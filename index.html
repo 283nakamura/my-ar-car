@@ -1,11 +1,58 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <style>
+      #action-button {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 24px;
+        background-color: #EF2D5E;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        font-size: 18px;
+        font-weight: bold;
+        z-index: 1000;
+        display: none; /* 最初は隠しておく */
+      }
+    </style>
+    
+    <button id="action-button">動画に切り替える</button>
+    
     <meta charset="utf-8">
     <title>WebAR Flying Car</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+    <script>
+      window.onload = function() {
+        const car = document.querySelector('#moving-car');
+        const videoScreen = document.querySelector('#video-screen');
+        const videoElement = document.querySelector('#my-video');
+        const button = document.querySelector('#action-button');
+    
+        // 1. 離陸・前進が終わる頃（10秒後など）にボタンを表示させる
+        setTimeout(() => {
+          button.style.display = 'block';
+        }, 10000); 
+    
+        // 2. ボタンが押された時の処理
+        button.addEventListener('click', () => {
+          // ボタンを消す
+          button.style.display = 'none';
+    
+          // 機体を消す
+          car.setAttribute('visible', 'false');
+    
+          // 動画を表示して再生（音も出るようになります！）
+          videoScreen.setAttribute('visible', 'true');
+          videoElement.muted = false; // 消音を解除
+          videoElement.play();
+        });
+      };
+    </script>
   </head>
   <body style="margin: 0; overflow: hidden;">
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
@@ -28,5 +75,12 @@
     
       <a-marker-camera preset="hiro"></a-marker-camera>
     </a-scene>
+    <a-video id="video-screen" 
+         src="#my-video" 
+         position="0 2 -15" 
+         width="4" 
+         height="2.25" 
+         visible="false">
+    </a-video>
   </body>
 </html>
