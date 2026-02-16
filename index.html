@@ -93,7 +93,10 @@
       // ② テイクオフボタン：一連のアニメーションと自動遷移
       btnTakeoff.addEventListener('click', () => {
         btnTakeoff.style.display = 'none';
-
+        
+        // ★ここで回転数を上げる（例：10倍速にアップ！）
+        model.setAttribute('animation-mixer', "clip: *; timeScale: 10");
+        
         // 1. 垂直浮上 (3秒)
         car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
 
