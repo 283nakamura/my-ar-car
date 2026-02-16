@@ -2,8 +2,9 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>WebAR Flying Car</title>
+    <title>WebAR to Video</title>
     <style>
+      /* 動画切り替えボタンのスタイル */
       #action-button {
         position: fixed;
         bottom: 20px;
@@ -16,8 +17,27 @@
         border-radius: 25px;
         font-size: 18px;
         font-weight: bold;
-        z-index: 1000;
+        z-index: 2000; /* 一番上に表示 */
         display: none;
+      }
+
+      /* 全画面動画のスタイル（最初は隠す） */
+      #video-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: black;
+        z-index: 3000; /* ARシーンよりも上に表示 */
+        display: none;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #full-screen-video {
+        width: 100%;
+        max-height: 100%;
       }
     </style>
     
@@ -27,22 +47,26 @@
     
     <script>
       window.onload = function() {
-        const car = document.querySelector('#moving-car');
-        const videoScreen = document.querySelector('#video-screen');
-        const videoElement = document.querySelector('#my-video');
+        const arScene = document.querySelector('a-scene');
         const button = document.querySelector('#action-button');
+        const videoContainer = document.querySelector('#video-container');
+        const videoElement = document.querySelector('#full-screen-video');
 
+        // 10秒後にボタンを表示
         setTimeout(() => {
           button.style.display = 'block';
         }, 10000); 
 
         button.addEventListener('click', () => {
+          // 1. ボタンを消す
           button.style.display = 'none';
-          car.setAttribute('visible', 'false');
-          
-          // 動画を表示して再生
-          videoScreen.setAttribute('visible', 'true');
-          videoElement.muted = false; 
+
+          // 2. ARシーンを完全に停止・非表示にする
+          arScene.style.display = 'none';
+          arScene.pause(); // 処理を止めてバッテリー消費を抑える
+
+          // 3. 動画コンテナを表示して再生
+          videoContainer.style.display = 'flex';
           videoElement.play();
         });
       };
@@ -50,13 +74,15 @@
   </head>
   
   <body style="margin: 0; overflow: hidden;">
-    <button id="action-button">動画に切り替える</button>
+    <button id="action-button">ミッション完了：動画を見る</button>
+
+    <div id="video-container">
+      <video id="full-screen-video" src="1.mp4" playsinline controls></video>
+    </div>
 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-      
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
-        <video id="my-video" src="1.mp4" preload="auto" playsinline webkit-playsinline muted></video>
       </a-assets>
 
       <a-entity id="moving-car" position="0 0 -5"
@@ -64,14 +90,6 @@
                 animation__forward="property: position; from: 0 2 -5; to: 10 2 -5; dur: 6000; delay: 6500; easing: easeInQuad">
           <a-gltf-model src="#car-model" scale="0.5 0.5 0.5" rotation="0 90 0" animation-mixer></a-gltf-model>
       </a-entity>
-
-      <a-video id="video-screen" 
-               src="#my-video" 
-               position="10 2 -5" 
-               width="4" 
-               height="2.25" 
-               visible="false">
-      </a-video>
 
       <a-marker-camera preset="hiro"></a-marker-camera>
     </a-scene>
