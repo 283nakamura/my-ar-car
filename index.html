@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Advanced WebAR VTOL</title>
+    <title>WebAR VTOL Mission</title>
     <style>
       /* ボタン共通スタイル */
       .ui-button {
@@ -22,15 +22,15 @@
         box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       }
 
-      /* フェード用オーバーレイ（画面全体を覆う黒い膜） */
+      /* フェード用オーバーレイ（動画より上に配置） */
       #fade-overlay {
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
         background-color: black;
         opacity: 0;
-        z-index: 2500;
-        pointer-events: none; /* 下のボタンを触れるように */
-        transition: opacity 2s; /* 2秒かけてフェード */
+        z-index: 4000;
+        pointer-events: none;
+        transition: opacity 2s; /* 2秒かけて変化 */
       }
 
       /* 動画コンテナ */
@@ -58,7 +58,7 @@
     <button id="btn-takeoff" class="ui-button" style="display:none;">2. 離陸 (テイクオフ)</button>
 
     <div id="video-container">
-      <video id="full-screen-video" src="1.mp4" playsinline controls></video>
+      <video id="full-screen-video" src="1.mp4" playsinline muted controls></video>
     </div>
 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
@@ -83,40 +83,42 @@
       const videoElement = document.querySelector('#full-screen-video');
       const arScene = document.querySelector('a-scene');
 
-      // ① スタートボタン：プロペラのみ起動
+      // ① スタートボタン：プロペラ起動
       btnStart.addEventListener('click', () => {
-        model.setAttribute('animation-mixer', "clip: *"); // アニメーション開始
+        model.setAttribute('animation-mixer', "clip: *");
         btnStart.style.display = 'none';
-        btnTakeoff.style.display = 'block'; // 次のボタンを出す
+        btnTakeoff.style.display = 'block';
       });
 
-      // ② テイクオフボタン：垂直浮上 → 前進 → 自動フェードアウト
+      // ② テイクオフボタン：一連のアニメーションと自動遷移
       btnTakeoff.addEventListener('click', () => {
         btnTakeoff.style.display = 'none';
 
-        // 浮上アニメーション設定（3秒）
+        // 1. 垂直浮上 (3秒)
         car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
 
-        // 3秒後に前進を開始
+        // 2. 3秒後に前進を開始
         setTimeout(() => {
           car.setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 10 2 -5; dur: 5000; easing: easeInQuad");
           
-          // 前進の終わり（5秒後）に合わせて画面を暗くするフェードアウト開始
+          // 3. 前進開始から3秒後(計6秒後)にフェードアウト（画面を黒くする）を開始
           setTimeout(() => {
-            overlay.style.opacity = "1"; // 黒幕がじわーっと出る
-          }, 3000); // 前進開始から3秒後（計6秒後）にフェード開始
+            overlay.style.opacity = "1";
+          }, 3000);
 
-          // 計8秒後（3秒浮上 + 5秒前進）に動画へ切り替え
+          // 4. 前進完了(計8秒後)に動画へ切り替え
           setTimeout(() => {
-            // ARを隠して動画を表示
             arScene.style.display = 'none';
+            arScene.pause();
             videoContainer.style.display = 'flex';
             
-            // 動画再生 ＋ 黒幕を消す（フェードイン）
+            // 動画再生開始
             videoElement.play();
+
+            // 5. 動画開始直後にフェードイン（黒幕を透明にする）
             setTimeout(() => {
               overlay.style.opacity = "0";
-            }, 500);
+            }, 100);
           }, 5000); 
 
         }, 3000);
