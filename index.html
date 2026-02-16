@@ -2,66 +2,50 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <title>WebAR VTOL Mission</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>空飛ぶクルマ フライトキャプテン</title>
     <style>
-      /* 基本設定 */
-      body, html {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
+      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
 
-      /* iPhone横向き時のカメラ映像サイズ問題を修正 */
-      canvas.a-canvas {
-        width: 100% !important;
-        height: 100% !important;
-        top: 0 !important;
-        left: 0 !important;
+      /* 横向き案内画面 */
+      #orientation-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); color: white; z-index: 9999;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        text-align: center;
       }
+      @media screen and (orientation: landscape) { #orientation-overlay { display: none; } }
 
-      /* ボタン共通スタイル */
+      /* 強制全画面ビデオ/キャンバス */
+      video, canvas { width: 100vw !important; height: 100vh !important; object-fit: cover !important; position: fixed !important; top: 0; left: 0; }
+
+      /* ボタン共通 */
       .ui-button {
-        position: fixed;
-        bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 15px 30px;
-        background-color: #EF2D5E;
-        color: white;
-        border: none;
-        border-radius: 30px;
-        font-size: 18px;
-        font-weight: bold;
-        z-index: 2000;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+        padding: 15px 40px; background-color: #EF2D5E; color: white;
+        border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
+        z-index: 5000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
       }
 
-      /* フェード用オーバーレイ */
-      #fade-overlay {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-color: black;
-        opacity: 0;
-        z-index: 4000;
-        pointer-events: none;
-        transition: opacity 2s;
+      /* 点滅アニメーション（テイクオフボタン用） */
+      @keyframes blink {
+        0% { background-color: #EF2D5E; box-shadow: 0 0 5px #EF2D5E; }
+        50% { background-color: #ff5e84; box-shadow: 0 0 30px #ff5e84; }
+        100% { background-color: #EF2D5E; box-shadow: 0 0 5px #EF2D5E; }
       }
+      #btn-takeoff { animation: blink 1.5s infinite; }
 
-      /* 動画コンテナ */
+      /* YouTubeコンテナ */
       #video-container {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-color: black;
-        z-index: 3000;
-        display: none;
-        justify-content: center;
-        align-items: center;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: black; z-index: 7000; display: none;
       }
-      video { width: 100%; max-height: 100%; }
+      iframe { width: 100%; height: 100%; border: none; }
+
+      #fade-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: black; opacity: 0; z-index: 8000; pointer-events: none; transition: opacity 2s;
+      }
     </style>
     
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
@@ -70,83 +54,84 @@
   </head>
   
   <body>
+    <div id="orientation-overlay">
+      <div style="font-size: 50px; margin-bottom: 20px;">🔄</div>
+      <p>iPhoneを横向きにしてください<br><small>画面のロックを解除して回転させてください</small></p>
+    </div>
 
     <div id="fade-overlay"></div>
     <button id="btn-start" class="ui-button">1. システム起動</button>
     <button id="btn-takeoff" class="ui-button" style="display:none;">2. テイクオフ</button>
 
     <div id="video-container">
-      <video id="full-screen-video" src="1.mp4" playsinline muted controls></video>
+      <div id="player"></div>
     </div>
 
-    <a-scene embedded 
-             arjs="sourceType: webcam; debugUIEnabled: false; displayWidth: 1280; displayHeight: 720;" 
-             vr-mode-ui="enabled: false">
-      
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
       </a-assets>
-
       <a-entity id="moving-car" position="0 0 -5">
           <a-gltf-model id="model-entity" src="#car-model" scale="0.2 0.2 0.2" rotation="0 90 0"></a-gltf-model>
       </a-entity>
-
       <a-marker-camera preset="hiro"></a-marker-camera>
     </a-scene>
 
     <script>
+      // YouTube IFrame APIの読み込み
+      var tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+      var player;
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+          height: '100%',
+          width: '100%',
+          videoId: 'uflgbhR3wVQ',
+          playerVars: {
+            'autoplay': 1,
+            'start': 43,
+            'playsinline': 1,
+            'controls': 1
+          },
+          events: { 'onReady': onPlayerReady }
+        });
+      }
+      function onPlayerReady(event) { event.target.mute(); } // 自動再生のため一旦ミュート
+
       const car = document.querySelector('#moving-car');
       const model = document.querySelector('#model-entity');
       const btnStart = document.querySelector('#btn-start');
       const btnTakeoff = document.querySelector('#btn-takeoff');
       const overlay = document.querySelector('#fade-overlay');
       const videoContainer = document.querySelector('#video-container');
-      const videoElement = document.querySelector('#full-screen-video');
       const arScene = document.querySelector('a-scene');
 
-      // iPhoneの向きが変わった時にカメラ映像を強制リサイズ
-      window.addEventListener('orientationchange', () => {
-        setTimeout(() => {
-          window.dispatchEvent(new Event('resize'));
-        }, 500);
-      });
-
-      // ① スタートボタン
       btnStart.addEventListener('click', () => {
         model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
         btnStart.style.display = 'none';
         btnTakeoff.style.display = 'block';
       });
 
-      // ② テイクオフボタン
       btnTakeoff.addEventListener('click', () => {
         btnTakeoff.style.display = 'none';
-        model.setAttribute('animation-mixer', "clip: *; timeScale: 10");
-        
+        model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
         car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
 
         setTimeout(() => {
-          model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
-        }, 1000);
-        
-        setTimeout(() => {
-          car.setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 10 2 -5; dur: 5000; easing: easeInQuad");
+          car.setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 15 2 -5; dur: 5000; easing: easeInQuad");
+          setTimeout(() => { overlay.style.opacity = "1"; }, 3000);
           
-          setTimeout(() => {
-            overlay.style.opacity = "1";
-          }, 3000);
-
           setTimeout(() => {
             arScene.style.display = 'none';
             arScene.pause();
-            videoContainer.style.display = 'flex';
-            videoElement.play();
-
-            setTimeout(() => {
-              overlay.style.opacity = "0";
-            }, 100);
-          }, 5000); 
-
+            videoContainer.style.display = 'block';
+            player.playVideo();
+            player.unMute(); // ユーザー操作（ボタンクリック）を経由しているので解除可能
+            setTimeout(() => { overlay.style.opacity = "0"; }, 100);
+          }, 5000);
         }, 3000);
       });
     </script>
