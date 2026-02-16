@@ -54,8 +54,8 @@
   <body style="margin: 0; overflow: hidden;">
 
     <div id="fade-overlay"></div>
-    <button id="btn-start" class="ui-button">1. システム起動 (スタート)</button>
-    <button id="btn-takeoff" class="ui-button" style="display:none;">2. 離陸 (テイクオフ)</button>
+    <button id="btn-start" class="ui-button">1. システム起動</button>
+    <button id="btn-takeoff" class="ui-button" style="display:none;">2. テイクオフ</button>
 
     <div id="video-container">
       <video id="full-screen-video" src="1.mp4" playsinline muted controls></video>
@@ -67,7 +67,7 @@
       </a-assets>
 
       <a-entity id="moving-car" position="0 0 -5">
-          <a-gltf-model id="model-entity" src="#car-model" scale="0.5 0.5 0.5" rotation="0 90 0"></a-gltf-model>
+          <a-gltf-model id="model-entity" src="#car-model" scale="0.2 0.2 0.2" rotation="0 90 0"></a-gltf-model>
       </a-entity>
 
       <a-marker-camera preset="hiro"></a-marker-camera>
