@@ -85,7 +85,7 @@
 
       // ① スタートボタン：プロペラ起動
       btnStart.addEventListener('click', () => {
-        model.setAttribute('animation-mixer', "clip: *");
+        model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
         btnStart.style.display = 'none';
         btnTakeoff.style.display = 'block';
       });
