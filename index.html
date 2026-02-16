@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WebAR Mission Final Fix</title>
+    <title>空飛ぶクルマのミッションに挑戦！</title>
     <style>
       /* 基本：背景は黒にしない（カメラが見えない原因になるため） */
       body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
@@ -84,7 +84,7 @@
 
       // ① スタートボタン
       btnStart.addEventListener('click', () => {
-        model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
+        model.setAttribute('animation-mixer', "clip: *; timeScale: 10");
         btnStart.style.display = 'none';
         btnTakeoff.style.display = 'block';
         
@@ -96,7 +96,7 @@
       // ② テイクオフボタン
       btnTakeoff.addEventListener('click', () => {
         btnTakeoff.style.display = 'none';
-        model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
+        model.setAttribute('animation-mixer', "clip: *; timeScale: 20");
         
         car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
 
