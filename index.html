@@ -3,10 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>空飛ぶクルマのミッションに挑戦！</title>
+    <title>WebAR VTOL - 360 Mission</title>
     <style>
-      /* 基本：背景は黒にしない（カメラが見えない原因になるため） */
-      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
 
       /* 横向き案内 */
       #orientation-overlay {
@@ -19,23 +18,27 @@
       /* ボタン：点滅演出 */
       .ui-button {
         position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-        padding: 15px 40px; background-color: #EF2D5E; color: white;
-        border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
-        z-index: 5000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        padding: 18px 45px; color: white; border: none; border-radius: 50px;
+        font-size: 22px; font-weight: bold; z-index: 5000; cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: all 0.3s;
       }
-      @keyframes blink {
-        0%, 100% { transform: translateX(-50%) scale(1); background-color: #EF2D5E; }
-        50% { transform: translateX(-50%) scale(1.1); background-color: #ff5e84; }
+      #btn-start { background-color: #EF2D5E; }
+      #btn-takeoff {
+        background-color: #007BFF; display: none;
+        animation: pulse-blue 1.2s infinite;
       }
-      #btn-takeoff { animation: blink 1s infinite; display: none; }
 
-      /* YouTubeコンテナ：ここを特定のIDで管理してカメラと分離 */
-      #video-container {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: black; z-index: 9000; display: none;
+      @keyframes pulse-blue {
+        0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 5px #007BFF; }
+        50% { transform: translateX(-50%) scale(1.1); box-shadow: 0 0 25px #00BFFF; background-color: #00BFFF; }
+        100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 5px #007BFF; }
       }
-      /* ARのビデオ要素を邪魔しないよう、YouTube用iframeだけにスタイルを当てる */
-      #yt-frame { width: 100%; height: 100%; border: none; }
+
+      /* 暗転用フェード */
+      #fade-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: black; opacity: 0; z-index: 9000; pointer-events: none; transition: opacity 1s;
+      }
     </style>
     
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
@@ -45,77 +48,83 @@
   
   <body style="margin: 0; overflow: hidden;">
     <div id="orientation-overlay">
-      <div>
-        <p style="font-size: 24px;">🔄</p>
-        <p>iPhoneを横向きにして開始してください</p>
-      </div>
+      <p>iPhoneを横向きにして開始してください</p>
     </div>
 
+    <div id="fade-overlay"></div>
     <button id="btn-start" class="ui-button">1. システム起動</button>
-    <button id="btn-takeoff" class="ui-button">2. テイクオフ</button>
-
-    <div id="video-container">
-      <iframe id="yt-frame" 
-              src="" 
-              allow="autoplay; encrypted-media; fullscreen" 
-              allowfullscreen></iframe>
-    </div>
+    <button id="btn-takeoff" class="ui-button">2. テイクオフ！</button>
 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
+        <video id="video360" src="360movie.mp4" playsinline crossorigin="anonymous" loop="false"></video>
       </a-assets>
-      <a-entity id="moving-car" position="0 0 -5">
-          <a-gltf-model id="model-entity" src="#car-model" scale="0.2 0.2 0.2" rotation="0 90 0"></a-gltf-model>
+
+      <a-entity id="ar-elements">
+        <a-entity id="moving-car" position="0 0 -5">
+            <a-gltf-model id="model-entity" src="#car-model" scale="0.2 0.2 0.2" rotation="0 90 0"></a-gltf-model>
+        </a-entity>
+        <a-marker-camera preset="hiro"></a-marker-camera>
       </a-entity>
-      <a-marker-camera preset="hiro"></a-marker-camera>
+
+      <a-videosphere src="#video360" rotation="0 -90 0" visible="false"></a-videosphere>
     </a-scene>
 
     <script>
-      const car = document.querySelector('#moving-car');
       const model = document.querySelector('#model-entity');
       const btnStart = document.querySelector('#btn-start');
       const btnTakeoff = document.querySelector('#btn-takeoff');
-      const videoContainer = document.querySelector('#video-container');
-      const ytFrame = document.querySelector('#yt-frame');
-
-      // YouTubeのURL（iPhoneの自動再生制限を突破するため mute=1 を付与）
-      const ytUrl = "https://www.youtube.com/embed/uflgbhR3wVQ?autoplay=1&mute=1&start=43&playsinline=1";
+      const video360 = document.querySelector('#video360');
+      const fade = document.querySelector('#fade-overlay');
+      const videosphere = document.querySelector('a-videosphere');
+      const arElements = document.querySelector('#ar-elements');
 
       // ① スタートボタン
       btnStart.addEventListener('click', () => {
-        model.setAttribute('animation-mixer', "clip: *; timeScale: 10");
+        model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
         btnStart.style.display = 'none';
         btnTakeoff.style.display = 'block';
         
-        // 【重要】ボタンを押した瞬間にYouTubeの読み込みだけ開始しておく（再生はさせない）
-        // これでブラウザに「ユーザーが動画を求めている」と認識させます
-        ytFrame.src = ytUrl;
+        // 動画をロードしておく（無音で一瞬再生して即停止：iPhoneの自動再生対策）
+        video360.play().then(() => {
+            video360.pause();
+            video360.currentTime = 0;
+        });
       });
 
       // ② テイクオフボタン
       btnTakeoff.addEventListener('click', () => {
         btnTakeoff.style.display = 'none';
-        model.setAttribute('animation-mixer', "clip: *; timeScale: 20");
+        model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
         
-        car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
+        // 浮上アニメーション
+        document.querySelector('#moving-car').setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
 
         setTimeout(() => {
-          car.setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 15 2 -5; dur: 5000; easing: easeInQuad");
+          // 前進アニメーション
+          document.querySelector('#moving-car').setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 20 2 -5; dur: 5000; easing: easeInQuad");
           
-          setTimeout(() => {
-            // ARシーンを消してYouTubeを表示
-            document.querySelector('a-scene').style.visibility = 'hidden';
-            videoContainer.style.display = 'block';
-            
-            // 再度URLをセットして再生をキック（iPhone対策）
-            ytFrame.src = ytUrl;
+          // 飛び去る直前にフェードアウト
+          setTimeout(() => { fade.style.opacity = "1"; }, 3500);
 
+          setTimeout(() => {
+            // ARを非表示にして360度ビデオを表示
+            arElements.setAttribute('visible', 'false');
+            videosphere.setAttribute('visible', 'true');
+            
+            // ビデオ再生
+            video360.muted = false; // 音を出す
+            video360.play();
+
+            // フェードイン
+            fade.style.opacity = "0";
+            
           }, 5000);
         }, 3000);
       });
 
-      // 画面回転時のリサイズ強制
+      // 画面回転時のリサイズ
       window.addEventListener('resize', () => {
         const scene = document.querySelector('a-scene');
         if (scene) scene.resize();
