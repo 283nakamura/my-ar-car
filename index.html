@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <title>WebAR Flying Car</title>
     <style>
       #action-button {
         position: fixed;
@@ -15,77 +17,63 @@
         font-size: 18px;
         font-weight: bold;
         z-index: 1000;
-        display: none; /* 最初は隠しておく */
+        display: none;
       }
     </style>
     
-    <button id="action-button">動画に切り替える</button>
-    
-    <meta charset="utf-8">
-    <title>WebAR Flying Car</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+    
     <script>
       window.onload = function() {
         const car = document.querySelector('#moving-car');
         const videoScreen = document.querySelector('#video-screen');
         const videoElement = document.querySelector('#my-video');
         const button = document.querySelector('#action-button');
-    
-        // 1. 離陸・前進が終わる頃（10秒後など）にボタンを表示させる
+
         setTimeout(() => {
           button.style.display = 'block';
         }, 10000); 
-    
-        // 2. ボタンが押された時の処理
+
         button.addEventListener('click', () => {
-          // ボタンを消す
           button.style.display = 'none';
-    
-          // 機体を消す
           car.setAttribute('visible', 'false');
-    
-          // 動画を表示して再生（音も出るようになります！）
+          
+          // 動画を表示して再生
           videoScreen.setAttribute('visible', 'true');
-          videoElement.muted = false; // 消音を解除
+          videoElement.muted = false; 
           videoElement.play();
         });
       };
     </script>
   </head>
+  
   <body style="margin: 0; overflow: hidden;">
+    <button id="action-button">動画に切り替える</button>
+
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
       
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
+        <video id="my-video" src="1.mp4" preload="auto" playsinline webkit-playsinline muted></video>
       </a-assets>
-    
+
       <a-entity id="moving-car" position="0 0 -5"
-                animation__takeoff="property: position; from: 0 0 -5; to: 0 2 -5; dur: 4000; delay: 2000; easing: easeInOutQuad; startEvents: loaded"
+                animation__takeoff="property: position; from: 0 0 -5; to: 0 2 -5; dur: 4000; delay: 2000; easing: easeInOutQuad"
                 animation__forward="property: position; from: 0 2 -5; to: 10 2 -5; dur: 6000; delay: 6500; easing: easeInQuad">
-          
-          <a-gltf-model src="#car-model" 
-                        scale="0.5 0.5 0.5" 
-                        rotation="0 90 0"
-                        animation-mixer>
-          </a-gltf-model>
-          
+          <a-gltf-model src="#car-model" scale="0.5 0.5 0.5" rotation="0 90 0" animation-mixer></a-gltf-model>
       </a-entity>
-    
+
+      <a-video id="video-screen" 
+               src="#my-video" 
+               position="10 2 -5" 
+               width="4" 
+               height="2.25" 
+               visible="false">
+      </a-video>
+
       <a-marker-camera preset="hiro"></a-marker-camera>
     </a-scene>
-
-    <a-assets>
-      <video id="my-video" src="1.mp4" preload="auto" playsinline webkit-playsinline muted></video>
-    </a-assets>
-    
-    <a-video id="video-screen" 
-         src="#my-video" 
-         position="0 2 -15" 
-         width="4" 
-         height="2.25" 
-         visible="false">
-    </a-video>
   </body>
 </html>
