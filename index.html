@@ -100,6 +100,11 @@
         // 1. 垂直浮上 (3秒)
         car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
 
+        // 1秒後にさらに出力を上げる（「15倍」に加速！）
+        setTimeout(() => {
+          model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
+        }, 1000);
+        
         // 2. 3秒後に前進を開始
         setTimeout(() => {
           car.setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 10 2 -5; dur: 5000; easing: easeInQuad");
