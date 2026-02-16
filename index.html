@@ -3,49 +3,45 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>空飛ぶクルマ フライトキャプテン</title>
+    <title>WebAR VTOL Mission Final</title>
     <style>
-      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
+      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; }
 
-      /* 横向き案内画面 */
+      /* カメラ映像を確実に表示するための設定 */
+      .a-canvas {
+        width: 100% !important;
+        height: 100% !important;
+        position: fixed !important;
+        top: 0; left: 0;
+      }
+
+      /* 横向き案内（シンプルに） */
       #orientation-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.9); color: white; z-index: 9999;
-        display: flex; flex-direction: column; justify-content: center; align-items: center;
-        text-align: center;
+        background: rgba(0,0,0,0.8); color: white; z-index: 9999;
+        display: flex; justify-content: center; align-items: center; text-align: center;
       }
       @media screen and (orientation: landscape) { #orientation-overlay { display: none; } }
 
-      /* 強制全画面ビデオ/キャンバス */
-      video, canvas { width: 100vw !important; height: 100vh !important; object-fit: cover !important; position: fixed !important; top: 0; left: 0; }
-
-      /* ボタン共通 */
+      /* ボタンと点滅演出 */
       .ui-button {
-        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
         padding: 15px 40px; background-color: #EF2D5E; color: white;
         border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
-        z-index: 5000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        z-index: 5000; cursor: pointer;
       }
-
-      /* 点滅アニメーション（テイクオフボタン用） */
       @keyframes blink {
-        0% { background-color: #EF2D5E; box-shadow: 0 0 5px #EF2D5E; }
-        50% { background-color: #ff5e84; box-shadow: 0 0 30px #ff5e84; }
-        100% { background-color: #EF2D5E; box-shadow: 0 0 5px #EF2D5E; }
+        0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+        50% { opacity: 0.8; transform: translateX(-50%) scale(1.05); }
       }
-      #btn-takeoff { animation: blink 1.5s infinite; }
+      #btn-takeoff { animation: blink 1s infinite; display: none; }
 
-      /* YouTubeコンテナ */
+      /* YouTube表示用 */
       #video-container {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background-color: black; z-index: 7000; display: none;
+        background: black; z-index: 8000; display: none;
       }
       iframe { width: 100%; height: 100%; border: none; }
-
-      #fade-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: black; opacity: 0; z-index: 8000; pointer-events: none; transition: opacity 2s;
-      }
     </style>
     
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
@@ -55,19 +51,20 @@
   
   <body>
     <div id="orientation-overlay">
-      <div style="font-size: 50px; margin-bottom: 20px;">🔄</div>
-      <p>iPhoneを横向きにしてください<br><small>画面のロックを解除して回転させてください</small></p>
+      <p>iPhoneを横向きに回転してください</p>
     </div>
 
-    <div id="fade-overlay"></div>
     <button id="btn-start" class="ui-button">1. システム起動</button>
-    <button id="btn-takeoff" class="ui-button" style="display:none;">2. テイクオフ</button>
+    <button id="btn-takeoff" class="ui-button">2. テイクオフ</button>
 
     <div id="video-container">
-      <div id="player"></div>
+      <iframe id="yt-player" 
+              src="https://www.youtube.com/embed/uflgbhR3wVQ?autoplay=1&mute=1&start=43&playsinline=1&enablejsapi=1" 
+              allow="autoplay; encrypted-media; fullscreen" 
+              allowfullscreen></iframe>
     </div>
 
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;" vr-mode-ui="enabled: false">
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
       </a-assets>
@@ -78,61 +75,49 @@
     </a-scene>
 
     <script>
-      // YouTube IFrame APIの読み込み
-      var tag = document.createElement('script');
-      tag.src = "https://www.youtube.com/iframe_api";
-      var firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-      var player;
-      function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-          height: '100%',
-          width: '100%',
-          videoId: 'uflgbhR3wVQ',
-          playerVars: {
-            'autoplay': 1,
-            'start': 43,
-            'playsinline': 1,
-            'controls': 1
-          },
-          events: { 'onReady': onPlayerReady }
-        });
-      }
-      function onPlayerReady(event) { event.target.mute(); } // 自動再生のため一旦ミュート
-
       const car = document.querySelector('#moving-car');
       const model = document.querySelector('#model-entity');
       const btnStart = document.querySelector('#btn-start');
       const btnTakeoff = document.querySelector('#btn-takeoff');
-      const overlay = document.querySelector('#fade-overlay');
       const videoContainer = document.querySelector('#video-container');
-      const arScene = document.querySelector('a-scene');
+      const ytPlayer = document.querySelector('#yt-player');
 
+      // ① スタートボタン
       btnStart.addEventListener('click', () => {
         model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
         btnStart.style.display = 'none';
         btnTakeoff.style.display = 'block';
       });
 
+      // ② テイクオフボタン
       btnTakeoff.addEventListener('click', () => {
         btnTakeoff.style.display = 'none';
         model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
+        
+        // 浮上アニメーション
         car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
 
         setTimeout(() => {
+          // 前進アニメーション
           car.setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 15 2 -5; dur: 5000; easing: easeInQuad");
-          setTimeout(() => { overlay.style.opacity = "1"; }, 3000);
           
           setTimeout(() => {
-            arScene.style.display = 'none';
-            arScene.pause();
+            // YouTubeに切り替え
+            document.querySelector('a-scene').style.display = 'none';
             videoContainer.style.display = 'block';
-            player.playVideo();
-            player.unMute(); // ユーザー操作（ボタンクリック）を経由しているので解除可能
-            setTimeout(() => { overlay.style.opacity = "0"; }, 100);
+            
+            // iframeのsrcを再セットすることで強制的に再生を開始させる（iPhone対策）
+            const currentSrc = ytPlayer.src;
+            ytPlayer.src = currentSrc; 
+            
           }, 5000);
         }, 3000);
+      });
+
+      // リサイズ強制（カメラ真っ黒対策）
+      window.addEventListener('resize', () => {
+        const scene = document.querySelector('a-scene');
+        if (scene) scene.resize();
       });
     </script>
   </body>
