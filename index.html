@@ -2,79 +2,60 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>WebAR to Video</title>
+    <title>Advanced WebAR VTOL</title>
     <style>
-      /* 動画切り替えボタンのスタイル */
-      #action-button {
+      /* ボタン共通スタイル */
+      .ui-button {
         position: fixed;
-        bottom: 20px;
+        bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
-        padding: 12px 24px;
+        padding: 15px 30px;
         background-color: #EF2D5E;
         color: white;
         border: none;
-        border-radius: 25px;
+        border-radius: 30px;
         font-size: 18px;
         font-weight: bold;
-        z-index: 2000; /* 一番上に表示 */
-        display: none;
+        z-index: 2000;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       }
 
-      /* 全画面動画のスタイル（最初は隠す） */
+      /* フェード用オーバーレイ（画面全体を覆う黒い膜） */
+      #fade-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-color: black;
+        opacity: 0;
+        z-index: 2500;
+        pointer-events: none; /* 下のボタンを触れるように */
+        transition: opacity 2s; /* 2秒かけてフェード */
+      }
+
+      /* 動画コンテナ */
       #video-container {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        top: 0; left: 0; width: 100%; height: 100%;
         background-color: black;
-        z-index: 3000; /* ARシーンよりも上に表示 */
+        z-index: 3000;
         display: none;
         justify-content: center;
         align-items: center;
       }
-
-      #full-screen-video {
-        width: 100%;
-        max-height: 100%;
-      }
+      video { width: 100%; max-height: 100%; }
     </style>
     
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
-    
-    <script>
-      window.onload = function() {
-        const arScene = document.querySelector('a-scene');
-        const button = document.querySelector('#action-button');
-        const videoContainer = document.querySelector('#video-container');
-        const videoElement = document.querySelector('#full-screen-video');
-
-        // 10秒後にボタンを表示
-        setTimeout(() => {
-          button.style.display = 'block';
-        }, 10000); 
-
-        button.addEventListener('click', () => {
-          // 1. ボタンを消す
-          button.style.display = 'none';
-
-          // 2. ARシーンを完全に停止・非表示にする
-          arScene.style.display = 'none';
-          arScene.pause(); // 処理を止めてバッテリー消費を抑える
-
-          // 3. 動画コンテナを表示して再生
-          videoContainer.style.display = 'flex';
-          videoElement.play();
-        });
-      };
-    </script>
   </head>
   
   <body style="margin: 0; overflow: hidden;">
-    <button id="action-button">ミッション完了：動画を見る</button>
+
+    <div id="fade-overlay"></div>
+    <button id="btn-start" class="ui-button">1. システム起動 (スタート)</button>
+    <button id="btn-takeoff" class="ui-button" style="display:none;">2. 離陸 (テイクオフ)</button>
 
     <div id="video-container">
       <video id="full-screen-video" src="1.mp4" playsinline controls></video>
@@ -85,13 +66,61 @@
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
       </a-assets>
 
-      <a-entity id="moving-car" position="0 0 -5"
-                animation__takeoff="property: position; from: 0 0 -5; to: 0 2 -5; dur: 4000; delay: 2000; easing: easeInOutQuad"
-                animation__forward="property: position; from: 0 2 -5; to: 10 2 -5; dur: 6000; delay: 6500; easing: easeInQuad">
-          <a-gltf-model src="#car-model" scale="0.5 0.5 0.5" rotation="0 90 0" animation-mixer></a-gltf-model>
+      <a-entity id="moving-car" position="0 0 -5">
+          <a-gltf-model id="model-entity" src="#car-model" scale="0.5 0.5 0.5" rotation="0 90 0"></a-gltf-model>
       </a-entity>
 
       <a-marker-camera preset="hiro"></a-marker-camera>
     </a-scene>
+
+    <script>
+      const car = document.querySelector('#moving-car');
+      const model = document.querySelector('#model-entity');
+      const btnStart = document.querySelector('#btn-start');
+      const btnTakeoff = document.querySelector('#btn-takeoff');
+      const overlay = document.querySelector('#fade-overlay');
+      const videoContainer = document.querySelector('#video-container');
+      const videoElement = document.querySelector('#full-screen-video');
+      const arScene = document.querySelector('a-scene');
+
+      // ① スタートボタン：プロペラのみ起動
+      btnStart.addEventListener('click', () => {
+        model.setAttribute('animation-mixer', "clip: *"); // アニメーション開始
+        btnStart.style.display = 'none';
+        btnTakeoff.style.display = 'block'; // 次のボタンを出す
+      });
+
+      // ② テイクオフボタン：垂直浮上 → 前進 → 自動フェードアウト
+      btnTakeoff.addEventListener('click', () => {
+        btnTakeoff.style.display = 'none';
+
+        // 浮上アニメーション設定（3秒）
+        car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
+
+        // 3秒後に前進を開始
+        setTimeout(() => {
+          car.setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 10 2 -5; dur: 5000; easing: easeInQuad");
+          
+          // 前進の終わり（5秒後）に合わせて画面を暗くするフェードアウト開始
+          setTimeout(() => {
+            overlay.style.opacity = "1"; // 黒幕がじわーっと出る
+          }, 3000); // 前進開始から3秒後（計6秒後）にフェード開始
+
+          // 計8秒後（3秒浮上 + 5秒前進）に動画へ切り替え
+          setTimeout(() => {
+            // ARを隠して動画を表示
+            arScene.style.display = 'none';
+            videoContainer.style.display = 'flex';
+            
+            // 動画再生 ＋ 黒幕を消す（フェードイン）
+            videoElement.play();
+            setTimeout(() => {
+              overlay.style.opacity = "0";
+            }, 500);
+          }, 5000); 
+
+        }, 3000);
+      });
+    </script>
   </body>
 </html>
