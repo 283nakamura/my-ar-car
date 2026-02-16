@@ -2,22 +2,24 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <title>WebAR VTOL Mission</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>WebAR VTOL Fullscreen</title>
     <style>
-      /* 基本設定 */
       body, html {
         margin: 0;
         padding: 0;
         width: 100%;
         height: 100%;
         overflow: hidden;
+        background-color: #000;
       }
 
-      /* iPhone横向き時のカメラ映像サイズ問題を修正 */
-      canvas.a-canvas {
-        width: 100% !important;
-        height: 100% !important;
+      /* 【最重要】AR.jsが生成するビデオとCanvasを画面いっぱいに強制固定 */
+      #arjs-video, .a-canvas {
+        width: 100vw !important;
+        height: 100vh !important;
+        object-fit: cover !important;
+        position: fixed !important;
         top: 0 !important;
         left: 0 !important;
       }
@@ -35,7 +37,7 @@
         border-radius: 30px;
         font-size: 18px;
         font-weight: bold;
-        z-index: 2000;
+        z-index: 5000; /* 最前面に */
         cursor: pointer;
         box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       }
@@ -46,17 +48,17 @@
         top: 0; left: 0; width: 100%; height: 100%;
         background-color: black;
         opacity: 0;
-        z-index: 4000;
+        z-index: 6000;
         pointer-events: none;
         transition: opacity 2s;
       }
 
-      /* 動画コンテナ */
+      /* 全画面動画コンテナ */
       #video-container {
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
         background-color: black;
-        z-index: 3000;
+        z-index: 7000;
         display: none;
         justify-content: center;
         align-items: center;
@@ -80,7 +82,7 @@
     </div>
 
     <a-scene embedded 
-             arjs="sourceType: webcam; debugUIEnabled: false; displayWidth: 1280; displayHeight: 720;" 
+             arjs="sourceType: webcam; debugUIEnabled: false;" 
              vr-mode-ui="enabled: false">
       
       <a-assets>
@@ -104,18 +106,33 @@
       const videoElement = document.querySelector('#full-screen-video');
       const arScene = document.querySelector('a-scene');
 
-      // iPhoneの向きが変わった時にカメラ映像を強制リサイズ
+      // 強制的にリサイズを適用する関数
+      function forceResize() {
+        window.dispatchEvent(new Event('resize'));
+        // AR.jsが生成したビデオ要素を捕まえてサイズを固定
+        const video = document.querySelector('#arjs-video');
+        if (video) {
+          video.style.width = window.innerWidth + 'px';
+          video.style.height = window.innerHeight + 'px';
+        }
+      }
+
+      // iPhoneの向き変更に粘り強く対応
       window.addEventListener('orientationchange', () => {
-        setTimeout(() => {
-          window.dispatchEvent(new Event('resize'));
-        }, 500);
+        [0, 200, 500, 1000, 2000].forEach(delay => {
+          setTimeout(forceResize, delay);
+        });
       });
+
+      // 定期的にリサイズチェック（念のため）
+      setInterval(forceResize, 3000);
 
       // ① スタートボタン
       btnStart.addEventListener('click', () => {
         model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
         btnStart.style.display = 'none';
         btnTakeoff.style.display = 'block';
+        forceResize(); // タップ時にもリサイズを走らせる
       });
 
       // ② テイクオフボタン
