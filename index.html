@@ -3,35 +3,27 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WebAR VTOL - Final Interaction Fix</title>
+    <title>WebAR VTOL - Interaction Resolved</title>
     <style>
       body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: transparent; }
 
-      /* 横向き案内（最前面） */
-      #orientation-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.9); color: white; z-index: 20000;
-        display: flex; justify-content: center; align-items: center; text-align: center;
-        pointer-events: auto; /* ここはタッチを受け取る */
-      }
-      @media screen and (orientation: landscape) { #orientation-overlay { display: none; } }
-
-      /* ボタン層：画面全体を覆うがタッチは透過させる */
+      /* 【最重要】UIレイヤー：z-indexを極限まで高くし、pointer-eventsを整理 */
       #ui-layer {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 15000;
-        pointer-events: none; /* 下のAR層にタッチを逃がす */
+        z-index: 999999; /* 圧倒的最前面 */
+        pointer-events: none; /* 下のAR層にイベントを逃がす */
       }
 
-      /* ボタン：個別にタッチを有効にする */
+      /* ボタン： pointer-eventsをautoにしてタッチを奪い返す */
       .ui-button {
-        position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-        padding: 18px 45px; color: white; border: none; border-radius: 50px;
-        font-size: 20px; font-weight: bold; cursor: pointer;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        pointer-events: auto; /* ボタンだけはタッチに反応する */
-        display: block;
+        position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+        padding: 20px 50px; color: white; border: none; border-radius: 60px;
+        font-size: 24px; font-weight: bold; cursor: pointer;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        pointer-events: auto; /* ボタン部分だけはタッチを有効に */
+        -webkit-tap-highlight-color: transparent; /* タップ時の青枠消去 */
       }
+
       #btn-start { background-color: #EF2D5E; }
       #btn-takeoff {
         background-color: #007BFF; display: none;
@@ -39,17 +31,25 @@
       }
       @keyframes pulse-blue {
         0%, 100% { transform: translateX(-50%) scale(1); }
-        50% { transform: translateX(-50%) scale(1.05); background-color: #00BFFF; }
+        50% { transform: translateX(-50%) scale(1.08); background-color: #00BFFF; }
       }
 
-      /* フェード用 */
+      /* 横向き案内（最前面中の最前面） */
+      #orientation-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); color: white; z-index: 1000000;
+        display: flex; justify-content: center; align-items: center; text-align: center;
+      }
+      @media screen and (orientation: landscape) { #orientation-overlay { display: none; } }
+
+      /* 暗転フェード */
       #fade-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: black; opacity: 0; z-index: 18000; pointer-events: none; transition: opacity 1s;
+        background: black; opacity: 0; z-index: 950000; pointer-events: none; transition: opacity 1s;
       }
 
-      /* カメラ映像を一番奥へ */
-      #arjs-video { z-index: -1 !important; }
+      /* A-Frameのキャンバスがボタンを邪魔しないようにする設定 */
+      .a-canvas { pointer-events: none !important; }
     </style>
     
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
@@ -72,7 +72,6 @@
     <a-scene embedded 
              arjs="sourceType: webcam; debugUIEnabled: false;" 
              vr-mode-ui="enabled: false">
-      
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
         <video id="video360" src="360movie.mp4" playsinline crossorigin="anonymous" loop="false"></video>
@@ -97,25 +96,54 @@
       const arElements = document.querySelector('#ar-elements');
       const model = document.querySelector('#model-entity');
 
-      // ① スタートボタン
-      btnStart.addEventListener('click', (e) => {
-        e.stopPropagation(); // 重複クリック防止
+      // iPhone/Safari向けに click と touchstart 両方で反応するようにする
+      const handleStart = (e) => {
+        e.preventDefault();
         model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
         btnStart.style.display = 'none';
         btnTakeoff.style.display = 'block';
         
+        // 動画の読み込み開始
         video360.play().then(() => {
             video360.pause();
             video360.currentTime = 0;
         });
         window.dispatchEvent(new Event('resize'));
-      });
+      };
 
-      // ② テイクオフボタン
-      btnTakeoff.addEventListener('click', (e) => {
-        e.stopPropagation();
+      const handleTakeoff = (e) => {
+        e.preventDefault();
         btnTakeoff.style.display = 'none';
         model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
         
         const car = document.querySelector('#moving-car');
-        car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur
+        car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
+
+        setTimeout(() => {
+          car.setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 20 2 -5; dur: 5000; easing: easeInQuad");
+          setTimeout(() => { fade.style.opacity = "1"; }, 4000);
+          setTimeout(() => {
+            arElements.setAttribute('visible', 'false');
+            vSphere.setAttribute('visible', 'true');
+            vSphere.setAttribute('scale', '1 1 1');
+            video360.muted = false;
+            video360.play();
+            fade.style.opacity = "0";
+          }, 5000);
+        }, 3000);
+      };
+
+      // イベントリスナー登録
+      btnStart.addEventListener('touchstart', handleStart);
+      btnStart.addEventListener('click', handleStart);
+      
+      btnTakeoff.addEventListener('touchstart', handleTakeoff);
+      btnTakeoff.addEventListener('click', handleTakeoff);
+
+      window.addEventListener('resize', () => {
+        const scene = document.querySelector('a-scene');
+        if (scene) scene.resize();
+      });
+    </script>
+  </body>
+</html>
