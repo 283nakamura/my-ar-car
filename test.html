@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WebVR VTOL - Virtual World</title>
+    <title>WebVR VTOL - Side Takeoff</title>
     <style>
       body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; }
       #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100000; pointer-events: none; }
@@ -19,14 +19,11 @@
       #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 90000; display: none; }
       #niagara-video { width: 100%; height: 100%; object-fit: cover; }
       #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; opacity: 0; z-index: 95000; pointer-events: none; transition: opacity 1s; }
-      /* カメラ映像を隠す設定 */
-      #arjs-video { display: none !important; }
     </style>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
   </head>
-  <body style="margin: 0; overflow: hidden;">
+  <body>
 
     <div id="ui-layer">
       <button id="btn-start" class="ui-button">1. システム起動</button>
@@ -38,33 +35,46 @@
     </div>
     <div id="fade-overlay"></div>
 
-    <a-scene embedded vr-mode-ui="enabled: false">
+    <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
       </a-assets>
 
       <a-sky color="#1a1a2e"></a-sky>
-      <a-grid position="0 0 0" rotation="-90 0 0" width="100" height="100" static-body></a-grid>
+      <a-grid position="0 0 0" rotation="-90 0 0" width="100" height="100" src="https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/grid.png"></a-grid>
+      
       <a-light type="ambient" color="#bbb"></a-light>
-      <a-light type="directional" color="#ffffff" intensity="0.6" position="-1 1 2"></a-light>
+      <a-light type="directional" color="#ffffff" intensity="0.8" position="-1 1 2"></a-light>
 
-      <a-entity id="moving-car" position="0 0.5 -5">
+      <a-entity id="moving-car" position="-5 0.5 -10">
           <a-gltf-model id="model-entity" src="#car-model" scale="0.3 0.3 0.3" rotation="0 90 0"></a-gltf-model>
       </a-entity>
 
-      <a-entity camera position="0 1.6 0"></a-entity>
+      <a-entity id="main-camera" camera look-controls position="0 1.6 0"></a-entity>
     </a-scene>
 
     <script>
       const btnStart = document.querySelector('#btn-start');
       const btnTakeoff = document.querySelector('#btn-takeoff');
       const niagaraVideo = document.querySelector('#niagara-video');
-      const videoContainer = document.querySelector('#video-container');
-      const fade = document.querySelector('#fade-overlay');
       const model = document.querySelector('#model-entity');
+
+      async function requestDeviceOrientation() {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          try {
+            const permissionState = await DeviceOrientationEvent.requestPermission();
+            if (permissionState === 'granted') {
+              window.addEventListener('deviceorientation', () => {});
+            }
+          } catch (error) {
+            console.error(error);
+          }
+        }
+      }
 
       const handleStart = (e) => {
         if (e) e.preventDefault();
+        requestDeviceOrientation();
         model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
         btnStart.style.display = 'none';
         btnTakeoff.style.display = 'block';
@@ -77,17 +87,20 @@
         model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
         
         const car = document.querySelector('#moving-car');
-        // 仮想空間なので少し高めに飛ばす演出
-        car.setAttribute('animation__up', "property: position; from: 0 0.5 -5; to: 0 5 -5; dur: 3000; easing: easeInOutQuad");
+        
+        // ① まずは垂直上昇（Y軸）
+        car.setAttribute('animation__up', "property: position; from: -5 0.5 -10; to: -5 5 -10; dur: 3000; easing: easeInOutQuad");
 
         setTimeout(() => {
-          car.setAttribute('animation__forward', "property: position; from: 0 5 -5; to: 0 5 -30; dur: 5000; easing: easeInQuad");
-          setTimeout(() => { fade.style.opacity = "1"; }, 4000);
+          // ② 右方向へ飛び去る（X軸をマイナスからプラスへ大きく移動）
+          car.setAttribute('animation__forward', "property: position; from: -5 5 -10; to: 40 5 -10; dur: 5000; easing: easeInQuad");
+          
+          setTimeout(() => { document.querySelector('#fade-overlay').style.opacity = "1"; }, 4000);
           setTimeout(() => {
             document.querySelector('a-scene').style.display = 'none';
-            videoContainer.style.display = 'block';
+            document.querySelector('#video-container').style.display = 'block';
             niagaraVideo.play();
-            fade.style.opacity = "0";
+            document.querySelector('#fade-overlay').style.opacity = "0";
           }, 5000);
         }, 3000);
       };
