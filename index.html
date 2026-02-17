@@ -3,25 +3,34 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WebAR VTOL - 360 & Camera Fixed</title>
+    <title>WebAR VTOL - Final Interaction Fix</title>
     <style>
-      /* 背景色を透明にしてカメラ映像が見えるようにする */
       body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: transparent; }
 
-      /* 横向き案内 */
+      /* 横向き案内（最前面） */
       #orientation-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.9); color: white; z-index: 10000;
+        background: rgba(0,0,0,0.9); color: white; z-index: 20000;
         display: flex; justify-content: center; align-items: center; text-align: center;
+        pointer-events: auto; /* ここはタッチを受け取る */
       }
       @media screen and (orientation: landscape) { #orientation-overlay { display: none; } }
 
-      /* ボタン：視認性重視 */
+      /* ボタン層：画面全体を覆うがタッチは透過させる */
+      #ui-layer {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        z-index: 15000;
+        pointer-events: none; /* 下のAR層にタッチを逃がす */
+      }
+
+      /* ボタン：個別にタッチを有効にする */
       .ui-button {
-        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+        position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
         padding: 18px 45px; color: white; border: none; border-radius: 50px;
-        font-size: 20px; font-weight: bold; z-index: 5000; cursor: pointer;
+        font-size: 20px; font-weight: bold; cursor: pointer;
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        pointer-events: auto; /* ボタンだけはタッチに反応する */
+        display: block;
       }
       #btn-start { background-color: #EF2D5E; }
       #btn-takeoff {
@@ -33,18 +42,14 @@
         50% { transform: translateX(-50%) scale(1.05); background-color: #00BFFF; }
       }
 
-      /* 暗転用フェード */
+      /* フェード用 */
       #fade-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: black; opacity: 0; z-index: 9000; pointer-events: none; transition: opacity 1s;
+        background: black; opacity: 0; z-index: 18000; pointer-events: none; transition: opacity 1s;
       }
 
-      /* AR.jsが生成するビデオ要素を確実に背面に配置 */
-      #arjs-video {
-        z-index: -1 !important;
-        position: fixed !important;
-        top: 0; left: 0;
-      }
+      /* カメラ映像を一番奥へ */
+      #arjs-video { z-index: -1 !important; }
     </style>
     
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
@@ -57,14 +62,16 @@
       <p>iPhoneを横向きにして開始してください</p>
     </div>
 
+    <div id="ui-layer">
+      <button id="btn-start" class="ui-button">1. システム起動</button>
+      <button id="btn-takeoff" class="ui-button">2. テイクオフ！</button>
+    </div>
+
     <div id="fade-overlay"></div>
-    <button id="btn-start" class="ui-button">1. システム起動</button>
-    <button id="btn-takeoff" class="ui-button">2. テイクオフ！</button>
 
     <a-scene embedded 
              arjs="sourceType: webcam; debugUIEnabled: false;" 
-             vr-mode-ui="enabled: false"
-             renderer="logarithmicDepthBuffer: true; colorManagement: true;">
+             vr-mode-ui="enabled: false">
       
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
@@ -91,29 +98,24 @@
       const model = document.querySelector('#model-entity');
 
       // ① スタートボタン
-      btnStart.addEventListener('click', () => {
+      btnStart.addEventListener('click', (e) => {
+        e.stopPropagation(); // 重複クリック防止
         model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
         btnStart.style.display = 'none';
         btnTakeoff.style.display = 'block';
         
-        // 動画のプリロード（iPhone対策）
         video360.play().then(() => {
             video360.pause();
             video360.currentTime = 0;
         });
-        
-        // 背景真っ黒対策：リサイズを強制
         window.dispatchEvent(new Event('resize'));
       });
 
       // ② テイクオフボタン
-      btnTakeoff.addEventListener('click', () => {
+      btnTakeoff.addEventListener('click', (e) => {
+        e.stopPropagation();
         btnTakeoff.style.display = 'none';
         model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
         
-        // 浮上
-        document.querySelector('#moving-car').setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
-
-        setTimeout(() => {
-          // 前進
-          document.querySelector('#moving-car').setAttribute('animation__forward
+        const car = document.querySelector('#moving-car');
+        car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur
