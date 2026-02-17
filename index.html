@@ -3,9 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WebAR VTOL - 360 Mission</title>
+    <title>WebAR VTOL - 360 & Camera Fixed</title>
     <style>
-      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
+      /* 背景色を透明にしてカメラ映像が見えるようにする */
+      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: transparent; }
 
       /* 横向き案内 */
       #orientation-overlay {
@@ -15,29 +16,34 @@
       }
       @media screen and (orientation: landscape) { #orientation-overlay { display: none; } }
 
-      /* ボタン：点滅演出 */
+      /* ボタン：視認性重視 */
       .ui-button {
         position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
         padding: 18px 45px; color: white; border: none; border-radius: 50px;
-        font-size: 22px; font-weight: bold; z-index: 5000; cursor: pointer;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: all 0.3s;
+        font-size: 20px; font-weight: bold; z-index: 5000; cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
       }
       #btn-start { background-color: #EF2D5E; }
       #btn-takeoff {
         background-color: #007BFF; display: none;
         animation: pulse-blue 1.2s infinite;
       }
-
       @keyframes pulse-blue {
-        0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 5px #007BFF; }
-        50% { transform: translateX(-50%) scale(1.1); box-shadow: 0 0 25px #00BFFF; background-color: #00BFFF; }
-        100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 5px #007BFF; }
+        0%, 100% { transform: translateX(-50%) scale(1); }
+        50% { transform: translateX(-50%) scale(1.05); background-color: #00BFFF; }
       }
 
       /* 暗転用フェード */
       #fade-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: black; opacity: 0; z-index: 9000; pointer-events: none; transition: opacity 1s;
+      }
+
+      /* AR.jsが生成するビデオ要素を確実に背面に配置 */
+      #arjs-video {
+        z-index: -1 !important;
+        position: fixed !important;
+        top: 0; left: 0;
       }
     </style>
     
@@ -55,7 +61,11 @@
     <button id="btn-start" class="ui-button">1. システム起動</button>
     <button id="btn-takeoff" class="ui-button">2. テイクオフ！</button>
 
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+    <a-scene embedded 
+             arjs="sourceType: webcam; debugUIEnabled: false;" 
+             vr-mode-ui="enabled: false"
+             renderer="logarithmicDepthBuffer: true; colorManagement: true;">
+      
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
         <video id="video360" src="360movie.mp4" playsinline crossorigin="anonymous" loop="false"></video>
@@ -68,17 +78,17 @@
         <a-marker-camera preset="hiro"></a-marker-camera>
       </a-entity>
 
-      <a-videosphere src="#video360" rotation="0 -90 0" visible="false"></a-videosphere>
+      <a-videosphere id="v-sphere" src="#video360" rotation="0 -90 0" visible="false" scale="0 0 0"></a-videosphere>
     </a-scene>
 
     <script>
-      const model = document.querySelector('#model-entity');
       const btnStart = document.querySelector('#btn-start');
       const btnTakeoff = document.querySelector('#btn-takeoff');
       const video360 = document.querySelector('#video360');
       const fade = document.querySelector('#fade-overlay');
-      const videosphere = document.querySelector('a-videosphere');
+      const vSphere = document.querySelector('#v-sphere');
       const arElements = document.querySelector('#ar-elements');
+      const model = document.querySelector('#model-entity');
 
       // ① スタートボタン
       btnStart.addEventListener('click', () => {
@@ -86,11 +96,14 @@
         btnStart.style.display = 'none';
         btnTakeoff.style.display = 'block';
         
-        // 動画をロードしておく（無音で一瞬再生して即停止：iPhoneの自動再生対策）
+        // 動画のプリロード（iPhone対策）
         video360.play().then(() => {
             video360.pause();
             video360.currentTime = 0;
         });
+        
+        // 背景真っ黒対策：リサイズを強制
+        window.dispatchEvent(new Event('resize'));
       });
 
       // ② テイクオフボタン
@@ -98,37 +111,9 @@
         btnTakeoff.style.display = 'none';
         model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
         
-        // 浮上アニメーション
+        // 浮上
         document.querySelector('#moving-car').setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
 
         setTimeout(() => {
-          // 前進アニメーション
-          document.querySelector('#moving-car').setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 20 2 -5; dur: 5000; easing: easeInQuad");
-          
-          // 飛び去る直前にフェードアウト
-          setTimeout(() => { fade.style.opacity = "1"; }, 3500);
-
-          setTimeout(() => {
-            // ARを非表示にして360度ビデオを表示
-            arElements.setAttribute('visible', 'false');
-            videosphere.setAttribute('visible', 'true');
-            
-            // ビデオ再生
-            video360.muted = false; // 音を出す
-            video360.play();
-
-            // フェードイン
-            fade.style.opacity = "0";
-            
-          }, 5000);
-        }, 3000);
-      });
-
-      // 画面回転時のリサイズ
-      window.addEventListener('resize', () => {
-        const scene = document.querySelector('a-scene');
-        if (scene) scene.resize();
-      });
-    </script>
-  </body>
-</html>
+          // 前進
+          document.querySelector('#moving-car').setAttribute('animation__forward
