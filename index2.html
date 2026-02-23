@@ -3,158 +3,156 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WebAR VTOL - Niagara Mission</title>
-    <style>
-      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: transparent; font-family: sans-serif; }
-
-      /* UIレイヤー：最前面 */
-      #ui-layer {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 100000; pointer-events: none;
-      }
-
-      /* ボタン：タッチ反応を確保 */
-      .ui-button {
-        position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-        padding: 20px 50px; color: white; border: none; border-radius: 60px;
-        font-size: 24px; font-weight: bold; cursor: pointer;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        pointer-events: auto;
-        -webkit-tap-highlight-color: transparent;
-      }
-      #btn-start { background-color: #EF2D5E; }
-      #btn-takeoff {
-        background-color: #007BFF; display: none;
-        animation: pulse-blue 1.2s infinite;
-      }
-      @keyframes pulse-blue {
-        0%, 100% { transform: translateX(-50%) scale(1); }
-        50% { transform: translateX(-50%) scale(1.08); background-color: #00BFFF; }
-      }
-
-      /* 横向き案内（絶対最前面） */
-      #orientation-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.9); color: white; z-index: 200000;
-        display: flex; justify-content: center; align-items: center; text-align: center;
-      }
-      @media screen and (orientation: landscape) { #orientation-overlay { display: none; } }
-
-      /* 2D動画コンテナ */
-      #video-container {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: black; z-index: 90000; display: none;
-      }
-      #niagara-video { width: 100%; height: 100%; object-fit: cover; }
-
-      /* フェード演出 */
-      #fade-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: black; opacity: 0; z-index: 95000; pointer-events: none; transition: opacity 1s;
-      }
-
-      /* カメラ映像を背面に */
-      #arjs-video { z-index: -1 !important; }
-      .a-canvas { pointer-events: none !important; }
-    </style>
-    
+    <title>VTOL Pilot Mission</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+    <style>
+      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Helvetica Neue', Arial, sans-serif; }
+      
+      /* UI共通レイヤー */
+      #ui-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+      
+      /* メンター用パネル */
+      #mentor-panel {
+        width: 80%; max-width: 600px; background: rgba(0, 40, 80, 0.85); border: 2px solid #00d4ff; border-radius: 15px; padding: 20px; color: #fff;
+        pointer-events: auto; box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); display: none; transform: translateY(20px); transition: 0.5s;
+      }
+      #mentor-panel.active { display: block; transform: translateY(0); }
+      .mentor-header { font-size: 14px; color: #00d4ff; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; }
+      .mentor-msg { font-size: 18px; line-height: 1.5; margin-bottom: 15px; }
+
+      /* ボタン類 */
+      .action-btn {
+        background: #00d4ff; color: #000; border: none; border-radius: 5px; padding: 12px 25px;
+        font-weight: bold; font-size: 16px; cursor: pointer; pointer-events: auto;
+      }
+      .choice-container { display: flex; gap: 20px; justify-content: center; }
+      .choice-btn { background: #ffaa00; color: #000; border: none; border-radius: 5px; padding: 15px 20px; font-weight: bold; cursor: pointer; pointer-events: auto; }
+
+      /* 動画コンテナ */
+      #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 500; background: #000; display: none; }
+      video { width: 100%; height: 100%; object-fit: cover; }
+
+      /* フェード */
+      #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 2000; pointer-events: none; transition: 1s; }
+    </style>
   </head>
-  
-  <body style="margin: 0; overflow: hidden;">
-    <div id="orientation-overlay">
-      <p>iPhoneを横向きにして開始してください</p>
-    </div>
-
-    <div id="ui-layer">
-      <button id="btn-start" class="ui-button">1. システム起動</button>
-      <button id="btn-takeoff" class="ui-button">2. テイクオフ！</button>
-    </div>
-
-    <div id="video-container">
-      <video id="niagara-video" src="niagara.mp4" playsinline crossorigin="anonymous"></video>
-    </div>
+  <body>
 
     <div id="fade-overlay"></div>
 
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+    <div id="ui-container">
+      <div id="mentor-panel" class="active">
+        <div class="mentor-header">Command Center - Mentor</div>
+        <div id="mentor-text" class="mentor-msg">「君にこの重要なミッションを任せる。準備ができたらシステムを起動してくれ。」</div>
+        <div id="btn-area">
+          <button class="action-btn" onclick="startMission()">システム起動（ズーム）</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="video-layer">
+      <video id="mission-video" playsinline crossorigin="anonymous" src="niagara.mp4"></video>
+    </div>
+
+    <a-scene embedded vr-mode-ui="enabled: false">
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
       </a-assets>
-
-      <a-entity id="ar-elements">
-        <a-entity id="moving-car" position="0 0 -5">
-            <a-gltf-model id="model-entity" src="#car-model" scale="0.2 0.2 0.2" rotation="0 90 0"></a-gltf-model>
-        </a-entity>
-        <a-marker-camera preset="hiro"></a-marker-camera>
+      <a-sky color="#1a1a2e"></a-sky>
+      <a-grid position="0 0 0" rotation="-90 0 0" width="100" height="100" opacity="0.2"></a-grid>
+      
+      <a-entity id="moving-car" position="-5 0.5 -10">
+          <a-gltf-model id="model-entity" src="#car-model" scale="0.1 0.1 0.1" rotation="0 90 0"></a-gltf-model>
       </a-entity>
+      <a-entity camera position="0 1.6 0"></a-entity>
     </a-scene>
 
     <script>
-      const btnStart = document.querySelector('#btn-start');
-      const btnTakeoff = document.querySelector('#btn-takeoff');
-      const niagaraVideo = document.querySelector('#niagara-video');
-      const videoContainer = document.querySelector('#video-container');
-      const fade = document.querySelector('#fade-overlay');
-      const arElements = document.querySelector('#ar-elements');
-      const model = document.querySelector('#model-entity');
+      const mentorPanel = document.getElementById('mentor-panel');
+      const mentorText = document.getElementById('mentor-text');
+      const btnArea = document.getElementById('btn-area');
+      const videoLayer = document.getElementById('video-layer');
+      const missionVideo = document.getElementById('mission-video');
+      const fade = document.getElementById('fade-overlay');
+      const model = document.getElementById('model-entity');
+      const car = document.getElementById('moving-car');
 
-      // ① スタートボタン（動画のプリロードを行う）
-      const handleStart = (e) => {
-        if (e) e.preventDefault();
+      // ① ミッション開始（任命 & ズーム）
+      function startMission() {
+        // ズーム演出
         model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
-        btnStart.style.display = 'none';
-        btnTakeoff.style.display = 'block';
+        model.setAttribute('animation__zoom', { property: 'scale', to: '0.4 0.4 0.4', dur: 1200, easing: 'easeOutBack' });
         
-        // iPhone対策：ユーザーがボタンを押した瞬間に動画をロード＆一瞬再生
-        niagaraVideo.play().then(() => {
-            niagaraVideo.pause();
-            niagaraVideo.currentTime = 0;
-        });
-        window.dispatchEvent(new Event('resize'));
-      };
+        // メンターのセリフ更新
+        mentorText.innerText = "「よし、システムは正常だ。模型から目を離さず、離陸のタイミングを待て。」";
+        btnArea.innerHTML = `<button class="action-btn" onclick="takeOff()">テイクオフ！</button>`;
+        
+        // 動画の準備
+        missionVideo.play().then(() => { missionVideo.pause(); missionVideo.currentTime = 0; });
+      }
 
-      // ② テイクオフボタン
-      const handleTakeoff = (e) => {
-        if (e) e.preventDefault();
-        btnTakeoff.style.display = 'none';
-        model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
-        
-        const car = document.querySelector('#moving-car');
-        car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
+      // ② 離陸（AR飛行）
+      function takeOff() {
+        mentorPanel.classList.remove('active');
+        car.setAttribute('animation__up', "property: position; from: -5 0.5 -10; to: -5 5 -10; dur: 3000; easing: easeInOutQuad");
 
         setTimeout(() => {
-          car.setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 20 2 -5; dur: 5000; easing: easeInQuad");
+          car.setAttribute('animation__forward', "property: position; from: -5 5 -10; to: 40 5 -10; dur: 5000; easing: easeInQuad");
           
-          // 飛び去る直前の演出
           setTimeout(() => { fade.style.opacity = "1"; }, 4000);
-
+          
+          // ③ 搭乗者視点へ遷移
           setTimeout(() => {
-            // ARシーンを停止・非表示
-            document.querySelector('a-scene').pause();
-            arElements.setAttribute('visible', 'false');
-            
-            // 2D動画を表示して再生
-            videoContainer.style.display = 'block';
-            niagaraVideo.play();
-
-            // フェード解除
+            document.querySelector('a-scene').style.display = 'none';
+            videoLayer.style.display = 'block';
+            missionVideo.play();
             fade.style.opacity = "0";
+
+            // ④ 途中で波乱発生（動画再生2秒後を想定）
+            setTimeout(triggerTrouble, 4000);
           }, 5000);
         }, 3000);
-      };
+      }
 
-      btnStart.addEventListener('touchstart', handleStart);
-      btnStart.addEventListener('click', handleStart);
-      btnTakeoff.addEventListener('touchstart', handleTakeoff);
-      btnTakeoff.addEventListener('click', handleTakeoff);
+      // ④ 途中で波乱発生
+      function triggerTrouble() {
+        missionVideo.pause();
+        mentorPanel.classList.add('active');
+        mentorText.innerText = "「キャプテン、判断が必要だ！滝の水しぶきがいつもより高く、視界が悪化している。」";
+        // ⑤ 選択肢の表示
+        btnArea.innerHTML = `
+          <div class="choice-container">
+            <button class="choice-btn" onclick="handleChoice('A')">高度を上げる</button>
+            <button class="choice-btn" onclick="handleChoice('B')">ルートをずらす</button>
+          </div>
+        `;
+      }
 
-      window.addEventListener('resize', () => {
-        const scene = document.querySelector('a-scene');
-        if (scene) scene.resize();
-      });
+      // ⑥ 選択肢に応じた映像（今回は同じ動画を継続）
+      function handleChoice(option) {
+        mentorPanel.classList.remove('active');
+        // 本来はここで option ごとに missionVideo.src を変える
+        missionVideo.play();
+
+        // ⑦ 終了処理へ（動画が最後まで終わった時を想定）
+        missionVideo.onended = () => {
+          showEnding();
+        };
+      }
+
+      // ⑧ メンターからの称賛
+      function showEnding() {
+        fade.style.opacity = "1";
+        setTimeout(() => {
+          videoLayer.style.display = 'none';
+          mentorPanel.classList.add('active');
+          mentorText.innerText = "「見事な判断だった。君のおかげで無事に着陸できたぞ。ミッション完了だ。」";
+          // ⑨ 終了ボタン
+          btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">体験を終了する</button>`;
+          fade.style.opacity = "0";
+        }, 1000);
+      }
     </script>
   </body>
 </html>
