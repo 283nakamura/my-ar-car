@@ -37,19 +37,19 @@
       <video id="mission-video" playsinline crossorigin="anonymous" src="niagara.mp4"></video>
     </div>
 
-    <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" renderer="antialias: true; colorManagement: true;">
+    <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
-        <img id="virtual-bg" src="test.jpg">
+        <img id="virtual-bg" src="test2.jpg">
       </a-assets>
 
       <a-sky src="#virtual-bg" radius="100" rotation="0 -90 0"></a-sky>
 
-      <a-entity id="moving-car" position="0 0.5 -4">
+      <a-entity id="moving-car" position="0 0.5 -3">
           <a-gltf-model id="model-entity" src="#car-model" scale="0.1 0.1 0.1" rotation="0 180 0"></a-gltf-model>
       </a-entity>
 
-      <a-entity id="main-camera" camera="active: true" look-controls="pointerLockEnabled: false" position="0 1.6 0"></a-entity>
+      <a-entity id="main-camera" camera look-controls position="0 1.6 0"></a-entity>
     </a-scene>
 
     <script>
