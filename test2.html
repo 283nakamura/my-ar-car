@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL VR Mission - Gyro & Reset</title>
+    <title>VTOL VR - Final Landscape Fix</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <style>
@@ -50,7 +50,7 @@
       </a-entity>
 
       <a-entity id="camera-rig" position="0 1.6 0">
-        <a-entity id="main-camera" camera look-controls="magic-window-trackingEnabled: true; touchEnabled: true; pointerLockEnabled: false"></a-entity>
+        <a-entity id="main-camera" camera="active: true"></a-entity>
       </a-entity>
     </a-scene>
 
@@ -71,24 +71,28 @@
         if (e) e.preventDefault();
         
         if (currentState === 'START') {
-          // 1. ジャイロ許可（iPhone対策）
+          // 1. ジャイロ許可（iPhone対応）
           if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try {
               const res = await DeviceOrientationEvent.requestPermission();
-              if (res !== 'granted') return;
+              if (res !== 'granted') alert("ジャイロセンサーを許可してください");
             } catch (err) { console.error(err); }
           }
 
-          // 🌟 視点リセット 🌟
-          // look-controlsが計算した現在の「ズレ」を取得し、逆方向にリグを回す
-          const currentRot = cam.getAttribute('rotation');
-          rig.setAttribute('rotation', {
-            x: 0, // 上下の傾き（ピッチ）はあえてリセットせず、水平だけ直すのが自然です
-            y: -currentRot.y,
-            z: 0
-          });
+          // 🌟 強制リセットと視点連動の開始 🌟
+          // 一旦カメラを完全にリセット
+          cam.setAttribute('rotation', '0 0 0');
+          rig.setAttribute('rotation', '0 0 0');
 
-          // プロペラ ＆ ズーム起動
+          // 0.1秒待ってから look-controls を「横向き基準」で付与
+          setTimeout(() => {
+            cam.setAttribute('look-controls', {
+              magic-window-trackingEnabled: true,
+              touchEnabled: true
+            });
+          }, 100);
+
+          // モデル演出
           model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
           model.setAttribute('animation__zoom', { 
             property: 'scale', to: '0.4 0.4 0.4', dur: 1500, easing: 'easeOutBack' 
@@ -105,7 +109,6 @@
           btnMain.style.display = 'none';
           mentorText.innerText = "M: テイクオフ！";
           
-          // 飛行：上昇して前方へ
           car.setAttribute('animation__up', "property: position; from: 0 0.5 -4; to: 0 6 -4; dur: 3000; easing: easeInOutQuad");
           setTimeout(() => {
             car.setAttribute('animation__forward', "property: position; from: 0 6 -4; to: 0 6 -50; dur: 5000; easing: easeInQuad");
@@ -124,7 +127,11 @@
       btnMain.addEventListener('click', handleInteraction);
       btnMain.addEventListener('touchstart', handleInteraction);
 
-      // 波乱・エンディング処理は前回同様
+      // 画面回転時（横にした時）のカメラリセット
+      window.addEventListener("orientationchange", () => {
+          location.reload(); // 回転した場合はリロードして再計算させるのが最も確実です
+      });
+
       function triggerTrouble() {
         missionVideo.pause();
         document.getElementById('ui-container').style.display = 'flex';
