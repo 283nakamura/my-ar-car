@@ -3,23 +3,17 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL VR - Dynamic Takeoff</title>
+    <title>VTOL VR - Smooth Takeoff</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <style>
       body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
-      
-      /* UI: メッセージを消し、ボタンを中央下部に配置 */
       #ui-container { position: fixed; bottom: 40px; left: 0; width: 100%; z-index: 100000; display: flex; justify-content: center; pointer-events: none; }
       .action-btn { 
         pointer-events: auto; background: #00d4ff; color: #000; border: none; padding: 15px 35px; 
         font-weight: bold; border-radius: 50px; cursor: pointer; font-size: 18px; 
         box-shadow: 0 4px 15px rgba(0,212,255,0.4); -webkit-tap-highlight-color: transparent;
       }
-      .choice-container { display: flex; gap: 20px; }
-      .choice-btn { background: #ffaa00; color: #000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 4px; cursor: pointer; }
-
-      /* 背景演出 */
       #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90000; background: #000; display: none; }
       video { width: 100%; height: 100%; object-fit: cover; }
       #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 95000; pointer-events: none; transition: 1.5s; }
@@ -47,7 +41,7 @@
 
       <a-sky src="#virtual-bg" radius="100" rotation="0 -90 0" segments-width="64" segments-height="64"></a-sky>
 
-      <a-entity id="moving-car" position="0 0.5 -8">
+      <a-entity id="moving-car" position="0 0.5 -10">
           <a-gltf-model id="model-entity" src="#car-model" scale="0.15 0.15 0.15" rotation="0 180 0"></a-gltf-model>
       </a-entity>
 
@@ -65,9 +59,6 @@
       const car = document.getElementById('moving-car');
       const cam = document.getElementById('main-camera');
 
-      let currentState = 'START';
-
-      // 1. システム起動：プロペラのみ開始
       async function handleStart() {
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
           try {
@@ -80,44 +71,38 @@
           } catch (e) { console.error(e); }
         }
 
-        // プロペラ回転アニメーション開始（スケール変更は無し）
         model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
-        
         btnMain.innerText = "離陸開始";
         btnMain.setAttribute('onclick', 'handleTakeOff()');
-        
         missionVideo.play().then(() => { missionVideo.pause(); missionVideo.currentTime = 0; });
       }
 
-      // 2. 離陸シーケンス：後退上昇 → ホバリング → 前進
       function handleTakeOff() {
         btnMain.style.display = 'none';
         
-        // 【フェーズ1】後退しながら上昇（カメラに近づいて大きく見える）
-        // 手前(Z:-3)かつ上空(Y:5)へ移動
+        // 【フェーズ1】ゆっくり後退しながら上昇 (5秒かけて Z:-10から-5へ)
         car.setAttribute('animation__takeoff', {
           property: 'position',
-          from: '0 0.5 -8',
-          to: '0 5 -3',
-          dur: 3000,
+          from: '0 0.5 -10',
+          to: '0 6 -5',
+          dur: 5000, 
           easing: 'easeInOutQuad'
         });
 
-        // 【フェーズ2】ホバリング（2秒間その場で停止）
+        // 【フェーズ2】ホバリング（1秒間）
         setTimeout(() => {
-          // 何もしない（停止状態）
           
-          // 【フェーズ3】前進加速
+          // 【フェーズ3】前方へフル加速
           setTimeout(() => {
             car.setAttribute('animation__forward', {
               property: 'position',
-              from: '0 5 -3',
-              to: '0 5 -50',
+              from: '0 6 -5',
+              to: '0 6 -60',
               dur: 4000,
               easing: 'easeInQuad'
             });
 
-            // 動画への切り替え演出
+            // 動画フェード
             setTimeout(() => { fade.style.opacity = "1"; }, 3000);
             setTimeout(() => {
               document.querySelector('a-scene').style.display = 'none';
@@ -127,17 +112,17 @@
               setTimeout(triggerTrouble, 10000); 
             }, 4000);
 
-          }, 2000); // 2秒間のホバリング時間
-        }, 3000); // 離陸上昇にかかる時間
+          }, 1000); // ホバリング 1秒
+        }, 5000); // 上昇 5秒
       }
 
       function triggerTrouble() {
         missionVideo.pause();
         document.getElementById('ui-container').style.display = 'flex';
         document.getElementById('btn-area').innerHTML = `
-          <div class="choice-container">
-            <button class="choice-btn" onclick="handleChoice()">高度UP</button>
-            <button class="choice-btn" onclick="handleChoice()">回避</button>
+          <div style="display:flex; gap:10px;">
+            <button class="action-btn" style="background:#ffaa00;" onclick="handleChoice()">高度UP</button>
+            <button class="action-btn" style="background:#ffaa00;" onclick="handleChoice()">回避</button>
           </div>
         `;
       }
