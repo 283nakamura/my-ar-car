@@ -3,29 +3,19 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL Pilot Mission - VR Edition</title>
+    <title>VTOL VR Mission - Fixed</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <style>
-      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
-      
-      /* UI: 画面下部にスリムに配置 */
-      #ui-container { position: fixed; bottom: 30px; left: 0; width: 100%; z-index: 100000; pointer-events: none; display: flex; flex-direction: column; align-items: center; }
+      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+      #ui-container { position: fixed; bottom: 30px; left: 0; width: 100%; z-index: 100000; pointer-events: none; display: flex; justify-content: center; }
       #mentor-panel {
-        width: 90%; max-width: 600px; background: rgba(0, 20, 40, 0.85); border-left: 5px solid #00d4ff; border-radius: 4px; 
-        padding: 12px 20px; color: #fff; pointer-events: auto; display: none; align-items: center; justify-content: space-between;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        width: 90%; max-width: 600px; background: rgba(0, 20, 40, 0.9); border-left: 5px solid #00d4ff; padding: 15px;
+        color: #fff; pointer-events: auto; display: flex; align-items: center; justify-content: space-between; border-radius: 4px;
       }
-      #mentor-panel.active { display: flex; }
-      .mentor-msg { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 15px; letter-spacing: 0.5px; }
-
-      /* ボタンデザイン */
-      .action-btn { background: #00d4ff; color: #000; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; white-space: nowrap; }
-      .choice-container { display: flex; gap: 10px; }
-      .choice-btn { background: #ffaa00; color: #000; border: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
-
-      /* 動画・フェード演出 */
-      #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90000; background: #000; display: none; }
+      .mentor-msg { font-size: 14px; margin-right: 10px; }
+      .action-btn { background: #00d4ff; color: #000; border: none; padding: 12px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+      #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90000; display: none; }
       video { width: 100%; height: 100%; object-fit: cover; }
       #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 95000; pointer-events: none; transition: 1s; }
     </style>
@@ -35,10 +25,10 @@
     <div id="fade-overlay"></div>
 
     <div id="ui-container">
-      <div id="mentor-panel" class="active">
-        <div id="mentor-text" class="mentor-msg">M: 君にこのミッションを任せる。</div>
+      <div id="mentor-panel">
+        <div id="mentor-text" class="mentor-msg">M: 準備ができたら、システムを起動してくれ。</div>
         <div id="btn-area">
-          <button class="action-btn" onclick="startMission()">システム起動(ズーム)</button>
+          <button id="btn-main" class="action-btn">システム起動</button>
         </div>
       </div>
     </div>
@@ -47,25 +37,24 @@
       <video id="mission-video" playsinline crossorigin="anonymous" src="niagara.mp4"></video>
     </div>
 
-    <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" renderer="antialias: true; colorManagement: true;">
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
         <img id="virtual-bg" src="test.jpg">
       </a-assets>
 
-      <a-sky src="#virtual-bg" rotation="0 -90 0"></a-sky>
+      <a-sky src="#virtual-bg" radius="100" rotation="0 -90 0"></a-sky>
 
-      <a-entity id="moving-car" position="0 0.5 -3">
+      <a-entity id="moving-car" position="0 0.5 -4">
           <a-gltf-model id="model-entity" src="#car-model" scale="0.1 0.1 0.1" rotation="0 180 0"></a-gltf-model>
       </a-entity>
 
-      <a-entity id="main-camera" camera look-controls position="0 1.6 0"></a-entity>
+      <a-entity id="main-camera" camera="active: true" look-controls="pointerLockEnabled: false" position="0 1.6 0"></a-entity>
     </a-scene>
 
     <script>
-      const mentorPanel = document.getElementById('mentor-panel');
+      const btnMain = document.getElementById('btn-main');
       const mentorText = document.getElementById('mentor-text');
-      const btnArea = document.getElementById('btn-area');
       const videoLayer = document.getElementById('video-layer');
       const missionVideo = document.getElementById('mission-video');
       const fade = document.getElementById('fade-overlay');
@@ -73,6 +62,85 @@
       const car = document.getElementById('moving-car');
       const camera = document.getElementById('main-camera');
 
-      // ① ミッション開始（ジャイロ許可 ＆ ズーム ＆ プロペラ起動）
-      async function startMission() {
-        // iPhoneのジャイロ
+      let currentState = 'START';
+
+      // ボタンクリックとタッチの両方に対応
+      const handleInteraction = async (e) => {
+        if (e) e.preventDefault();
+        
+        if (currentState === 'START') {
+          // iPhoneジャイロ許可リクエスト
+          if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            try {
+              const res = await DeviceOrientationEvent.requestPermission();
+              if (res === 'granted') {
+                camera.components['look-controls'].play();
+              }
+            } catch (err) { console.error(err); }
+          }
+          
+          // ズーム ＆ プロペラ起動
+          model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
+          model.setAttribute('animation__zoom', { property: 'scale', to: '0.4 0.4 0.4', dur: 1500, easing: 'easeOutBack' });
+          
+          mentorText.innerText = "M: システム正常。離陸待機せよ。";
+          btnMain.innerText = "離陸！";
+          currentState = 'TAKEOFF';
+
+          // 動画のプリロード
+          missionVideo.play().then(() => { missionVideo.pause(); missionVideo.currentTime = 0; });
+
+        } else if (currentState === 'TAKEOFF') {
+          btnMain.style.display = 'none';
+          mentorText.innerText = "M: テイクオフ！";
+          
+          // 飛行アニメーション
+          car.setAttribute('animation__up', "property: position; from: 0 0.5 -4; to: 0 6 -4; dur: 3000; easing: easeInOutQuad");
+          setTimeout(() => {
+            car.setAttribute('animation__forward', "property: position; from: 0 6 -4; to: 0 6 -50; dur: 5000; easing: easeInQuad");
+            setTimeout(() => { fade.style.opacity = "1"; }, 4000);
+            setTimeout(() => {
+              document.querySelector('a-scene').style.display = 'none';
+              videoLayer.style.display = 'block';
+              missionVideo.play();
+              fade.style.opacity = "0";
+              setTimeout(triggerTrouble, 10000); 
+            }, 5000);
+          }, 3000);
+        }
+      };
+
+      btnMain.addEventListener('click', handleInteraction);
+      btnMain.addEventListener('touchstart', handleInteraction);
+
+      function triggerTrouble() {
+        missionVideo.pause();
+        document.getElementById('ui-container').style.display = 'flex';
+        mentorPanel = document.getElementById('mentor-panel');
+        mentorPanel.style.display = 'flex';
+        mentorText.innerText = "M: 判断を。水しぶきで視界悪化！";
+        document.getElementById('btn-area').innerHTML = `
+          <div style="display:flex; gap:10px;">
+            <button class="action-btn" style="background:#ffaa00;" onclick="handleChoice()">高度UP</button>
+            <button class="action-btn" style="background:#ffaa00;" onclick="handleChoice()">回避</button>
+          </div>
+        `;
+      }
+
+      function handleChoice() {
+        document.getElementById('mentor-panel').style.display = 'none';
+        missionVideo.play();
+        missionVideo.onended = () => {
+          fade.style.opacity = "1";
+          setTimeout(() => {
+            videoLayer.style.display = 'none';
+            document.getElementById('mentor-panel').style.display = 'flex';
+            mentorText.innerText = "M: 見事な判断だった。任務完了。";
+            document.getElementById('btn-area').innerHTML = `<button class="action-btn" onclick="location.reload()">Reset</button>`;
+            fade.style.opacity = "0";
+          }, 1000);
+        };
+      }
+    </script>
+  </body>
+</html>
