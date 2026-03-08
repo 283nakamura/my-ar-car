@@ -3,81 +3,49 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WebAR VTOL - Niagara Mission</title>
-    <style>
-      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: transparent; font-family: sans-serif; }
-
-      /* UIレイヤー：最前面 */
-      #ui-layer {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 100000; pointer-events: none;
-      }
-
-      /* ボタン：タッチ反応を確保 */
-      .ui-button {
-        position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-        padding: 20px 50px; color: white; border: none; border-radius: 60px;
-        font-size: 24px; font-weight: bold; cursor: pointer;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        pointer-events: auto;
-        -webkit-tap-highlight-color: transparent;
-      }
-      #btn-start { background-color: #EF2D5E; }
-      #btn-takeoff {
-        background-color: #007BFF; display: none;
-        animation: pulse-blue 1.2s infinite;
-      }
-      @keyframes pulse-blue {
-        0%, 100% { transform: translateX(-50%) scale(1); }
-        50% { transform: translateX(-50%) scale(1.08); background-color: #00BFFF; }
-      }
-
-      /* 横向き案内（絶対最前面） */
-      #orientation-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.9); color: white; z-index: 200000;
-        display: flex; justify-content: center; align-items: center; text-align: center;
-      }
-      @media screen and (orientation: landscape) { #orientation-overlay { display: none; } }
-
-      /* 2D動画コンテナ */
-      #video-container {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: black; z-index: 90000; display: none;
-      }
-      #niagara-video { width: 100%; height: 100%; object-fit: cover; }
-
-      /* フェード演出 */
-      #fade-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: black; opacity: 0; z-index: 95000; pointer-events: none; transition: opacity 1s;
-      }
-
-      /* カメラ映像を背面に */
-      #arjs-video { z-index: -1 !important; }
-      .a-canvas { pointer-events: none !important; }
-    </style>
-    
+    <title>VTOL Pilot Mission - VR Edition</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+    <style>
+      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
+      
+      /* UI: 画面下部にスリムに配置 */
+      #ui-container { position: fixed; bottom: 30px; left: 0; width: 100%; z-index: 100000; pointer-events: none; display: flex; flex-direction: column; align-items: center; }
+      #mentor-panel {
+        width: 90%; max-width: 600px; background: rgba(0, 20, 40, 0.85); border-left: 5px solid #00d4ff; border-radius: 4px; 
+        padding: 12px 20px; color: #fff; pointer-events: auto; display: none; align-items: center; justify-content: space-between;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      }
+      #mentor-panel.active { display: flex; }
+      .mentor-msg { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 15px; letter-spacing: 0.5px; }
+
+      /* ボタンデザイン */
+      .action-btn { background: #00d4ff; color: #000; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+      .choice-container { display: flex; gap: 10px; }
+      .choice-btn { background: #ffaa00; color: #000; border: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+
+      /* 動画・フェード演出 */
+      #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90000; background: #000; display: none; }
+      video { width: 100%; height: 100%; object-fit: cover; }
+      #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 95000; pointer-events: none; transition: 1s; }
+    </style>
   </head>
-  
-  <body style="margin: 0; overflow: hidden;">
-    <div id="orientation-overlay">
-      <p>iPhoneを横向きにして開始してください</p>
-    </div>
-
-    <div id="ui-layer">
-      <button id="btn-start" class="ui-button">1. システム起動</button>
-      <button id="btn-takeoff" class="ui-button">2. テイクオフ！</button>
-    </div>
-
-    <div id="video-container">
-      <video id="niagara-video" src="niagara.mp4" playsinline crossorigin="anonymous"></video>
-    </div>
+  <body>
 
     <div id="fade-overlay"></div>
+
+    <div id="ui-container">
+      <div id="mentor-panel" class="active">
+        <div id="mentor-text" class="mentor-msg">M: 君にこのミッションを任せる。</div>
+        <div id="btn-area">
+          <button class="action-btn" onclick="startMission()">システム起動(ズーム)</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="video-layer">
+      <video id="mission-video" playsinline crossorigin="anonymous" src="niagara.mp4"></video>
+    </div>
 
     <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       <a-assets>
@@ -87,76 +55,24 @@
 
       <a-sky src="#virtual-bg" rotation="0 -90 0"></a-sky>
 
-      <a-entity id="moving-car" position="0 0 -5">
-          <a-gltf-model id="model-entity" src="#car-model" scale="0.1 0.1 0.1" rotation="0 90 0"></a-gltf-model>
+      <a-entity id="moving-car" position="0 0.5 -3">
+          <a-gltf-model id="model-entity" src="#car-model" scale="0.1 0.1 0.1" rotation="0 180 0"></a-gltf-model>
       </a-entity>
 
-      <a-entity camera look-controls position="0 1.6 0"></a-entity>
+      <a-entity id="main-camera" camera look-controls position="0 1.6 0"></a-entity>
     </a-scene>
 
     <script>
-      const btnStart = document.querySelector('#btn-start');
-      const btnTakeoff = document.querySelector('#btn-takeoff');
-      const niagaraVideo = document.querySelector('#niagara-video');
-      const videoContainer = document.querySelector('#video-container');
-      const fade = document.querySelector('#fade-overlay');
-      const arElements = document.querySelector('#ar-elements');
-      const model = document.querySelector('#model-entity');
+      const mentorPanel = document.getElementById('mentor-panel');
+      const mentorText = document.getElementById('mentor-text');
+      const btnArea = document.getElementById('btn-area');
+      const videoLayer = document.getElementById('video-layer');
+      const missionVideo = document.getElementById('mission-video');
+      const fade = document.getElementById('fade-overlay');
+      const model = document.getElementById('model-entity');
+      const car = document.getElementById('moving-car');
+      const camera = document.getElementById('main-camera');
 
-      // ① スタートボタン（動画のプリロードを行う）
-      const handleStart = (e) => {
-        if (e) e.preventDefault();
-        model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
-        btnStart.style.display = 'none';
-        btnTakeoff.style.display = 'block';
-        
-        // iPhone対策：ユーザーがボタンを押した瞬間に動画をロード＆一瞬再生
-        niagaraVideo.play().then(() => {
-            niagaraVideo.pause();
-            niagaraVideo.currentTime = 0;
-        });
-        window.dispatchEvent(new Event('resize'));
-      };
-
-      // ② テイクオフボタン
-      const handleTakeoff = (e) => {
-        if (e) e.preventDefault();
-        btnTakeoff.style.display = 'none';
-        model.setAttribute('animation-mixer', "clip: *; timeScale: 15");
-        
-        const car = document.querySelector('#moving-car');
-        car.setAttribute('animation__up', "property: position; from: 0 0 -5; to: 0 2 -5; dur: 3000; easing: easeInOutQuad");
-
-        setTimeout(() => {
-          car.setAttribute('animation__forward', "property: position; from: 0 2 -5; to: 20 2 -5; dur: 5000; easing: easeInQuad");
-          
-          // 飛び去る直前の演出
-          setTimeout(() => { fade.style.opacity = "1"; }, 4000);
-
-          setTimeout(() => {
-            // ARシーンを停止・非表示
-            document.querySelector('a-scene').pause();
-            arElements.setAttribute('visible', 'false');
-            
-            // 2D動画を表示して再生
-            videoContainer.style.display = 'block';
-            niagaraVideo.play();
-
-            // フェード解除
-            fade.style.opacity = "0";
-          }, 5000);
-        }, 3000);
-      };
-
-      btnStart.addEventListener('touchstart', handleStart);
-      btnStart.addEventListener('click', handleStart);
-      btnTakeoff.addEventListener('touchstart', handleTakeoff);
-      btnTakeoff.addEventListener('click', handleTakeoff);
-
-      window.addEventListener('resize', () => {
-        const scene = document.querySelector('a-scene');
-        if (scene) scene.resize();
-      });
-    </script>
-  </body>
-</html>
+      // ① ミッション開始（ジャイロ許可 ＆ ズーム ＆ プロペラ起動）
+      async function startMission() {
+        // iPhoneのジャイロ
