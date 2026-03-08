@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL VR Mission - Final Force</title>
+    <title>VTOL VR Mission - Gyro & Reset</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <style>
@@ -17,7 +17,7 @@
       .action-btn { background: #00d4ff; color: #000; border: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; cursor: pointer; }
       #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90000; display: none; }
       video { width: 100%; height: 100%; object-fit: cover; }
-      #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 95000; pointer-events: none; transition: 1s; }
+      #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 95000; pointer-events: none; transition: 1.5s; }
     </style>
   </head>
   <body>
@@ -49,7 +49,9 @@
           <a-gltf-model id="model-entity" src="#car-model" scale="0.1 0.1 0.1" rotation="0 180 0"></a-gltf-model>
       </a-entity>
 
-      <a-entity id="main-camera" camera position="0 1.6 0"></a-entity>
+      <a-entity id="camera-rig" position="0 1.6 0">
+        <a-entity id="main-camera" camera look-controls="magic-window-trackingEnabled: true; touchEnabled: true; pointerLockEnabled: false"></a-entity>
+      </a-entity>
     </a-scene>
 
     <script>
@@ -60,7 +62,8 @@
       const fade = document.getElementById('fade-overlay');
       const model = document.getElementById('model-entity');
       const car = document.getElementById('moving-car');
-      const camera = document.getElementById('main-camera');
+      const rig = document.getElementById('camera-rig');
+      const cam = document.getElementById('main-camera');
 
       let currentState = 'START';
 
@@ -68,33 +71,41 @@
         if (e) e.preventDefault();
         
         if (currentState === 'START') {
-          // 🌟 強制的なジャイロ許可とリセット 🌟
+          // 1. ジャイロ許可（iPhone対策）
           if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try {
               const res = await DeviceOrientationEvent.requestPermission();
+              if (res !== 'granted') return;
             } catch (err) { console.error(err); }
           }
 
-          // 🌟 カメラの向きを今持っている角度で「正面」に固定する強制処理 🌟
-          camera.removeAttribute('look-controls');
-          camera.setAttribute('rotation', '0 0 0');
-          // 少し遅延させてからコントロールを再付与（ブラウザの計算ズレを防ぐ）
-          setTimeout(() => {
-            camera.setAttribute('look-controls', 'magic-window-trackingEnabled: true; touchEnabled: true');
-          }, 100);
-          
+          // 🌟 視点リセット 🌟
+          // look-controlsが計算した現在の「ズレ」を取得し、逆方向にリグを回す
+          const currentRot = cam.getAttribute('rotation');
+          rig.setAttribute('rotation', {
+            x: 0, // 上下の傾き（ピッチ）はあえてリセットせず、水平だけ直すのが自然です
+            y: -currentRot.y,
+            z: 0
+          });
+
+          // プロペラ ＆ ズーム起動
           model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
-          model.setAttribute('animation__zoom', { property: 'scale', to: '0.4 0.4 0.4', dur: 1500, easing: 'easeOutBack' });
+          model.setAttribute('animation__zoom', { 
+            property: 'scale', to: '0.4 0.4 0.4', dur: 1500, easing: 'easeOutBack' 
+          });
           
           mentorText.innerText = "M: システム正常。離陸待機せよ。";
           btnMain.innerText = "離陸！";
           currentState = 'TAKEOFF';
 
+          // 動画プリロード
           missionVideo.play().then(() => { missionVideo.pause(); missionVideo.currentTime = 0; });
 
         } else if (currentState === 'TAKEOFF') {
           btnMain.style.display = 'none';
           mentorText.innerText = "M: テイクオフ！";
+          
+          // 飛行：上昇して前方へ
           car.setAttribute('animation__up', "property: position; from: 0 0.5 -4; to: 0 6 -4; dur: 3000; easing: easeInOutQuad");
           setTimeout(() => {
             car.setAttribute('animation__forward', "property: position; from: 0 6 -4; to: 0 6 -50; dur: 5000; easing: easeInQuad");
@@ -113,6 +124,7 @@
       btnMain.addEventListener('click', handleInteraction);
       btnMain.addEventListener('touchstart', handleInteraction);
 
+      // 波乱・エンディング処理は前回同様
       function triggerTrouble() {
         missionVideo.pause();
         document.getElementById('ui-container').style.display = 'flex';
