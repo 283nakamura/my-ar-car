@@ -3,19 +3,28 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL VR - Final Gyro Fix</title>
+    <title>VTOL VR Mission - Optimized</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <style>
       body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
+      
+      /* UIエリア */
       #ui-container { position: fixed; bottom: 30px; left: 0; width: 100%; z-index: 100000; pointer-events: none; display: flex; justify-content: center; }
       #mentor-panel {
         width: 90%; max-width: 600px; background: rgba(0, 20, 40, 0.95); border-left: 5px solid #00d4ff; padding: 12px 20px;
         color: #fff; pointer-events: auto; display: flex; align-items: center; justify-content: space-between; border-radius: 4px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
       }
-      .mentor-msg { font-size: 14px; }
-      .action-btn { background: #00d4ff; color: #000; border: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-      #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90000; display: none; }
+      .mentor-msg { font-size: 14px; letter-spacing: 0.5px; }
+      
+      /* ボタンデザイン */
+      .action-btn { background: #00d4ff; color: #000; border: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 16px; -webkit-tap-highlight-color: transparent; }
+      .choice-container { display: flex; gap: 10px; }
+      .choice-btn { background: #ffaa00; color: #000; border: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+
+      /* 動画・演出レイヤー */
+      #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90000; background: #000; display: none; }
       video { width: 100%; height: 100%; object-fit: cover; }
       #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 95000; pointer-events: none; transition: 1.5s; }
     </style>
@@ -37,20 +46,20 @@
       <video id="mission-video" playsinline crossorigin="anonymous" src="niagara.mp4"></video>
     </div>
 
-    <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" renderer="antialias: true; colorManagement: true;">
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
         <img id="virtual-bg" src="test.jpg">
       </a-assets>
 
-      <a-sky src="#virtual-bg" radius="100" rotation="0 -90 0"></a-sky>
+      <a-sky src="#virtual-bg" radius="100" rotation="0 -90 0" segments-width="64" segments-height="64"></a-sky>
 
       <a-entity id="moving-car" position="0 0.5 -4">
           <a-gltf-model id="model-entity" src="#car-model" scale="0.1 0.1 0.1" rotation="0 180 0"></a-gltf-model>
       </a-entity>
 
       <a-entity id="camera-rig" position="0 1.6 0">
-        <a-entity id="main-camera" camera look-controls="magic-window-trackingEnabled: true; touchEnabled: true"></a-entity>
+        <a-entity id="main-camera" camera="active: true; fov: 65" look-controls="magic-window-trackingEnabled: true; touchEnabled: true"></a-entity>
       </a-entity>
     </a-scene>
 
@@ -67,15 +76,15 @@
 
       let currentState = 'START';
 
-      // 🌟 ボタンが押された瞬間に実行される関数 🌟
+      // 🌟 システム起動（ジャイロ許可 ＆ 正面リセット）
       async function handleStart() {
         if (currentState === 'START') {
-          // ① iPhoneのジャイロ許可（この関数直下で呼ぶのが必須）
+          // iPhoneジャイロ許可
           if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try {
               const response = await DeviceOrientationEvent.requestPermission();
               if (response === 'granted') {
-                // 許可されたら、一度 look-controls をリフレッシュして現在地を0にする
+                // 許可直後に今の向きを 0 座標にリセット
                 cam.components['look-controls'].pause();
                 cam.setAttribute('rotation', '0 0 0');
                 cam.components['look-controls'].play();
@@ -83,7 +92,7 @@
             } catch (e) { console.error(e); }
           }
 
-          // ② プロペラ ＆ ズーム演出
+          // 模型から実機サイズへのズーム演出
           model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
           model.setAttribute('animation__zoom', { 
             property: 'scale', to: '0.4 0.4 0.4', dur: 1500, easing: 'easeOutBack' 
@@ -91,50 +100,57 @@
           
           mentorText.innerText = "M: システム正常。離陸待機せよ。";
           btnMain.innerText = "離陸！";
-          // ボタンの動作を切り替え
           btnMain.setAttribute('onclick', 'handleTakeOff()');
           currentState = 'TAKEOFF';
 
-          // 動画プリロード
+          // 動画のプリロード
           missionVideo.play().then(() => { missionVideo.pause(); missionVideo.currentTime = 0; });
         }
       }
 
-      // ③ 離陸処理
+      // 🌟 離陸演出
       function handleTakeOff() {
         btnMain.style.display = 'none';
         mentorText.innerText = "M: テイクオフ！";
         
+        // 上昇
         car.setAttribute('animation__up', "property: position; from: 0 0.5 -4; to: 0 6 -4; dur: 3000; easing: easeInOutQuad");
+        
         setTimeout(() => {
+          // 前方へ加速飛行
           car.setAttribute('animation__forward', "property: position; from: 0 6 -4; to: 0 6 -50; dur: 5000; easing: easeInQuad");
+          
+          // 飛び去る直前のフェード
           setTimeout(() => { fade.style.opacity = "1"; }, 4000);
+          
+          // 動画切り替え
           setTimeout(() => {
             document.querySelector('a-scene').style.display = 'none';
             videoLayer.style.display = 'block';
             missionVideo.play();
             fade.style.opacity = "0";
+            // 10秒後にミッションイベント
             setTimeout(triggerTrouble, 10000); 
           }, 5000);
         }, 3000);
       }
 
-      // 波乱・エンディング処理（変更なし）
+      // 🌟 ミッション分岐（波乱発生）
       function triggerTrouble() {
         missionVideo.pause();
         document.getElementById('ui-container').style.display = 'flex';
         mentorText.innerText = "M: 判断を。水しぶきで視界悪化！";
         document.getElementById('btn-area').innerHTML = `
-          <div style="display:flex; gap:10px;">
-            <button class="action-btn" style="background:#ffaa00;" onclick="handleChoice()">高度UP</button>
-            <button class="action-btn" style="background:#ffaa00;" onclick="handleChoice()">回避</button>
+          <div class="choice-container">
+            <button class="choice-btn" onclick="handleChoice('A')">高度を上げる</button>
+            <button class="choice-btn" onclick="handleChoice('B')">ルート回避</button>
           </div>
         `;
       }
 
-      function handleChoice() {
+      function handleChoice(option) {
         document.getElementById('btn-area').innerHTML = '';
-        mentorText.innerText = "M: 了解。";
+        mentorText.innerText = "M: 了解。ミッションを継続する。";
         missionVideo.play();
         missionVideo.onended = () => {
           fade.style.opacity = "1";
