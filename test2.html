@@ -3,18 +3,18 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL VR - Final Landscape Fix</title>
+    <title>VTOL VR - Final Gyro Fix</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <style>
       body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
       #ui-container { position: fixed; bottom: 30px; left: 0; width: 100%; z-index: 100000; pointer-events: none; display: flex; justify-content: center; }
       #mentor-panel {
-        width: 90%; max-width: 600px; background: rgba(0, 20, 40, 0.9); border-left: 5px solid #00d4ff; padding: 12px 20px;
+        width: 90%; max-width: 600px; background: rgba(0, 20, 40, 0.95); border-left: 5px solid #00d4ff; padding: 12px 20px;
         color: #fff; pointer-events: auto; display: flex; align-items: center; justify-content: space-between; border-radius: 4px;
       }
       .mentor-msg { font-size: 14px; }
-      .action-btn { background: #00d4ff; color: #000; border: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+      .action-btn { background: #00d4ff; color: #000; border: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
       #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90000; display: none; }
       video { width: 100%; height: 100%; object-fit: cover; }
       #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 95000; pointer-events: none; transition: 1.5s; }
@@ -28,7 +28,7 @@
       <div id="mentor-panel">
         <div id="mentor-text" class="mentor-msg">M: 準備ができたら、システムを起動してくれ。</div>
         <div id="btn-area">
-          <button id="btn-main" class="action-btn">システム起動</button>
+          <button id="btn-main" class="action-btn" onclick="handleStart()">システム起動</button>
         </div>
       </div>
     </div>
@@ -50,7 +50,7 @@
       </a-entity>
 
       <a-entity id="camera-rig" position="0 1.6 0">
-        <a-entity id="main-camera" camera="active: true"></a-entity>
+        <a-entity id="main-camera" camera look-controls="magic-window-trackingEnabled: true; touchEnabled: true"></a-entity>
       </a-entity>
     </a-scene>
 
@@ -67,32 +67,23 @@
 
       let currentState = 'START';
 
-      const handleInteraction = async (e) => {
-        if (e) e.preventDefault();
-        
+      // 🌟 ボタンが押された瞬間に実行される関数 🌟
+      async function handleStart() {
         if (currentState === 'START') {
-          // 1. ジャイロ許可（iPhone対応）
+          // ① iPhoneのジャイロ許可（この関数直下で呼ぶのが必須）
           if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try {
-              const res = await DeviceOrientationEvent.requestPermission();
-              if (res !== 'granted') alert("ジャイロセンサーを許可してください");
-            } catch (err) { console.error(err); }
+              const response = await DeviceOrientationEvent.requestPermission();
+              if (response === 'granted') {
+                // 許可されたら、一度 look-controls をリフレッシュして現在地を0にする
+                cam.components['look-controls'].pause();
+                cam.setAttribute('rotation', '0 0 0');
+                cam.components['look-controls'].play();
+              }
+            } catch (e) { console.error(e); }
           }
 
-          // 🌟 強制リセットと視点連動の開始 🌟
-          // 一旦カメラを完全にリセット
-          cam.setAttribute('rotation', '0 0 0');
-          rig.setAttribute('rotation', '0 0 0');
-
-          // 0.1秒待ってから look-controls を「横向き基準」で付与
-          setTimeout(() => {
-            cam.setAttribute('look-controls', {
-              magic-window-trackingEnabled: true,
-              touchEnabled: true
-            });
-          }, 100);
-
-          // モデル演出
+          // ② プロペラ ＆ ズーム演出
           model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
           model.setAttribute('animation__zoom', { 
             property: 'scale', to: '0.4 0.4 0.4', dur: 1500, easing: 'easeOutBack' 
@@ -100,38 +91,35 @@
           
           mentorText.innerText = "M: システム正常。離陸待機せよ。";
           btnMain.innerText = "離陸！";
+          // ボタンの動作を切り替え
+          btnMain.setAttribute('onclick', 'handleTakeOff()');
           currentState = 'TAKEOFF';
 
           // 動画プリロード
           missionVideo.play().then(() => { missionVideo.pause(); missionVideo.currentTime = 0; });
-
-        } else if (currentState === 'TAKEOFF') {
-          btnMain.style.display = 'none';
-          mentorText.innerText = "M: テイクオフ！";
-          
-          car.setAttribute('animation__up', "property: position; from: 0 0.5 -4; to: 0 6 -4; dur: 3000; easing: easeInOutQuad");
-          setTimeout(() => {
-            car.setAttribute('animation__forward', "property: position; from: 0 6 -4; to: 0 6 -50; dur: 5000; easing: easeInQuad");
-            setTimeout(() => { fade.style.opacity = "1"; }, 4000);
-            setTimeout(() => {
-              document.querySelector('a-scene').style.display = 'none';
-              videoLayer.style.display = 'block';
-              missionVideo.play();
-              fade.style.opacity = "0";
-              setTimeout(triggerTrouble, 10000); 
-            }, 5000);
-          }, 3000);
         }
-      };
+      }
 
-      btnMain.addEventListener('click', handleInteraction);
-      btnMain.addEventListener('touchstart', handleInteraction);
+      // ③ 離陸処理
+      function handleTakeOff() {
+        btnMain.style.display = 'none';
+        mentorText.innerText = "M: テイクオフ！";
+        
+        car.setAttribute('animation__up', "property: position; from: 0 0.5 -4; to: 0 6 -4; dur: 3000; easing: easeInOutQuad");
+        setTimeout(() => {
+          car.setAttribute('animation__forward', "property: position; from: 0 6 -4; to: 0 6 -50; dur: 5000; easing: easeInQuad");
+          setTimeout(() => { fade.style.opacity = "1"; }, 4000);
+          setTimeout(() => {
+            document.querySelector('a-scene').style.display = 'none';
+            videoLayer.style.display = 'block';
+            missionVideo.play();
+            fade.style.opacity = "0";
+            setTimeout(triggerTrouble, 10000); 
+          }, 5000);
+        }, 3000);
+      }
 
-      // 画面回転時（横にした時）のカメラリセット
-      window.addEventListener("orientationchange", () => {
-          location.reload(); // 回転した場合はリロードして再計算させるのが最も確実です
-      });
-
+      // 波乱・エンディング処理（変更なし）
       function triggerTrouble() {
         missionVideo.pause();
         document.getElementById('ui-container').style.display = 'flex';
