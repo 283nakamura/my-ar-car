@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL VR - Smooth Takeoff</title>
+    <title>VTOL VR - Red Edition</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <style>
@@ -59,6 +59,18 @@
       const car = document.getElementById('moving-car');
       const cam = document.getElementById('main-camera');
 
+      // 🌟 【新規】機体の色を塗り替える処理
+      model.addEventListener('model-loaded', () => {
+        const mesh = model.getObject3D('mesh');
+        if (mesh) {
+          mesh.traverse((node) => {
+            if (node.isMesh && node.material) {
+              node.material.color.set('#ff0000'); // 赤色に設定
+            }
+          });
+        }
+      });
+
       async function handleStart() {
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
           try {
@@ -80,7 +92,7 @@
       function handleTakeOff() {
         btnMain.style.display = 'none';
         
-        // 【フェーズ1】ゆっくり後退しながら上昇 (5秒かけて Z:-10から-5へ)
+        // 【フェーズ1】ゆっくり上昇・接近
         car.setAttribute('animation__takeoff', {
           property: 'position',
           from: '0 -15 -40',
@@ -89,15 +101,15 @@
           easing: 'easeInOutQuad'
         });
 
-        // 【フェーズ2】ホバリング（1秒間）
+        // 【フェーズ2】ホバリング
         setTimeout(() => {
           
-          // 【フェーズ3】前方へフル加速
+          // 【フェーズ3】前方へ加速（座標を -25 から開始するように修正）
           setTimeout(() => {
             car.setAttribute('animation__forward', {
               property: 'position',
-              from: '0 6 -5',
-              to: '0 6 -60',
+              from: '0 6 -25',
+              to: '0 6 -80',
               dur: 4000,
               easing: 'easeInQuad'
             });
