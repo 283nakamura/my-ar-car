@@ -173,24 +173,24 @@
           
           car.removeAttribute('animation__takeoff');
           car.removeAttribute('animation__forward');
-          car.setAttribute('position', '-20 15 -50');
+          car.setAttribute('position', '-20 15 -40');
           car.setAttribute('rotation', '0 -90 0');
           fade.style.opacity = "0";
 
           showMentorMessage("ポートへ到着した。着陸態勢に入れ。", 5000);
 
           car.setAttribute('animation__approach', {
-            property: 'position', to: '2 10 -15', dur: 6000, easing: 'easeOutQuad'
+            property: 'position', to: '-5 10 -40', dur: 6000, easing: 'easeOutQuad'
           });
 
           setTimeout(() => {
             car.setAttribute('animation__land', {
-              property: 'position', to: '2 1.5 -15', dur: 4000, easing: 'easeInQuad'
+              property: 'position', to: '-5 -15 -40', dur: 4000, easing: 'easeInQuad'
             });
             
             setTimeout(() => {
               model.setAttribute('animation-mixer', "clip: *; timeScale: 0");
-              showMentorMessage("任務完了。ゆっくり休んでくれ。", 5000);
+              showMentorMessage("任務完了。よくやった！ゆっくり休んでくれ。", 5000);
               btnArea.style.display = 'block';
               btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">Reset</button>`;
             }, 4000);
