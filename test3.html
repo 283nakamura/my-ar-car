@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL VR - Red Edition</title>
+    <title>VTOL VR - Mission & Landing</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <style>
@@ -37,9 +37,9 @@
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
         <img id="virtual-bg" src="test.jpg">
-      </a-assets>
+        <img id="landing-bg" src="test3.jpg"> </a-assets>
 
-      <a-sky src="#virtual-bg" radius="100" rotation="0 -90 0" segments-width="64" segments-height="64"></a-sky>
+      <a-sky id="sky-bg" src="#virtual-bg" radius="100" rotation="0 -90 0" segments-width="64" segments-height="64"></a-sky>
 
       <a-entity id="moving-car" position="0 -15 -40">
           <a-gltf-model id="model-entity" src="#car-model" scale="0.5 0.5 0.5" rotation="0 180 0"></a-gltf-model>
@@ -58,14 +58,15 @@
       const model = document.getElementById('model-entity');
       const car = document.getElementById('moving-car');
       const cam = document.getElementById('main-camera');
+      const sky = document.getElementById('sky-bg');
 
-      // 🌟 【新規】機体の色を塗り替える処理
+      // 機体の色設定
       model.addEventListener('model-loaded', () => {
         const mesh = model.getObject3D('mesh');
         if (mesh) {
           mesh.traverse((node) => {
             if (node.isMesh && node.material) {
-              node.material.color.set('#ff0000'); // 赤色に設定
+              node.material.color.set('#ff0000');
             }
           });
         }
@@ -91,65 +92,77 @@
 
       function handleTakeOff() {
         btnMain.style.display = 'none';
-        
-        // 【フェーズ1】ゆっくり上昇・接近
         car.setAttribute('animation__takeoff', {
-          property: 'position',
-          from: '0 -15 -40',
-          to: '0 20 -25',
-          dur: 5000, 
-          easing: 'easeInOutQuad'
+          property: 'position', from: '0 -15 -40', to: '0 6 -25', dur: 5000, easing: 'easeInOutQuad'
         });
 
-        // 【フェーズ2】ホバリング
         setTimeout(() => {
-          
-          // 【フェーズ3】前方へ加速（座標を -25 から開始するように修正）
           setTimeout(() => {
             car.setAttribute('animation__forward', {
-              property: 'position',
-              from: '0 20 -25',
-              to: '0 20 -80',
-              dur: 4000,
-              easing: 'easeInQuad'
+              property: 'position', from: '0 6 -25', to: '0 6 -80', dur: 4000, easing: 'easeInQuad'
             });
 
-            // 動画フェード
             setTimeout(() => { fade.style.opacity = "1"; }, 3000);
             setTimeout(() => {
               document.querySelector('a-scene').style.display = 'none';
               videoLayer.style.display = 'block';
               missionVideo.play();
               fade.style.opacity = "0";
-              setTimeout(triggerTrouble, 10000); 
+              // 動画終了時の処理を登録
+              missionVideo.onended = handleLanding;
             }, 4000);
-
-          }, 1000); // ホバリング 1秒
-        }, 5000); // 上昇 5秒
-      }
-
-      function triggerTrouble() {
-        missionVideo.pause();
-        document.getElementById('ui-container').style.display = 'flex';
-        document.getElementById('btn-area').innerHTML = `
-          <div style="display:flex; gap:10px;">
-            <button class="action-btn" style="background:#ffaa00;" onclick="handleChoice()">高度UP</button>
-            <button class="action-btn" style="background:#ffaa00;" onclick="handleChoice()">回避</button>
-          </div>
-        `;
-      }
-
-      function handleChoice() {
-        document.getElementById('btn-area').innerHTML = '';
-        missionVideo.play();
-        missionVideo.onended = () => {
-          fade.style.opacity = "1";
-          setTimeout(() => {
-            videoLayer.style.display = 'none';
-            document.getElementById('btn-area').innerHTML = `<button class="action-btn" onclick="location.reload()">Reset</button>`;
-            fade.style.opacity = "0";
           }, 1000);
-        };
+        }, 5000);
+      }
+
+      // 🌟 着陸シーケンス
+      function handleLanding() {
+        fade.style.opacity = "1";
+        
+        setTimeout(() => {
+          // 背景を test3.jpg に切り替え
+          sky.setAttribute('src', '#landing-bg');
+          
+          // VRシーンを再表示
+          videoLayer.style.display = 'none';
+          document.querySelector('a-scene').style.display = 'block';
+          
+          // 機体を「画面左奥」の開始地点にワープ
+          // 位置: 左側(X:-20), 上空(Y:15), 遠く(Z:-50)
+          car.removeAttribute('animation__takeoff');
+          car.removeAttribute('animation__forward');
+          car.setAttribute('position', '-20 15 -50');
+          car.setAttribute('rotation', '0 90 0'); // 着陸パッドを向くように回転
+
+          fade.style.opacity = "0";
+
+          // 🌟 着陸アニメーション開始
+          // 1. パッドの上空まで移動
+          car.setAttribute('animation__approach', {
+            property: 'position',
+            to: '2 10 -15', // 離着陸パッドの真上あたり
+            dur: 6000,
+            easing: 'easeOutQuad'
+          });
+
+          // 2. 垂直着陸
+          setTimeout(() => {
+            car.setAttribute('animation__land', {
+              property: 'position',
+              to: '2 1.5 -15', // 接地位置（高さは調整してください）
+              dur: 4000,
+              easing: 'easeInQuad'
+            });
+            
+            setTimeout(() => {
+              // プロペラ停止などの演出
+              model.setAttribute('animation-mixer', "clip: *; timeScale: 0");
+              document.getElementById('ui-container').style.display = 'flex';
+              document.getElementById('btn-area').innerHTML = `<button class="action-btn" onclick="location.reload()">ミッション完了</button>`;
+            }, 4000);
+          }, 6000);
+
+        }, 1500);
       }
     </script>
   </body>
