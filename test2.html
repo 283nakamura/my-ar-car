@@ -41,8 +41,8 @@
 
       <a-sky src="#virtual-bg" radius="100" rotation="0 -90 0" segments-width="64" segments-height="64"></a-sky>
 
-      <a-entity id="moving-car" position="0 -15 -30">
-          <a-gltf-model id="model-entity" src="#car-model" scale="0.3 0.3 0.3" rotation="0 180 0"></a-gltf-model>
+      <a-entity id="moving-car" position="0 -15 -40">
+          <a-gltf-model id="model-entity" src="#car-model" scale="0.35 0.35 0.35" rotation="0 180 0"></a-gltf-model>
       </a-entity>
 
       <a-entity id="camera-rig" position="0 1.6 0">
@@ -83,7 +83,7 @@
         // 【フェーズ1】ゆっくり後退しながら上昇 (5秒かけて Z:-10から-5へ)
         car.setAttribute('animation__takeoff', {
           property: 'position',
-          from: '0 -15 -30',
+          from: '0 -15 -40',
           to: '0 6 -5',
           dur: 5000, 
           easing: 'easeInOutQuad'
