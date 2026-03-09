@@ -173,19 +173,19 @@
           
           car.removeAttribute('animation__takeoff');
           car.removeAttribute('animation__forward');
-          car.setAttribute('position', '-20 15 -40');
+          car.setAttribute('position', '-20 15 -50');
           car.setAttribute('rotation', '0 -90 0');
           fade.style.opacity = "0";
 
           showMentorMessage("ポートへ到着した。着陸態勢に入れ。", 5000);
 
           car.setAttribute('animation__approach', {
-            property: 'position', to: '-5 10 -40', dur: 6000, easing: 'easeOutQuad'
+            property: 'position', to: '-5 0 -50', dur: 6000, easing: 'easeOutQuad'
           });
 
           setTimeout(() => {
             car.setAttribute('animation__land', {
-              property: 'position', to: '-5 -15 -40', dur: 4000, easing: 'easeInQuad'
+              property: 'position', to: '-5 -15 -50', dur: 6000, easing: 'easeInQuad'
             });
             
             setTimeout(() => {
