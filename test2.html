@@ -122,13 +122,13 @@
         btnArea.style.display = 'none';
         showMentorMessage("テイクオフ！健闘を祈る。", 4000);
         car.setAttribute('animation__takeoff', {
-          property: 'position', from: '0 -15 -40', to: '0 6 -25', dur: 5000, easing: 'easeInOutQuad'
+          property: 'position', from: '0 -15 -40', to: '0 15 -25', dur: 5000, easing: 'easeInOutQuad'
         });
 
         setTimeout(() => {
           setTimeout(() => {
             car.setAttribute('animation__forward', {
-              property: 'position', from: '0 6 -25', to: '0 6 -80', dur: 4000, easing: 'easeInQuad'
+              property: 'position', from: '0 15 -25', to: '0 15 -80', dur: 4000, easing: 'easeInQuad'
             });
             setTimeout(() => { fade.style.opacity = "1"; }, 3000);
             setTimeout(() => {
@@ -173,14 +173,14 @@
           
           car.removeAttribute('animation__takeoff');
           car.removeAttribute('animation__forward');
-          car.setAttribute('position', '-20 15 -50');
+          car.setAttribute('position', '-30 15 -50');
           car.setAttribute('rotation', '0 -90 0');
           fade.style.opacity = "0";
 
           showMentorMessage("ポートへ到着した。着陸態勢に入れ。", 5000);
 
           car.setAttribute('animation__approach', {
-            property: 'position', to: '-5 0 -50', dur: 6000, easing: 'easeOutQuad'
+            property: 'position', to: '-2 0 -50', dur: 6000, easing: 'easeOutQuad'
           });
 
           setTimeout(() => {
