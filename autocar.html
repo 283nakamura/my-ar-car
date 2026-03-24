@@ -1,14 +1,115 @@
-// 車の位置
-let cars = [
-  { x: 100, y: 200 },
-  { x: 150, y: 250 }
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Remote Pilot Prototype</title>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+  body { margin: 0; }
+  #map { width: 100vw; height: 100vh; }
+
+  .car-icon {
+    font-size: 20px;
+  }
+
+  .alert {
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+  }
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<script>
+// 地図初期化（東京あたり）
+const map = L.map('map').setView([35.6812, 139.7671], 15);
+
+// 地図タイル
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+// 車アイコン作成
+function createCarIcon(color="green") {
+  return L.divIcon({
+    className: '',
+    html: `<div class="car-icon ${color === "red" ? "alert" : ""}" style="color:${color}">🚗</div>`,
+    iconSize: [20, 20]
+  });
+}
+
+// 仮のルート（道路っぽいライン）
+const routes = [
+  [
+    [35.6812, 139.7671],
+    [35.6820, 139.7680],
+    [35.6830, 139.7690],
+    [35.6840, 139.7700]
+  ],
+  [
+    [35.6815, 139.7660],
+    [35.6825, 139.7670],
+    [35.6835, 139.7680],
+    [35.6845, 139.7690]
+  ],
+  [
+    [35.6810, 139.7690],
+    [35.6820, 139.7700],
+    [35.6830, 139.7710],
+    [35.6840, 139.7720]
+  ]
 ];
 
-// 毎秒動かす
-setInterval(() => {
-  cars.forEach(car => {
-    car.x += Math.random() * 10 - 5;
-    car.y += Math.random() * 10 - 5;
+// 車オブジェクト
+let cars = [];
+
+routes.forEach((route, i) => {
+  const marker = L.marker(route[0], {
+    icon: createCarIcon("green")
+  }).addTo(map);
+
+  cars.push({
+    marker: marker,
+    route: route,
+    index: 0,
+    alert: false
   });
-  render();
-}, 1000);
+});
+
+// 車を動かす
+function moveCars() {
+  cars.forEach(car => {
+    car.index = (car.index + 1) % car.route.length;
+    car.marker.setLatLng(car.route[car.index]);
+  });
+}
+
+// 1台を異常状態にする
+function triggerAlert() {
+  const target = cars[Math.floor(Math.random() * cars.length)];
+  target.alert = true;
+  target.marker.setIcon(createCarIcon("red"));
+}
+
+// 定期更新
+setInterval(moveCars, 1000);
+
+// 5秒後にアラート発生
+setTimeout(triggerAlert, 5000);
+
+</script>
+
+</body>
+</html>
