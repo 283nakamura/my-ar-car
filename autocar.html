@@ -1,0 +1,14 @@
+// 車の位置
+let cars = [
+  { x: 100, y: 200 },
+  { x: 150, y: 250 }
+];
+
+// 毎秒動かす
+setInterval(() => {
+  cars.forEach(car => {
+    car.x += Math.random() * 10 - 5;
+    car.y += Math.random() * 10 - 5;
+  });
+  render();
+}, 1000);
