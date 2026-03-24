@@ -1,115 +1,624 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>Remote Pilot Prototype</title>
+  <meta charset="UTF-8" />
+  <title>Remote Pilot Prototype - Real Camera View</title>
 
-<!-- Leaflet -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<style>
-  body { margin: 0; }
-  #map { width: 100vw; height: 100vh; }
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      font-family: sans-serif;
+      background: #0f172a;
+      color: white;
+    }
 
-  .car-icon {
-    font-size: 20px;
-  }
+    #map {
+      width: 70vw;
+      height: 100vh;
+    }
 
-  .alert {
-    animation: blink 1s infinite;
-  }
+    #sidebar {
+      width: 30vw;
+      height: 100vh;
+      padding: 16px;
+      box-sizing: border-box;
+      background: #111827;
+      overflow-y: auto;
+      border-left: 1px solid #334155;
+    }
 
-  @keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0.3; }
-    100% { opacity: 1; }
-  }
-</style>
+    .section {
+      background: #1e293b;
+      padding: 12px;
+      margin-bottom: 14px;
+      border-radius: 10px;
+    }
+
+    h2, h3 {
+      margin-top: 0;
+    }
+
+    .small {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    .muted {
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .alert-item {
+      background: #1f2937;
+      padding: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      border-left: 4px solid #ef4444;
+      border-radius: 6px;
+    }
+
+    .alert-item:hover {
+      background: #374151;
+    }
+
+    .car-icon {
+      font-size: 18px;
+      transform: translate(-50%, -50%);
+    }
+
+    .alert-blink {
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.25; }
+      100% { opacity: 1; }
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .status-label {
+      color: #cbd5e1;
+    }
+
+    .status-value {
+      font-weight: bold;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .badge-normal {
+      background: #14532d;
+    }
+
+    .badge-alert {
+      background: #991b1b;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #334155;
+      color: white;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #475569;
+    }
+
+    .primary {
+      background: #2563eb;
+    }
+
+    .primary:hover {
+      background: #1d4ed8;
+    }
+
+    .danger {
+      background: #dc2626;
+    }
+
+    .danger:hover {
+      background: #b91c1c;
+    }
+
+    .success {
+      background: #16a34a;
+    }
+
+    .success:hover {
+      background: #15803d;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    #focusPanel.hidden {
+      display: none;
+    }
+
+    .camera-wrap {
+      position: relative;
+      width: 100%;
+      height: 190px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #0b1220;
+      margin-top: 8px;
+      border: 1px solid #334155;
+    }
+
+    #cameraVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: black;
+    }
+
+    #cameraFallback {
+      position: absolute;
+      inset: 0;
+      display: none;
+      background: linear-gradient(#60a5fa, #1e3a8a);
+    }
+
+    #cameraFallback.active {
+      display: block;
+    }
+
+    .road {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 62%;
+      background: #374151;
+    }
+
+    .lane {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 4px;
+      height: 62%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.7);
+    }
+
+    .obstacle {
+      position: absolute;
+      left: 50%;
+      bottom: 30%;
+      transform: translateX(-50%);
+      font-size: 28px;
+    }
+
+    .camera-label {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.55);
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .camera-alert {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      background: rgba(185, 28, 28, 0.9);
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+  </style>
 </head>
-
 <body>
+  <div id="map"></div>
 
-<div id="map"></div>
+  <div id="sidebar">
+    <div class="section">
+      <h2>🚨 アラート一覧</h2>
+      <div class="small">
+        異常は同時に1件のみ発生します。現在の異常が解決するまでは次の異常は出ません。
+      </div>
+      <div id="alerts" style="margin-top: 12px;"></div>
+      <button class="full" onclick="resetView()" style="margin-top: 10px;">全体表示に戻る</button>
+    </div>
 
-<script>
-// 地図初期化（東京あたり）
-const map = L.map('map').setView([35.6812, 139.7671], 15);
+    <div class="section">
+      <h3>📊 全体状況</h3>
+      <div class="status-row">
+        <span class="status-label">総車両数</span>
+        <span class="status-value" id="totalCars">0</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">正常車両</span>
+        <span class="status-value" id="normalCars">0</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">異常車両</span>
+        <span class="status-value" id="alertCars">0</span>
+      </div>
+    </div>
 
-// 地図タイル
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap'
-}).addTo(map);
+    <div class="section hidden" id="focusPanel">
+      <h3>🎯 フォーカス画面</h3>
 
-// 車アイコン作成
-function createCarIcon(color="green") {
-  return L.divIcon({
-    className: '',
-    html: `<div class="car-icon ${color === "red" ? "alert" : ""}" style="color:${color}">🚗</div>`,
-    iconSize: [20, 20]
-  });
-}
+      <div class="camera-wrap">
+        <video id="cameraVideo" muted loop playsinline autoplay>
+          <source src="assets/dashcam.mp4" type="video/mp4">
+        </video>
 
-// 仮のルート（道路っぽいライン）
-const routes = [
-  [
-    [35.6812, 139.7671],
-    [35.6820, 139.7680],
-    [35.6830, 139.7690],
-    [35.6840, 139.7700]
-  ],
-  [
-    [35.6815, 139.7660],
-    [35.6825, 139.7670],
-    [35.6835, 139.7680],
-    [35.6845, 139.7690]
-  ],
-  [
-    [35.6810, 139.7690],
-    [35.6820, 139.7700],
-    [35.6830, 139.7710],
-    [35.6840, 139.7720]
-  ]
-];
+        <div id="cameraFallback">
+          <div class="road"></div>
+          <div class="lane"></div>
+          <div class="obstacle" id="fallbackObstacle">🌳</div>
+        </div>
 
-// 車オブジェクト
-let cars = [];
+        <div class="camera-label">車載カメラ</div>
+        <div class="camera-alert">REMOTE ASSIST</div>
+      </div>
 
-routes.forEach((route, i) => {
-  const marker = L.marker(route[0], {
-    icon: createCarIcon("green")
-  }).addTo(map);
+      <div class="status-row" style="margin-top: 12px;">
+        <span class="status-label">対象車両</span>
+        <span class="status-value" id="focusId">-</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">状態</span>
+        <span class="status-value" id="focusState">-</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">速度</span>
+        <span class="status-value" id="focusSpeed">-</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">現在方向</span>
+        <span class="status-value" id="focusDir">-</span>
+      </div>
 
-  cars.push({
-    marker: marker,
-    route: route,
-    index: 0,
-    alert: false
-  });
-});
+      <div class="small" id="focusScenario" style="margin-top: 8px;">
+        シナリオ: -
+      </div>
 
-// 車を動かす
-function moveCars() {
-  cars.forEach(car => {
-    car.index = (car.index + 1) % car.route.length;
-    car.marker.setLatLng(car.route[car.index]);
-  });
-}
+      <div class="controls">
+        <button class="danger" onclick="stopFocusedCar()">停止</button>
+        <button onclick="resumeAutoFocusedCar()">自動復帰</button>
+        <button onclick="evadeFocusedCar('left')">左へ回避</button>
+        <button onclick="evadeFocusedCar('right')">右へ回避</button>
+        <button class="primary full" onclick="clearFocusedCar()">フォーカス解除</button>
+      </div>
+    </div>
+  </div>
 
-// 1台を異常状態にする
-function triggerAlert() {
-  const target = cars[Math.floor(Math.random() * cars.length)];
-  target.alert = true;
-  target.marker.setIcon(createCarIcon("red"));
-}
+  <script>
+    const center = [35.6812, 139.7671];
+    const map = L.map("map").setView(center, 15);
 
-// 定期更新
-setInterval(moveCars, 1000);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
 
-// 5秒後にアラート発生
-setTimeout(triggerAlert, 5000);
+    function createCarIcon(color = "limegreen", blinking = false) {
+      return L.divIcon({
+        className: "",
+        html: `<div class="car-icon ${blinking ? "alert-blink" : ""}" style="color:${color}">🚗</div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+    }
 
-</script>
+    const directionDefs = {
+      east:  { dLat: 0,        dLng: 0.00010, label: "東" },
+      west:  { dLat: 0,        dLng: -0.00010, label: "西" },
+      north: { dLat: 0.00010,  dLng: 0,       label: "北" },
+      south: { dLat: -0.00010, dLng: 0,       label: "南" }
+    };
+    const directionKeys = Object.keys(directionDefs);
 
+    function randomDirectionKey() {
+      return directionKeys[Math.floor(Math.random() * directionKeys.length)];
+    }
+
+    function perpendicularDirections(dirKey) {
+      if (dirKey === "east" || dirKey === "west") return ["north", "south"];
+      return ["east", "west"];
+    }
+
+    const scenarios = [
+      { text: "前方で倒木を検知", obstacle: "🌳" },
+      { text: "事故処理のためルート変更が必要", obstacle: "🚧" },
+      { text: "工事区間により一時迂回が必要", obstacle: "🦺" },
+      { text: "緊急車両接近のため進路調整が必要", obstacle: "🚑" }
+    ];
+
+    const NUM_CARS = 20;
+    const cars = [];
+    let focusedCar = null;
+
+    for (let i = 0; i < NUM_CARS; i++) {
+      const lat = center[0] + (Math.random() - 0.5) * 0.012;
+      const lng = center[1] + (Math.random() - 0.5) * 0.012;
+      const dirKey = randomDirectionKey();
+
+      const marker = L.marker([lat, lng], {
+        icon: createCarIcon("limegreen", false)
+      }).addTo(map);
+
+      cars.push({
+        id: i + 1,
+        marker,
+        lat,
+        lng,
+        dirKey,
+        speed: 0.6 + Math.random() * 1.6,
+        alert: false,
+        paused: false,
+        autoMode: true,
+        counter: Math.floor(Math.random() * 20),
+        alertUI: null,
+        scenario: null,
+        obstacle: null
+      });
+    }
+
+    function getCurrentAlertCar() {
+      return cars.find(c => c.alert) || null;
+    }
+
+    function updateSummary() {
+      const total = cars.length;
+      const alerts = cars.filter(c => c.alert).length;
+      const normal = total - alerts;
+
+      document.getElementById("totalCars").textContent = total;
+      document.getElementById("normalCars").textContent = normal;
+      document.getElementById("alertCars").textContent = alerts;
+    }
+
+    function updateFocusPanel() {
+      const panel = document.getElementById("focusPanel");
+      if (!focusedCar) {
+        panel.classList.add("hidden");
+        return;
+      }
+
+      panel.classList.remove("hidden");
+      document.getElementById("focusId").textContent = `車両 #${focusedCar.id}`;
+      document.getElementById("focusState").innerHTML = focusedCar.alert
+        ? `<span class="badge badge-alert">異常対応中</span>`
+        : `<span class="badge badge-normal">正常</span>`;
+      document.getElementById("focusSpeed").textContent = focusedCar.paused
+        ? "0 km/h"
+        : `${(focusedCar.speed * 20).toFixed(0)} km/h`;
+      document.getElementById("focusDir").textContent = directionDefs[focusedCar.dirKey].label;
+      document.getElementById("focusScenario").textContent = `シナリオ: ${focusedCar.scenario || "なし"}`;
+
+      const fallbackObstacle = document.getElementById("fallbackObstacle");
+      fallbackObstacle.textContent = focusedCar.obstacle || "🌳";
+    }
+
+    function addAlertUI(car) {
+      const alertsContainer = document.getElementById("alerts");
+      alertsContainer.innerHTML = "";
+
+      const div = document.createElement("div");
+      div.className = "alert-item";
+      div.innerHTML = `<strong>車両 #${car.id}</strong><br><span class="muted">${car.scenario}</span>`;
+      div.onclick = () => focusCar(car);
+
+      alertsContainer.appendChild(div);
+      car.alertUI = div;
+    }
+
+    function removeAlertUI(car) {
+      if (car.alertUI && car.alertUI.parentNode) {
+        car.alertUI.parentNode.removeChild(car.alertUI);
+      }
+      car.alertUI = null;
+    }
+
+    function focusCar(car) {
+      focusedCar = car;
+      map.setView([car.lat, car.lng], 18);
+      updateFocusPanel();
+      tryPlayCamera();
+    }
+
+    function clearFocusedCar() {
+      focusedCar = null;
+      updateFocusPanel();
+    }
+
+    function resetView() {
+      map.setView(center, 15);
+    }
+
+    function maybeChangeDirection(car) {
+      car.counter++;
+      if (car.counter > 15 + Math.floor(Math.random() * 15)) {
+        if (Math.random() < 0.65) {
+          car.dirKey = randomDirectionKey();
+        }
+        car.counter = 0;
+      }
+    }
+
+    function moveCar(car) {
+      if (car.paused) return;
+
+      if (car.autoMode) {
+        maybeChangeDirection(car);
+      }
+
+      const dir = directionDefs[car.dirKey];
+      car.lat += dir.dLat * car.speed;
+      car.lng += dir.dLng * car.speed;
+
+      const latDiff = Math.abs(car.lat - center[0]);
+      const lngDiff = Math.abs(car.lng - center[1]);
+
+      if (latDiff > 0.015 || lngDiff > 0.015) {
+        car.lat = center[0] + (Math.random() - 0.5) * 0.01;
+        car.lng = center[1] + (Math.random() - 0.5) * 0.01;
+        car.dirKey = randomDirectionKey();
+      }
+
+      car.marker.setLatLng([car.lat, car.lng]);
+    }
+
+    function moveCars() {
+      cars.forEach(moveCar);
+      if (focusedCar) updateFocusPanel();
+    }
+
+    function triggerAlert() {
+      // すでに異常がある間は新規発生しない
+      if (getCurrentAlertCar()) return;
+
+      // 発生頻度を低めに
+      if (Math.random() < 0.7) return;
+
+      const candidates = cars.filter(c => !c.alert);
+      if (candidates.length === 0) return;
+
+      const target = candidates[Math.floor(Math.random() * candidates.length)];
+      const picked = scenarios[Math.floor(Math.random() * scenarios.length)];
+
+      target.alert = true;
+      target.scenario = picked.text;
+      target.obstacle = picked.obstacle;
+      target.marker.setIcon(createCarIcon("red", true));
+
+      addAlertUI(target);
+      updateSummary();
+    }
+
+    function stopFocusedCar() {
+      if (!focusedCar) return;
+      focusedCar.paused = true;
+      focusedCar.autoMode = false;
+      updateFocusPanel();
+    }
+
+    function resumeAutoFocusedCar() {
+      if (!focusedCar) return;
+
+      focusedCar.paused = false;
+      focusedCar.autoMode = true;
+      focusedCar.alert = false;
+      focusedCar.scenario = null;
+      focusedCar.obstacle = null;
+
+      focusedCar.marker.setIcon(createCarIcon("limegreen", false));
+      removeAlertUI(focusedCar);
+
+      document.getElementById("alerts").innerHTML = "";
+      updateSummary();
+      updateFocusPanel();
+    }
+
+    function evadeFocusedCar(side) {
+      if (!focusedCar) return;
+
+      focusedCar.paused = false;
+      focusedCar.autoMode = false;
+
+      const choices = perpendicularDirections(focusedCar.dirKey);
+      focusedCar.dirKey = side === "left" ? choices[0] : choices[1];
+
+      focusedCar.alert = false;
+      focusedCar.scenario = `回避操作実施（${side === "left" ? "左" : "右"}）`;
+      focusedCar.obstacle = null;
+      focusedCar.marker.setIcon(createCarIcon("orange", false));
+
+      removeAlertUI(focusedCar);
+      document.getElementById("alerts").innerHTML = "";
+
+      updateSummary();
+      updateFocusPanel();
+
+      const targetCarId = focusedCar.id;
+      setTimeout(() => {
+        const car = cars.find(c => c.id === targetCarId);
+        if (!car) return;
+        if (!car.alert) {
+          car.autoMode = true;
+          car.marker.setIcon(createCarIcon("limegreen", false));
+          if (focusedCar && focusedCar.id === car.id) updateFocusPanel();
+        }
+      }, 2500);
+    }
+
+    function setupCameraFallback() {
+      const video = document.getElementById("cameraVideo");
+      const fallback = document.getElementById("cameraFallback");
+
+      video.addEventListener("error", () => {
+        fallback.classList.add("active");
+      });
+
+      video.addEventListener("loadeddata", () => {
+        fallback.classList.remove("active");
+      });
+
+      // ローカルで動画が無い時の保険
+      setTimeout(() => {
+        if (video.readyState < 2) {
+          fallback.classList.add("active");
+        }
+      }, 1200);
+    }
+
+    function tryPlayCamera() {
+      const video = document.getElementById("cameraVideo");
+      const fallback = document.getElementById("cameraFallback");
+
+      video.currentTime = 0;
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {
+          fallback.classList.add("active");
+        });
+      }
+    }
+
+    setupCameraFallback();
+    updateSummary();
+    updateFocusPanel();
+
+    setInterval(moveCars, 200);
+    setInterval(triggerAlert, 8000);
+  </script>
 </body>
 </html>
