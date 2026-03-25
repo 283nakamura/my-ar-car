@@ -1,0 +1,624 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+
+const WORLD_W = 980;
+const WORLD_H = 440;
+const ROAD_Y = 220;
+const LANE_OFFSET = 22;
+const ROAD_LEFT = 50;
+const ROAD_RIGHT = 930;
+const ACCIDENT_X = 610;
+const SPLIT_X = 280;
+const DETOUR_Y = 118;
+const DETOUR_REJOIN_X = 760;
+const CAR_W = 22;
+const CAR_H = 12;
+const EMERGENCY_START_X = 70;
+const EMERGENCY_TARGET_X = ACCIDENT_X + 40;
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function laneY(lane, createCorridor) {
+  if (lane === "center") return ROAD_Y;
+  if (createCorridor) {
+    return lane === "top" ? ROAD_Y - 34 : ROAD_Y + 34;
+  }
+  return lane === "top" ? ROAD_Y - LANE_OFFSET : ROAD_Y + LANE_OFFSET;
+}
+
+function roadColor(level) {
+  if (level < 0.25) return "#86efac";
+  if (level < 0.5) return "#fcd34d";
+  if (level < 0.75) return "#fb923c";
+  return "#f87171";
+}
+
+function runSanityChecks() {
+  const checks = [];
+  checks.push({ name: "clamp upper bound", ok: clamp(3, 0, 1) === 1 });
+  checks.push({ name: "laneY default top", ok: laneY("top", false) === ROAD_Y - LANE_OFFSET });
+  checks.push({ name: "laneY corridor bottom", ok: laneY("bottom", true) === ROAD_Y + 34 });
+  checks.push({ name: "laneY center", ok: laneY("center", false) === ROAD_Y });
+  checks.push({ name: "roadColor low congestion", ok: roadColor(0.1) === "#86efac" });
+  checks.push({ name: "roadColor high congestion", ok: roadColor(0.9) === "#f87171" });
+  return checks;
+}
+
+export default function TrafficControllerPrototype() {
+  const rafRef = useRef<number | null>(null);
+  const lastRef = useRef(0);
+  const spawnRef = useRef(0);
+  const idRef = useRef(1);
+  const emergencySpawnedRef = useRef(false);
+
+  const [time, setTime] = useState(0);
+  const [cars, setCars] = useState<any[]>([]);
+  const [accidentActive, setAccidentActive] = useState(false);
+  const [diversionOn, setDiversionOn] = useState(false);
+  const [corridorOn, setCorridorOn] = useState(false);
+  const [emergencyActive, setEmergencyActive] = useState(false);
+  const [emergencyArrived, setEmergencyArrived] = useState(false);
+  const [message, setMessage] = useState("交通は平常運転です。2車線を自動運転車がスムーズに流れています。");
+  const [showHelp, setShowHelp] = useState(true);
+  const [score, setScore] = useState(100);
+  const [smoothScore, setSmoothScore] = useState(100);
+
+  const sanityChecks = useMemo(() => runSanityChecks(), []);
+
+  function nextId() {
+    const id = idRef.current;
+    idRef.current += 1;
+    return String(id);
+  }
+
+  function makeCar(overrides: Record<string, any> = {}) {
+    const lane = Math.random() > 0.5 ? "top" : "bottom";
+    return {
+      id: nextId(),
+      type: "normal",
+      x: ROAD_LEFT - 20,
+      lane,
+      targetLane: lane,
+      route: "main",
+      speed: 62 + Math.random() * 18,
+      active: true,
+      ...overrides,
+    };
+  }
+
+  function reset() {
+    setTime(0);
+    setCars([]);
+    setAccidentActive(false);
+    setDiversionOn(false);
+    setCorridorOn(false);
+    setEmergencyActive(false);
+    setEmergencyArrived(false);
+    setMessage("交通は平常運転です。2車線を自動運転車がスムーズに流れています。");
+    setShowHelp(true);
+    setScore(100);
+    setSmoothScore(100);
+    idRef.current = 1;
+    spawnRef.current = 0;
+    lastRef.current = 0;
+    emergencySpawnedRef.current = false;
+  }
+
+  useEffect(() => {
+    reset();
+  }, []);
+
+  useEffect(() => {
+    function tick(ts: number) {
+      if (!lastRef.current) lastRef.current = ts;
+      const dt = Math.min(0.05, (ts - lastRef.current) / 1000);
+      lastRef.current = ts;
+
+      setTime((prev) => {
+        const next = prev + dt;
+
+        if (next > 5 && !accidentActive) {
+          setAccidentActive(true);
+          setMessage("事故発生。上側車線が塞がれました。車が下側車線へ移り、渋滞が始まります。");
+        }
+
+        if (next > 15 && accidentActive && !emergencySpawnedRef.current) {
+          emergencySpawnedRef.current = true;
+          setEmergencyActive(true);
+          setMessage("緊急車両が事故現場へ向かっています。前の車を横に寄せて、2車線の間に通路を作りましょう。");
+          setCars((prevCars) => [
+            ...prevCars,
+            makeCar({
+              type: "emergency",
+              x: EMERGENCY_START_X,
+              lane: "center",
+              targetLane: "center",
+              speed: 96,
+            }),
+          ]);
+        }
+
+        return next;
+      });
+
+      spawnRef.current += dt;
+      const interval = accidentActive ? 0.72 : 0.9;
+      if (spawnRef.current >= interval) {
+        spawnRef.current = 0;
+        setCars((prevCars) => [...prevCars, makeCar()].slice(-42));
+      }
+
+      setCars((prevCars) => {
+        const snapshot = prevCars.map((c) => ({ ...c }));
+
+        const updated = snapshot
+          .map((car) => {
+            if (!car.active) return car;
+
+            if (car.type === "normal") {
+              let desiredLane = car.lane;
+
+              if (accidentActive && car.x > ACCIDENT_X - 180 && car.lane === "top") {
+                desiredLane = "bottom";
+              }
+
+              if (diversionOn && car.x < SPLIT_X + 24) {
+                car.route = "detour";
+              }
+
+              if (car.route === "detour") {
+                desiredLane = desiredLane === "top" ? "top" : "bottom";
+              }
+
+              car.targetLane = desiredLane;
+
+              const localDensity = snapshot.filter(
+                (other) =>
+                  other.id !== car.id &&
+                  other.type === "normal" &&
+                  other.route === car.route &&
+                  other.lane === car.lane &&
+                  other.x > car.x &&
+                  other.x - car.x < 68,
+              ).length;
+
+              let speedFactor = 1;
+              if (car.route === "detour") {
+                speedFactor = 0.88;
+                if (car.x > DETOUR_REJOIN_X - 70 && car.x < DETOUR_REJOIN_X + 20) {
+                  speedFactor = 0.7;
+                }
+              } else if (accidentActive && car.x > ACCIDENT_X - 160 && car.x < ACCIDENT_X + 40) {
+                speedFactor = 0.38;
+              } else if (accidentActive && car.x > ACCIDENT_X - 260 && car.x < ACCIDENT_X - 40) {
+                speedFactor = 0.65;
+              }
+
+              if (diversionOn && car.route === "main" && car.x < ACCIDENT_X - 120) {
+                speedFactor += 0.18;
+              }
+
+              speedFactor -= localDensity * 0.18;
+              speedFactor = clamp(speedFactor, 0.2, 1.05);
+
+              const nextX = car.x + car.speed * speedFactor * dt;
+              if (nextX > ROAD_RIGHT + 30) {
+                return { ...car, x: nextX, active: false };
+              }
+
+              if (car.route === "detour" && nextX > DETOUR_REJOIN_X) {
+                return { ...car, x: nextX, route: "main", lane: "bottom", targetLane: "bottom" };
+              }
+
+              return { ...car, x: nextX };
+            }
+
+            let emergencySpeedFactor = 0.18;
+
+            const blockers = snapshot.filter(
+              (other) =>
+                other.id !== car.id &&
+                other.type === "normal" &&
+                other.x > car.x &&
+                other.x - car.x < 95,
+            ).length;
+
+            if (corridorOn) {
+              emergencySpeedFactor = 1;
+            } else if (blockers === 0) {
+              emergencySpeedFactor = 0.65;
+            } else if (blockers <= 2) {
+              emergencySpeedFactor = 0.35;
+            }
+
+            const nextX = car.x + car.speed * emergencySpeedFactor * dt;
+            if (nextX >= EMERGENCY_TARGET_X) {
+              setEmergencyArrived(true);
+              setEmergencyActive(false);
+              setMessage("緊急車両が事故現場へ到着しました。交通流の制御が成功しました。");
+              return { ...car, x: EMERGENCY_TARGET_X, active: false };
+            }
+
+            return { ...car, x: nextX };
+          })
+          .filter((car) => car.active);
+
+        return updated;
+      });
+
+      rafRef.current = requestAnimationFrame(tick);
+    }
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [accidentActive, diversionOn, corridorOn]);
+
+  const renderedCars = useMemo(() => {
+    return cars.map((car) => {
+      const createCorridor = corridorOn && emergencyActive && car.type === "normal";
+      const targetY = car.type === "emergency" ? ROAD_Y : laneY(car.targetLane, createCorridor);
+      const currentY = car.type === "emergency" ? ROAD_Y : laneY(car.lane, createCorridor);
+      const laneBaseY = lerp(currentY, targetY, 0.75);
+
+      if (car.route === "detour") {
+        const detourProgress = clamp((car.x - SPLIT_X) / (DETOUR_REJOIN_X - SPLIT_X), 0, 1);
+        let arcY;
+        if (detourProgress < 0.3) {
+          const t = detourProgress / 0.3;
+          arcY = lerp(laneBaseY, DETOUR_Y, t);
+        } else if (detourProgress < 0.75) {
+          arcY = DETOUR_Y;
+        } else {
+          const t = (detourProgress - 0.75) / 0.25;
+          arcY = lerp(DETOUR_Y, laneY("bottom", createCorridor), t);
+        }
+        return { ...car, y: arcY };
+      }
+
+      return {
+        ...car,
+        y: laneBaseY,
+      };
+    });
+  }, [cars, corridorOn, emergencyActive]);
+
+  const stats = useMemo(() => {
+    const nearAccident = renderedCars.filter(
+      (car) => car.type === "normal" && car.route === "main" && car.x > ACCIDENT_X - 180 && car.x < ACCIDENT_X + 40,
+    ).length;
+    const queueCount = renderedCars.filter(
+      (car) => car.type === "normal" && car.route === "main" && car.x > ACCIDENT_X - 280 && car.x < ACCIDENT_X - 60,
+    ).length;
+    const detourCount = renderedCars.filter((car) => car.type === "normal" && car.route === "detour").length;
+    const congestion = clamp((nearAccident + queueCount * 0.7 - detourCount * 0.25) / 16, 0, 1);
+    return { nearAccident, queueCount, detourCount, congestion };
+  }, [renderedCars]);
+
+  useEffect(() => {
+    const penalty = stats.congestion * 0.22 + (emergencyActive && !corridorOn ? 0.05 : 0);
+    setSmoothScore((prev) => clamp(prev - penalty, 0, 100));
+  }, [stats, emergencyActive, corridorOn]);
+
+  useEffect(() => {
+    let nextScore = smoothScore;
+    if (diversionOn) nextScore += 6;
+    if (emergencyArrived) nextScore += 18;
+    if (corridorOn && emergencyActive) nextScore += 4;
+    setScore(Math.round(clamp(nextScore, 0, 130)));
+  }, [smoothScore, diversionOn, corridorOn, emergencyArrived, emergencyActive]);
+
+  const passedChecks = sanityChecks.filter((check) => check.ok).length;
+  const phaseLabel = !accidentActive
+    ? "平常時"
+    : emergencyActive
+      ? "事故対応＋緊急車両優先"
+      : "事故対応中";
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white p-6">
+      <div className="max-w-7xl mx-auto space-y-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-bold">未来の車ワールド：トラフィックコントローラー体験</h1>
+            <p className="text-slate-300 mt-1">
+              事故発生後の2車線道路で、渋滞を落ち着かせ、緊急車両の通路を作る簡易プロトタイプです。
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              className="px-4 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700"
+              onClick={() => setShowHelp((v) => !v)}
+            >
+              {showHelp ? "説明を隠す" : "説明を見る"}
+            </button>
+            <button className="px-4 py-2 rounded-2xl bg-sky-700 hover:bg-sky-600" onClick={reset}>
+              リセット
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-[290px_minmax(0,1fr)_290px] gap-4">
+          <div className="rounded-3xl bg-slate-900/80 border border-slate-800 p-4 space-y-4 shadow-xl">
+            <div>
+              <h2 className="font-semibold text-lg">操作</h2>
+              <div className="mt-3 space-y-3 text-sm">
+                <div className="rounded-2xl bg-slate-800 p-3">
+                  <div className="font-semibold">道路上の丸ボタン</div>
+                  <div className="text-slate-300 mt-1">
+                    分岐の脇の ↗ ボタンで迂回路へ流します。事故地点近くの ⇆ ボタンで車両を横に寄せます。
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-slate-800 p-3">
+                  <div className="font-semibold">現在の状態</div>
+                  <div className="text-slate-300 mt-2">迂回指示：{diversionOn ? "ON" : "OFF"}</div>
+                  <div className="text-slate-300">横寄せ指示：{corridorOn ? "ON" : "OFF"}</div>
+                  <div className="text-slate-300">フェーズ：{phaseLabel}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-slate-800 p-3">
+              <div className="font-semibold">ミッション</div>
+              <div className="mt-2">{message}</div>
+            </div>
+
+            {showHelp && (
+              <div className="rounded-2xl bg-slate-800 p-3 text-sm leading-6">
+                <div className="font-semibold mb-2">見方</div>
+                <div>・最初の5秒は2車線がスムーズに流れます。</div>
+                <div>・事故発生後、上側車線の車が下側車線へ寄って渋滞します。</div>
+                <div>・「迂回指示」で流れを落ち着かせます。</div>
+                <div>・その後「横に寄せる」で2車線の間に通路を作ります。</div>
+              </div>
+            )}
+
+            <details className="rounded-2xl bg-slate-800 p-3 text-sm">
+              <summary className="cursor-pointer font-semibold">
+                簡易サニティチェック {passedChecks}/{sanityChecks.length} passed
+              </summary>
+              <div className="mt-2 space-y-1 text-slate-300">
+                {sanityChecks.map((check) => (
+                  <div key={check.name}>
+                    {check.ok ? "✅" : "❌"} {check.name}
+                  </div>
+                ))}
+              </div>
+            </details>
+          </div>
+
+          <div className="rounded-3xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl overflow-hidden">
+            <div className="rounded-3xl bg-slate-950 border border-slate-800 p-3 overflow-auto">
+              <svg viewBox={`0 0 ${WORLD_W} ${WORLD_H}`} className="w-full h-[500px]">
+                <rect x="0" y="0" width={WORLD_W} height={WORLD_H} fill="#020617" />
+
+                <text x="38" y="38" fill="#cbd5e1" fontSize="18" fontWeight="700">
+                  道路マップ
+                </text>
+                <text x="38" y="60" fill="#94a3b8" fontSize="13">
+                  2車線道路と分岐路で、事故対応と緊急車両優先の流れを確認します
+                </text>
+
+                <rect x={ROAD_LEFT} y={ROAD_Y - 56} width={ROAD_RIGHT - ROAD_LEFT} height="112" rx="26" fill="#334155" />
+                <path
+                  d={`M ${SPLIT_X} ${ROAD_Y + LANE_OFFSET} C ${SPLIT_X + 60} ${ROAD_Y + 12}, ${SPLIT_X + 90} ${DETOUR_Y}, ${DETOUR_REJOIN_X} ${DETOUR_Y}`}
+                  fill="none"
+                  stroke="#475569"
+                  strokeWidth="18"
+                  strokeLinecap="round"
+                />
+                <path
+                  d={`M ${DETOUR_REJOIN_X} ${DETOUR_Y} C ${DETOUR_REJOIN_X + 10} ${DETOUR_Y}, ${DETOUR_REJOIN_X + 30} ${ROAD_Y + 10}, ${DETOUR_REJOIN_X + 34} ${ROAD_Y + LANE_OFFSET}`}
+                  fill="none"
+                  stroke="#475569"
+                  strokeWidth="18"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1={ROAD_LEFT + 4}
+                  y1={ROAD_Y}
+                  x2={ROAD_RIGHT - 4}
+                  y2={ROAD_Y}
+                  stroke={corridorOn && emergencyActive ? "#e2e8f0" : "#cbd5e1"}
+                  strokeWidth={corridorOn && emergencyActive ? "16" : "4"}
+                  strokeDasharray={corridorOn && emergencyActive ? "10 12" : "12 12"}
+                  opacity={corridorOn && emergencyActive ? 0.95 : 0.6}
+                />
+
+                <text x={ROAD_LEFT} y={ROAD_Y - 74} fill="#cbd5e1" fontSize="12">
+                  入口
+                </text>
+                <text x={SPLIT_X - 16} y={ROAD_Y + 78} fill="#cbd5e1" fontSize="12">
+                  分岐
+                </text>
+                <text x={SPLIT_X + 80} y={DETOUR_Y - 18} fill="#cbd5e1" fontSize="12">
+                  迂回路
+                </text>
+                <text x={ACCIDENT_X - 24} y={ROAD_Y - 74} fill="#cbd5e1" fontSize="12">
+                  事故地点
+                </text>
+                <text x={EMERGENCY_TARGET_X - 8} y={ROAD_Y + 88} fill="#fca5a5" fontSize="12">
+                  緊急車両の目的地
+                </text>
+                <line
+                  x1={EMERGENCY_TARGET_X}
+                  y1={ROAD_Y + 20}
+                  x2={EMERGENCY_TARGET_X}
+                  y2={ROAD_Y + 70}
+                  stroke="#f87171"
+                  strokeWidth="2"
+                  strokeDasharray="6 6"
+                />
+
+                {accidentActive && (
+                  <>
+                    <rect x={ACCIDENT_X - 18} y={ROAD_Y - 52} width="74" height="34" rx="10" fill="#7f1d1d" opacity="0.95" />
+                    <text x={ACCIDENT_X - 4} y={ROAD_Y - 30} fill="#fecaca" fontSize="14" fontWeight="700">
+                      事故
+                    </text>
+                    <g>
+                      <rect x={ACCIDENT_X - 8} y={ROAD_Y - 40} width="56" height="20" rx="10" fill="#ef4444" opacity="0.9" />
+                      <line x1={ACCIDENT_X - 2} y1={ROAD_Y - 22} x2={ACCIDENT_X + 42} y2={ROAD_Y - 42} stroke="#fee2e2" strokeWidth="3" />
+                      <line x1={ACCIDENT_X - 2} y1={ROAD_Y - 42} x2={ACCIDENT_X + 42} y2={ROAD_Y - 22} stroke="#fee2e2" strokeWidth="3" />
+                    </g>
+                    <rect x={ACCIDENT_X - 20} y={ROAD_Y - 54} width="82" height="38" rx="12" fill="none" stroke="#fca5a5" strokeWidth="2" strokeDasharray="6 6" />
+                  </>
+                )}
+
+                {diversionOn && (
+                  <>
+                    <rect x={SPLIT_X - 50} y={ROAD_Y + 70} width="112" height="34" rx="17" fill="#0f766e" opacity="0.95" />
+                    <text x={SPLIT_X - 26} y={ROAD_Y + 92} fill="#ccfbf1" fontSize="14" fontWeight="700">
+                      迂回指示
+                    </text>
+                    <path
+                      d={`M ${SPLIT_X + 18} ${ROAD_Y + 18} Q ${SPLIT_X + 66} ${ROAD_Y - 40} ${SPLIT_X + 118} ${DETOUR_Y + 6}`}
+                      fill="none"
+                      stroke="#2dd4bf"
+                      strokeWidth="4"
+                      strokeDasharray="7 7"
+                    />
+                  </>
+                )}
+
+                {corridorOn && emergencyActive && (
+                  <>
+                    <rect x={ACCIDENT_X - 30} y={ROAD_Y + 72} width="116" height="36" rx="18" fill="#92400e" opacity="0.95" />
+                    <text x={ACCIDENT_X - 3} y={ROAD_Y + 95} fill="#fde68a" fontSize="14" fontWeight="700">
+                      横に寄せる
+                    </text>
+                  </>
+                )}
+
+                {renderedCars.map((car) => (
+                  <g key={car.id}>
+                    <rect
+                      x={car.x - CAR_W / 2}
+                      y={car.y - CAR_H / 2}
+                      width={CAR_W}
+                      height={CAR_H}
+                      rx="4"
+                      fill={car.type === "emergency" ? "#ef4444" : car.route === "detour" ? "#93c5fd" : "#e2e8f0"}
+                      stroke={car.type === "emergency" ? "#fee2e2" : car.route === "detour" ? "#38bdf8" : "#94a3b8"}
+                    />
+                    {car.type === "emergency" && (
+                      <>
+                        <text x={car.x - 14} y={car.y - 12} fill="#fecaca" fontSize="11">
+                          緊急車両
+                        </text>
+                        <circle cx={car.x + 12} cy={car.y - 8} r="3" fill="#fef08a" />
+                      </>
+                    )}
+                  </g>
+                ))}
+
+                <foreignObject x={SPLIT_X - 26} y={ROAD_Y + 26} width="52" height="52">
+                  <button
+                    xmlns="http://www.w3.org/1999/xhtml"
+                    onClick={() => setDiversionOn((v) => !v)}
+                    disabled={!accidentActive}
+                    style={{
+                      width: "52px",
+                      height: "52px",
+                      borderRadius: "9999px",
+                      background: diversionOn ? "#0f766e" : "#0f172a",
+                      color: "white",
+                      border: "2px solid #2dd4bf",
+                      fontWeight: 700,
+                      cursor: accidentActive ? "pointer" : "not-allowed",
+                      opacity: accidentActive ? 1 : 0.45,
+                    }}
+                    title="迂回指示"
+                  >
+                    ↗
+                  </button>
+                </foreignObject>
+
+                <foreignObject x={ACCIDENT_X - 18} y={ROAD_Y + 24} width="52" height="52">
+                  <button
+                    xmlns="http://www.w3.org/1999/xhtml"
+                    onClick={() => setCorridorOn((v) => !v)}
+                    disabled={!emergencyActive}
+                    style={{
+                      width: "52px",
+                      height: "52px",
+                      borderRadius: "9999px",
+                      background: corridorOn ? "#92400e" : "#0f172a",
+                      color: "white",
+                      border: "2px solid #f59e0b",
+                      fontWeight: 700,
+                      cursor: emergencyActive ? "pointer" : "not-allowed",
+                      opacity: emergencyActive ? 1 : 0.45,
+                    }}
+                    title="車両を横に寄せる"
+                  >
+                    ⇆
+                  </button>
+                </foreignObject>
+              </svg>
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-slate-800 p-4 text-sm leading-6">
+              <div className="font-semibold">コントローラーガイド</div>
+              <div className="mt-2 text-slate-200">{message}</div>
+              <div className="mt-2 text-slate-400">
+                事故後は迂回で流れを落ち着かせ、その後に車両を横に寄せて、2車線の間に緊急車両用の通路を作る流れです。
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl bg-slate-900/80 border border-slate-800 p-4 space-y-4 shadow-xl">
+            <div>
+              <h2 className="font-semibold text-lg">操作</h2>
+              <div className="mt-3 space-y-3 text-sm">
+                <div className="rounded-2xl bg-slate-800 p-3">
+                  <div className="font-semibold">① 迂回指示</div>
+                  <div className="text-slate-300 mt-1">事故手前から車の流れを整えます。渋滞が少し落ち着きます。</div>
+                  <button
+                    className={`mt-3 w-full px-4 py-3 rounded-2xl font-semibold ${diversionOn ? "bg-teal-700" : "bg-slate-700 hover:bg-slate-600"}`}
+                    onClick={() => setDiversionOn((v) => !v)}
+                    disabled={!accidentActive}
+                  >
+                    {diversionOn ? "迂回指示 ON" : "迂回指示 OFF"}
+                  </button>
+                </div>
+                <div className="rounded-2xl bg-slate-800 p-3">
+                  <div className="font-semibold">② 車両を横に寄せる</div>
+                  <div className="text-slate-300 mt-1">
+                    他の車をゆっくりにし、2車線の間に通路を作ります。緊急車両が通れるようになります。
+                  </div>
+                  <button
+                    className={`mt-3 w-full px-4 py-3 rounded-2xl font-semibold ${corridorOn ? "bg-amber-700" : "bg-slate-700 hover:bg-slate-600"}`}
+                    onClick={() => setCorridorOn((v) => !v)}
+                    disabled={!emergencyActive}
+                  >
+                    {corridorOn ? "横に寄せる ON" : "横に寄せる OFF"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-slate-800 p-3">
+              <div className="text-slate-300 text-sm">評価</div>
+              <div className="text-4xl font-bold mt-1">{score}</div>
+              <div className="text-sm text-slate-400 mt-1">大きな失敗がない限り合格しつつ、よりスムーズなら高評価です。</div>
+            </div>
+
+            <div className="rounded-2xl bg-slate-800 p-3 text-sm leading-6">
+              <div className="font-semibold">この版で確認したいこと</div>
+              <div className="mt-2">・2車線が隣接していることが直感的に分かるか</div>
+              <div>・事故発生と車線変更の流れが自然に見えるか</div>
+              <div>・緊急車両の目的地と「通路を作る」意味が分かるか</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
