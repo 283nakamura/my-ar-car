@@ -91,6 +91,7 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+        background: #000;
       }
 
       #fade-overlay {
@@ -103,7 +104,7 @@
         opacity: 0;
         z-index: 95000;
         pointer-events: none;
-        transition: 1.5s;
+        transition: opacity 0.9s ease;
       }
     </style>
   </head>
@@ -119,7 +120,7 @@
     </div>
 
     <div id="video-layer">
-      <video id="mission-video" playsinline crossorigin="anonymous" src="niagara.mp4"></video>
+      <video id="mission-video" playsinline webkit-playsinline preload="auto" crossorigin="anonymous" src="niagara.mp4"></video>
     </div>
 
     <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" renderer="antialias: true; colorManagement: true;">
@@ -138,10 +139,12 @@
         画面手前が0度で、上から見て反時計回りに+の角度
       -->
 
+      // 機体の初期位置・サイズ・向き
       <a-entity id="moving-car" position="0 -15 -70">
         <a-gltf-model id="model-entity" src="#car-model" scale="6 6 6" rotation="0 60 0"></a-gltf-model>
       </a-entity>
 
+      // カメラの初期位置
       <a-entity id="camera-rig" position="0 0 0">
         <a-entity id="main-camera" camera="active: true; fov: 65" look-controls="magic-window-trackingEnabled: true; touchEnabled: true"></a-entity>
       </a-entity>
@@ -161,10 +164,14 @@
       const btnArea = document.getElementById('btn-area');
       const sceneEl = document.querySelector('a-scene');
 
-      // 動画音量（0.0〜1.0）
       const VIDEO_VOLUME = 0.5;
 
-      // 初期設定
+      // タイミング定数
+      const TAKEOFF_DURATION = 5000;   // 垂直離陸 5.0秒
+      const FORWARD_DURATION = 2200;   // 前進 2.2秒（少し速く）
+      const FADE_DURATION = 900;       // フェード時間
+      const TROUBLE_DELAY = 8000;      // 動画開始からトラブル表示まで
+
       missionVideo.volume = VIDEO_VOLUME;
 
       function showMentorMessage(text, duration = 3000) {
@@ -182,6 +189,13 @@
             }, 500);
           }, duration);
         }
+      }
+
+      function clearAllFlightAnimations() {
+        car.removeAttribute('animation__takeoff');
+        car.removeAttribute('animation__forward');
+        car.removeAttribute('animation__approach');
+        car.removeAttribute('animation__land');
       }
 
       model.addEventListener('model-loaded', () => {
@@ -223,8 +237,11 @@
         btnMain.innerText = "離陸開始";
         btnMain.setAttribute('onclick', 'handleTakeOff()');
 
-        // 動画の事前ロード＋音量設定
         missionVideo.volume = VIDEO_VOLUME;
+        missionVideo.currentTime = 0;
+        missionVideo.load();
+
+        // 事前に1回触っておく
         missionVideo.play().then(() => {
           missionVideo.pause();
           missionVideo.currentTime = 0;
@@ -235,54 +252,65 @@
 
       function handleTakeOff() {
         btnArea.style.display = 'none';
-        showMentorMessage("テイクオフ！健闘を祈る。", 4000);
+        showMentorMessage("テイクオフ！健闘を祈る。", 3500);
 
+        clearAllFlightAnimations();
+
+        // 1. 垂直離陸
         car.setAttribute('animation__takeoff', {
           property: 'position',
           from: '0 -15 -70',
           to: '0 30 -70',
-          dur: 5000,
+          dur: TAKEOFF_DURATION,
           easing: 'easeInOutQuad'
         });
 
+        // 2. 離陸完了後に前進開始
         setTimeout(() => {
+          car.setAttribute('animation__forward', {
+            property: 'position',
+            from: '0 30 -70',
+            to: '30 30 -20',
+            dur: FORWARD_DURATION,
+            easing: 'easeInQuad'
+          });
+
+          // 3. 前進の終盤でフェードアウト開始
+          const fadeStart = Math.max(FORWARD_DURATION - FADE_DURATION, 200);
           setTimeout(() => {
-            car.setAttribute('animation__forward', {
-              property: 'position',
-              from: '0 30 -70',
-              to: '30 30 -20',
-              dur: 3000,
-              easing: 'easeInQuad'
+            fade.style.opacity = "1";
+          }, fadeStart);
+
+          // 4. 前進完了後、黒画面状態で動画へ切替
+          setTimeout(() => {
+            sceneEl.style.display = 'none';
+            videoLayer.style.display = 'block';
+
+            missionVideo.pause();
+            missionVideo.currentTime = 0;
+            missionVideo.volume = VIDEO_VOLUME;
+            missionVideo.onended = handleLanding;
+
+            missionVideo.play().then(() => {
+              // 動画が見え始めてからフェードを戻す
+              setTimeout(() => {
+                fade.style.opacity = "0";
+              }, 100);
+            }).catch((err) => {
+              console.error('Video play failed:', err);
+              // 再生に失敗しても真っ黒のまま固まらないように戻す
+              fade.style.opacity = "0";
             });
 
-            setTimeout(() => {
-              fade.style.opacity = "1";
-            }, 5000);
-
-            setTimeout(() => {
-              sceneEl.style.display = 'none';
-              videoLayer.style.display = 'block';
-
-              // 動画再生時に音量を半分に設定
-              missionVideo.volume = VIDEO_VOLUME;
-              missionVideo.currentTime = 0;
-              missionVideo.play().catch((err) => {
-                console.error('Video play failed:', err);
-              });
-
-              fade.style.opacity = "0";
-
-              // 動画中のトラブルイベント
-              setTimeout(triggerTrouble, 8000);
-
-              // 動画終了時の着陸処理
-              missionVideo.onended = handleLanding;
-            }, 4000);
-          }, 1000);
-        }, 5000);
+            setTimeout(triggerTrouble, TROUBLE_DELAY);
+          }, FORWARD_DURATION);
+        }, TAKEOFF_DURATION);
       }
 
       function triggerTrouble() {
+        // すでに動画終了していたら何もしない
+        if (missionVideo.ended) return;
+
         missionVideo.pause();
         btnArea.style.display = 'block';
         showMentorMessage("判断を。水しぶきで視界悪化！", 0);
@@ -316,15 +344,14 @@
           sceneEl.style.display = 'block';
           btnArea.style.display = 'none';
 
-          car.removeAttribute('animation__takeoff');
-          car.removeAttribute('animation__forward');
-          car.removeAttribute('animation__approach');
-          car.removeAttribute('animation__land');
+          clearAllFlightAnimations();
 
           car.setAttribute('position', '-30 15 -50');
           car.setAttribute('rotation', '0 -90 0');
 
-          fade.style.opacity = "0";
+          setTimeout(() => {
+            fade.style.opacity = "0";
+          }, 80);
 
           showMentorMessage("ポートへ到着した。着陸態勢に入れ。", 5000);
 
@@ -350,7 +377,7 @@
               btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">Reset</button>`;
             }, 7000);
           }, 6000);
-        }, 1500);
+        }, FADE_DURATION);
       }
     </script>
   </body>
