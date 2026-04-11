@@ -7,29 +7,104 @@
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <style>
-      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
-      
-      /* UIコンテナ */
-      #ui-container { position: fixed; bottom: 40px; left: 0; width: 100%; z-index: 100000; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
-      
-      /* メンターメッセージ：opacityだけでなくdisplayも制御して確実に表示 */
+      body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        font-family: sans-serif;
+      }
+
+      #ui-container {
+        position: fixed;
+        bottom: 40px;
+        left: 0;
+        width: 100%;
+        z-index: 100000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        pointer-events: none;
+      }
+
       #mentor-panel {
-        width: 80%; max-width: 500px; background: rgba(0, 20, 40, 0.9); border-left: 5px solid #00d4ff; 
-        padding: 15px; color: #fff; border-radius: 4px; margin-bottom: 20px;
-        display: none; opacity: 0; transition: opacity 0.5s; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        width: 80%;
+        max-width: 500px;
+        background: rgba(0, 20, 40, 0.9);
+        border-left: 5px solid #00d4ff;
+        padding: 15px;
+        color: #fff;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.5s;
+        font-size: 14px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
       }
 
-      .action-btn { 
-        pointer-events: auto; background: #00d4ff; color: #000; border: none; padding: 15px 35px; 
-        font-weight: bold; border-radius: 50px; cursor: pointer; font-size: 18px; 
-        box-shadow: 0 4px 15px rgba(0,212,255,0.4); -webkit-tap-highlight-color: transparent;
+      .action-btn {
+        pointer-events: auto;
+        background: #00d4ff;
+        color: #000;
+        border: none;
+        padding: 15px 35px;
+        font-weight: bold;
+        border-radius: 50px;
+        cursor: pointer;
+        font-size: 18px;
+        box-shadow: 0 4px 15px rgba(0,212,255,0.4);
+        -webkit-tap-highlight-color: transparent;
       }
-      .choice-container { display: flex; gap: 15px; pointer-events: auto; }
-      .choice-btn { background: #ffaa00; color: #000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 50px; cursor: pointer; font-size: 16px; }
 
-      #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90000; background: #000; display: none; }
-      video { width: 100%; height: 100%; object-fit: cover; }
-      #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 95000; pointer-events: none; transition: 1.5s; }
+      .choice-container {
+        display: flex;
+        gap: 15px;
+        pointer-events: auto;
+      }
+
+      .choice-btn {
+        background: #ffaa00;
+        color: #000;
+        border: none;
+        padding: 12px 25px;
+        font-weight: bold;
+        border-radius: 50px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      #video-layer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 90000;
+        background: #000;
+        display: none;
+      }
+
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      #fade-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        opacity: 0;
+        z-index: 95000;
+        pointer-events: none;
+        transition: 1.5s;
+      }
     </style>
   </head>
   <body>
@@ -56,10 +131,15 @@
 
       <a-sky id="sky-bg" src="#virtual-bg" radius="100" rotation="0 -90 0" segments-width="64" segments-height="64"></a-sky>
 
-    /* 座標系：左(-)右(+),下(-)上(+),手前(-)奥(+)。鉛直方向角度：画面手前が0度で、上から見て反時計回りに+の角度。 */
-      
+      <!--
+        座標系：
+        左(-)右(+), 下(-)上(+), 手前(-)奥(+)
+        水平方向角度：
+        画面手前が0度で、上から見て反時計回りに+の角度
+      -->
+
       <a-entity id="moving-car" position="0 -15 -70">
-          <a-gltf-model id="model-entity" src="#car-model" scale="6 6 6" rotation="0 60 0"></a-gltf-model>
+        <a-gltf-model id="model-entity" src="#car-model" scale="6 6 6" rotation="0 60 0"></a-gltf-model>
       </a-entity>
 
       <a-entity id="camera-rig" position="0 0 0">
@@ -79,16 +159,27 @@
       const mentorPanel = document.getElementById('mentor-panel');
       const mentorText = document.getElementById('mentor-text');
       const btnArea = document.getElementById('btn-area');
+      const sceneEl = document.querySelector('a-scene');
+
+      // 動画音量（0.0〜1.0）
+      const VIDEO_VOLUME = 0.5;
+
+      // 初期設定
+      missionVideo.volume = VIDEO_VOLUME;
 
       function showMentorMessage(text, duration = 3000) {
         mentorText.innerText = text;
         mentorPanel.style.display = "block";
-        setTimeout(() => { mentorPanel.style.opacity = "1"; }, 10);
-        
+        setTimeout(() => {
+          mentorPanel.style.opacity = "1";
+        }, 10);
+
         if (duration > 0) {
           setTimeout(() => {
             mentorPanel.style.opacity = "0";
-            setTimeout(() => { mentorPanel.style.display = "none"; }, 500);
+            setTimeout(() => {
+              mentorPanel.style.display = "none";
+            }, 500);
           }, duration);
         }
       }
@@ -97,13 +188,24 @@
         const mesh = model.getObject3D('mesh');
         if (mesh) {
           mesh.traverse((node) => {
-            if (node.isMesh && node.material) { node.material.color.set('#ffffff'); }
+            if (node.isMesh && node.material) {
+              if (Array.isArray(node.material)) {
+                node.material.forEach((mat) => {
+                  if (mat.color) mat.color.set('#ffffff');
+                });
+              } else {
+                if (node.material.color) node.material.color.set('#ffffff');
+              }
+            }
           });
         }
       });
 
       async function handleStart() {
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        if (
+          typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function'
+        ) {
           try {
             const response = await DeviceOrientationEvent.requestPermission();
             if (response === 'granted') {
@@ -111,35 +213,68 @@
               cam.setAttribute('rotation', '0 0 0');
               cam.components['look-controls'].play();
             }
-          } catch (e) { console.error(e); }
+          } catch (e) {
+            console.error(e);
+          }
         }
+
         model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
         showMentorMessage("システム正常。ミッションを開始する。");
         btnMain.innerText = "離陸開始";
         btnMain.setAttribute('onclick', 'handleTakeOff()');
-        missionVideo.play().then(() => { missionVideo.pause(); missionVideo.currentTime = 0; });
+
+        // 動画の事前ロード＋音量設定
+        missionVideo.volume = VIDEO_VOLUME;
+        missionVideo.play().then(() => {
+          missionVideo.pause();
+          missionVideo.currentTime = 0;
+        }).catch((err) => {
+          console.warn('Video preload play was blocked:', err);
+        });
       }
 
       function handleTakeOff() {
         btnArea.style.display = 'none';
         showMentorMessage("テイクオフ！健闘を祈る。", 4000);
+
         car.setAttribute('animation__takeoff', {
-          property: 'position', from: '0 -15 -70', to: '0 30 -7', dur: 5000, easing: 'easeInOutQuad'
+          property: 'position',
+          from: '0 -15 -70',
+          to: '0 30 -70',
+          dur: 5000,
+          easing: 'easeInOutQuad'
         });
 
         setTimeout(() => {
           setTimeout(() => {
             car.setAttribute('animation__forward', {
-              property: 'position', from: '0 30 -70', to: '30 30 -20', dur: 6000, easing: 'easeInQuad'
+              property: 'position',
+              from: '0 30 -70',
+              to: '30 30 -20',
+              dur: 3000,
+              easing: 'easeInQuad'
             });
-            setTimeout(() => { fade.style.opacity = "1"; }, 5000);
+
             setTimeout(() => {
-              document.querySelector('a-scene').style.display = 'none';
+              fade.style.opacity = "1";
+            }, 5000);
+
+            setTimeout(() => {
+              sceneEl.style.display = 'none';
               videoLayer.style.display = 'block';
-              missionVideo.play();
+
+              // 動画再生時に音量を半分に設定
+              missionVideo.volume = VIDEO_VOLUME;
+              missionVideo.currentTime = 0;
+              missionVideo.play().catch((err) => {
+                console.error('Video play failed:', err);
+              });
+
               fade.style.opacity = "0";
+
               // 動画中のトラブルイベント
               setTimeout(triggerTrouble, 8000);
+
               // 動画終了時の着陸処理
               missionVideo.onended = handleLanding;
             }, 4000);
@@ -150,7 +285,8 @@
       function triggerTrouble() {
         missionVideo.pause();
         btnArea.style.display = 'block';
-        showMentorMessage("判断を。水しぶきで視界悪化！", 0); // 0は消さない設定
+        showMentorMessage("判断を。水しぶきで視界悪化！", 0);
+
         btnArea.innerHTML = `
           <div class="choice-container">
             <button class="choice-btn" onclick="handleChoice('高度UP中...')">高度UP</button>
@@ -162,40 +298,57 @@
       function handleChoice(msg) {
         btnArea.style.display = 'none';
         showMentorMessage(msg, 2000);
-        setTimeout(() => { missionVideo.play(); }, 500);
+
+        setTimeout(() => {
+          missionVideo.volume = VIDEO_VOLUME;
+          missionVideo.play().catch((err) => {
+            console.error('Video resume failed:', err);
+          });
+        }, 500);
       }
 
       function handleLanding() {
         fade.style.opacity = "1";
+
         setTimeout(() => {
           sky.setAttribute('src', '#landing-bg');
           videoLayer.style.display = 'none';
-          document.querySelector('a-scene').style.display = 'block';
+          sceneEl.style.display = 'block';
           btnArea.style.display = 'none';
-          
+
           car.removeAttribute('animation__takeoff');
           car.removeAttribute('animation__forward');
+          car.removeAttribute('animation__approach');
+          car.removeAttribute('animation__land');
+
           car.setAttribute('position', '-30 15 -50');
           car.setAttribute('rotation', '0 -90 0');
+
           fade.style.opacity = "0";
 
           showMentorMessage("ポートへ到着した。着陸態勢に入れ。", 5000);
 
           car.setAttribute('animation__approach', {
-            property: 'position', to: '-8 0 -50', dur: 6000, easing: 'easeOutQuad'
+            property: 'position',
+            to: '-8 0 -50',
+            dur: 6000,
+            easing: 'easeOutQuad'
           });
 
           setTimeout(() => {
             car.setAttribute('animation__land', {
-              property: 'position', to: '-5 -15 -50', dur: 6000, easing: 'easeInQuad'
+              property: 'position',
+              to: '-5 -15 -50',
+              dur: 6000,
+              easing: 'easeInQuad'
             });
-            
+
             setTimeout(() => {
               model.setAttribute('animation-mixer', "clip: *; timeScale: 0");
               showMentorMessage("任務完了。よくやった！ゆっくり休んでくれ。", 5000);
               btnArea.style.display = 'block';
               btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">Reset</button>`;
-            },  7000);
+            }, 7000);
           }, 6000);
         }, 1500);
       }
