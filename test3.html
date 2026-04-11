@@ -56,7 +56,9 @@
 
       <a-sky id="sky-bg" src="#virtual-bg" radius="100" rotation="0 -90 0" segments-width="64" segments-height="64"></a-sky>
 
-      <a-entity id="moving-car" position="0 -15 -40">
+    /* 座標系：左(-)右(+),下(-)上(+),手前(-)奥(+)。鉛直方向角度：画面手前が0度で、上から見て反時計回りに+の角度。 */
+      
+      <a-entity id="moving-car" position="0 -15 -50">
           <a-gltf-model id="model-entity" src="#car-model" scale="2 2 2" rotation="0 60 0"></a-gltf-model>
       </a-entity>
 
@@ -122,13 +124,13 @@
         btnArea.style.display = 'none';
         showMentorMessage("テイクオフ！健闘を祈る。", 4000);
         car.setAttribute('animation__takeoff', {
-          property: 'position', from: '0 -15 -40', to: '0 30 -40', dur: 5000, easing: 'easeInOutQuad'
+          property: 'position', from: '0 -15 -50', to: '0 30 -50', dur: 5000, easing: 'easeInOutQuad'
         });
 
         setTimeout(() => {
           setTimeout(() => {
             car.setAttribute('animation__forward', {
-              property: 'position', from: '0 30 -40', to: '30 30 -20', dur: 4000, easing: 'easeInQuad'
+              property: 'position', from: '0 30 -50', to: '30 30 -20', dur: 4000, easing: 'easeInQuad'
             });
             setTimeout(() => { fade.style.opacity = "1"; }, 3000);
             setTimeout(() => {
