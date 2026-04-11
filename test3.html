@@ -3,9 +3,11 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL VR - Full Mission Fixed</title>
+    <title>VTOL VR - Final Tuned</title>
+
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+
     <style>
       body, html {
         margin: 0;
@@ -41,8 +43,6 @@
         display: none;
         opacity: 0;
         transition: opacity 0.5s;
-        font-size: 14px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
       }
 
       .action-btn {
@@ -53,27 +53,7 @@
         padding: 15px 35px;
         font-weight: bold;
         border-radius: 50px;
-        cursor: pointer;
         font-size: 18px;
-        box-shadow: 0 4px 15px rgba(0,212,255,0.4);
-        -webkit-tap-highlight-color: transparent;
-      }
-
-      .choice-container {
-        display: flex;
-        gap: 15px;
-        pointer-events: auto;
-      }
-
-      .choice-btn {
-        background: #ffaa00;
-        color: #000;
-        border: none;
-        padding: 12px 25px;
-        font-weight: bold;
-        border-radius: 50px;
-        cursor: pointer;
-        font-size: 16px;
       }
 
       #video-layer {
@@ -91,7 +71,6 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        background: #000;
       }
 
       #fade-overlay {
@@ -104,10 +83,11 @@
         opacity: 0;
         z-index: 95000;
         pointer-events: none;
-        transition: opacity 700ms ease;
+        transition: opacity 1200ms ease;
       }
     </style>
   </head>
+
   <body>
 
     <div id="fade-overlay"></div>
@@ -120,301 +100,108 @@
     </div>
 
     <div id="video-layer">
-      <video
-        id="mission-video"
-        playsinline
-        webkit-playsinline
-        preload="auto"
-        crossorigin="anonymous"
-        src="niagara.mp4"
-      ></video>
+      <video id="mission-video" playsinline webkit-playsinline preload="auto" src="niagara.mp4"></video>
     </div>
 
-    <a-scene
-      embedded
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-      renderer="antialias: true; colorManagement: true;"
-    >
+    <a-scene embedded vr-mode-ui="enabled: false">
+
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
         <img id="virtual-bg" src="test4.jpg">
-        <img id="landing-bg" src="test4.jpg">
       </a-assets>
 
-      <a-sky
-        id="sky-bg"
-        src="#virtual-bg"
-        radius="100"
-        rotation="0 -90 0"
-        segments-width="64"
-        segments-height="64"
-      ></a-sky>
-
-      <!--
-        座標系：
-        左(-)右(+), 下(-)上(+), 手前(-)奥(+)
-        水平方向角度：
-        画面手前が0度で、上から見て反時計回りに+の角度
-      -->
+      <a-sky src="#virtual-bg" rotation="0 -90 0"></a-sky>
 
       <a-entity id="moving-car" position="0 -15 -70">
-        <a-gltf-model
-          id="model-entity"
-          src="#car-model"
-          scale="6 6 6"
-          rotation="0 60 0"
-        ></a-gltf-model>
+        <a-gltf-model id="model-entity" src="#car-model" scale="6 6 6" rotation="0 60 0"></a-gltf-model>
       </a-entity>
 
-      <a-entity id="camera-rig" position="0 0 0">
-        <a-entity
-          id="main-camera"
-          camera="active: true; fov: 65"
-          look-controls="magic-window-trackingEnabled: true; touchEnabled: true"
-        ></a-entity>
+      <a-entity position="0 0 0">
+        <a-entity id="main-camera" camera look-controls></a-entity>
       </a-entity>
+
     </a-scene>
 
     <script>
-      const btnMain = document.getElementById('btn-main');
-      const btnArea = document.getElementById('btn-area');
-      const videoLayer = document.getElementById('video-layer');
-      const missionVideo = document.getElementById('mission-video');
-      const fade = document.getElementById('fade-overlay');
-      const model = document.getElementById('model-entity');
-      const car = document.getElementById('moving-car');
-      const cam = document.getElementById('main-camera');
-      const sky = document.getElementById('sky-bg');
-      const mentorPanel = document.getElementById('mentor-panel');
-      const mentorText = document.getElementById('mentor-text');
-      const sceneEl = document.querySelector('a-scene');
 
-      // -----------------------------
-      // 調整しやすい定数
-      // -----------------------------
+      const car = document.getElementById('moving-car');
+      const model = document.getElementById('model-entity');
+      const video = document.getElementById('mission-video');
+      const fade = document.getElementById('fade-overlay');
+      const videoLayer = document.getElementById('video-layer');
+      const scene = document.querySelector('a-scene');
+      const btnArea = document.getElementById('btn-area');
+
+      // ===== 調整パラメータ =====
       const VIDEO_VOLUME = 0.3;
 
-      const TAKEOFF_DURATION = 5000;    // 垂直離陸
-      const FORWARD_DURATION = 5000;    // 前進の長さ
-      const FADE_LEAD_TIME = 120;       // 前進終了の何ms前からフェード開始するか
-      const FADE_TRANSITION = 700;      // フェードそのものの時間
-      const TROUBLE_DELAY = 8000;       // 動画開始からトラブル表示まで
+      const TAKEOFF_DURATION = 5000;
+      const FORWARD_DURATION = 3500;
 
-      // CSSのフェード時間をJS定数に合わせる
-      fade.style.transition = `opacity ${FADE_TRANSITION}ms ease`;
+      const EXTRA_TIME_BEFORE_FADE = 2000;
+      const FADE_LEAD_TIME = 300;
+      const FADE_TRANSITION = 1200;
 
-      // 初期音量設定
-      missionVideo.volume = VIDEO_VOLUME;
+      video.volume = VIDEO_VOLUME;
 
-      function showMentorMessage(text, duration = 3000) {
-        mentorText.innerText = text;
-        mentorPanel.style.display = 'block';
+      function handleStart() {
+        model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
 
-        setTimeout(() => {
-          mentorPanel.style.opacity = '1';
-        }, 10);
-
-        if (duration > 0) {
-          setTimeout(() => {
-            mentorPanel.style.opacity = '0';
-            setTimeout(() => {
-              mentorPanel.style.display = 'none';
-            }, 500);
-          }, duration);
-        }
-      }
-
-      function clearAllFlightAnimations() {
-        car.removeAttribute('animation__takeoff');
-        car.removeAttribute('animation__forward');
-        car.removeAttribute('animation__approach');
-        car.removeAttribute('animation__land');
-      }
-
-      model.addEventListener('model-loaded', () => {
-        const mesh = model.getObject3D('mesh');
-        if (!mesh) return;
-
-        mesh.traverse((node) => {
-          if (node.isMesh && node.material) {
-            if (Array.isArray(node.material)) {
-              node.material.forEach((mat) => {
-                if (mat.color) mat.color.set('#ffffff');
-              });
-            } else {
-              if (node.material.color) node.material.color.set('#ffffff');
-            }
-          }
-        });
-      });
-
-      async function handleStart() {
-        if (
-          typeof DeviceOrientationEvent !== 'undefined' &&
-          typeof DeviceOrientationEvent.requestPermission === 'function'
-        ) {
-          try {
-            const response = await DeviceOrientationEvent.requestPermission();
-            if (response === 'granted') {
-              cam.components['look-controls'].pause();
-              cam.setAttribute('rotation', '0 0 0');
-              cam.components['look-controls'].play();
-            }
-          } catch (e) {
-            console.error(e);
-          }
-        }
-
-        model.setAttribute('animation-mixer', 'clip: *; timeScale: 5');
-        showMentorMessage('システム正常。ミッションを開始する。');
-
-        btnMain.innerText = '離陸開始';
-        btnMain.setAttribute('onclick', 'handleTakeOff()');
-
-        // 動画の事前準備
-        missionVideo.pause();
-        missionVideo.currentTime = 0;
-        missionVideo.volume = VIDEO_VOLUME;
-        missionVideo.load();
-
-        missionVideo.play().then(() => {
-          missionVideo.pause();
-          missionVideo.currentTime = 0;
-        }).catch((err) => {
-          console.warn('Video preload play was blocked:', err);
-        });
+        btnArea.innerHTML =
+          `<button class="action-btn" onclick="handleTakeOff()">離陸開始</button>`;
       }
 
       function handleTakeOff() {
+
         btnArea.style.display = 'none';
-        showMentorMessage('テイクオフ！健闘を祈る。', 3500);
 
-        clearAllFlightAnimations();
-
-        // 1. 垂直離陸
+        // 離陸
         car.setAttribute('animation__takeoff', {
           property: 'position',
           from: '0 -15 -70',
           to: '0 30 -70',
-          dur: TAKEOFF_DURATION,
-          easing: 'easeInOutQuad'
+          dur: TAKEOFF_DURATION
         });
 
-        // 2. 離陸後に前進
         setTimeout(() => {
+
+          // 前進（距離を伸ばして速度UP）
           car.setAttribute('animation__forward', {
             property: 'position',
             from: '0 30 -70',
-            to: '30 30 -20',
-            dur: FORWARD_DURATION,
-            easing: 'easeInQuad'
+            to: '60 35 30', // ← ここが重要（2倍以上）
+            dur: FORWARD_DURATION
           });
 
-          // 3. 前進終了の少し前にフェード開始
-          const fadeStart = Math.max(FORWARD_DURATION - FADE_LEAD_TIME, 50);
+          // フェード開始（遅らせる）
+          const fadeStart =
+            FORWARD_DURATION + EXTRA_TIME_BEFORE_FADE - FADE_LEAD_TIME;
 
           setTimeout(() => {
-            fade.style.opacity = '1';
+            fade.style.opacity = "1";
           }, fadeStart);
 
-          // 4. 前進終了後に動画へ切替
+          // 動画切替
           setTimeout(() => {
-            sceneEl.style.display = 'none';
+
+            scene.style.display = 'none';
             videoLayer.style.display = 'block';
 
-            missionVideo.pause();
-            missionVideo.currentTime = 0;
-            missionVideo.volume = VIDEO_VOLUME;
-            missionVideo.onended = handleLanding;
+            video.currentTime = 0;
+            video.volume = VIDEO_VOLUME;
 
-            missionVideo.play().then(() => {
-              setTimeout(() => {
-                fade.style.opacity = '0';
-              }, 80);
-            }).catch((err) => {
-              console.error('Video play failed:', err);
-              fade.style.opacity = '0';
-            });
+            video.play();
 
-            setTimeout(triggerTrouble, TROUBLE_DELAY);
-          }, FORWARD_DURATION);
+            setTimeout(() => {
+              fade.style.opacity = "0";
+            }, 100);
+
+          }, FORWARD_DURATION + EXTRA_TIME_BEFORE_FADE);
 
         }, TAKEOFF_DURATION);
       }
 
-      function triggerTrouble() {
-        if (missionVideo.ended) return;
-        if (videoLayer.style.display === 'none') return;
-
-        missionVideo.pause();
-        btnArea.style.display = 'block';
-        showMentorMessage('判断を。水しぶきで視界悪化！', 0);
-
-        btnArea.innerHTML = `
-          <div class="choice-container">
-            <button class="choice-btn" onclick="handleChoice('高度UP中...')">高度UP</button>
-            <button class="choice-btn" onclick="handleChoice('ルート回避中...')">回避</button>
-          </div>
-        `;
-      }
-
-      function handleChoice(msg) {
-        btnArea.style.display = 'none';
-        showMentorMessage(msg, 2000);
-
-        setTimeout(() => {
-          missionVideo.volume = VIDEO_VOLUME;
-          missionVideo.play().catch((err) => {
-            console.error('Video resume failed:', err);
-          });
-        }, 500);
-      }
-
-      function handleLanding() {
-        fade.style.opacity = '1';
-
-        setTimeout(() => {
-          sky.setAttribute('src', '#landing-bg');
-          videoLayer.style.display = 'none';
-          sceneEl.style.display = 'block';
-          btnArea.style.display = 'none';
-
-          clearAllFlightAnimations();
-
-          car.setAttribute('position', '-30 15 -50');
-          car.setAttribute('rotation', '0 -90 0');
-
-          setTimeout(() => {
-            fade.style.opacity = '0';
-          }, 80);
-
-          showMentorMessage('ポートへ到着した。着陸態勢に入れ。', 5000);
-
-          car.setAttribute('animation__approach', {
-            property: 'position',
-            to: '-8 0 -50',
-            dur: 6000,
-            easing: 'easeOutQuad'
-          });
-
-          setTimeout(() => {
-            car.setAttribute('animation__land', {
-              property: 'position',
-              to: '-5 -15 -50',
-              dur: 6000,
-              easing: 'easeInQuad'
-            });
-
-            setTimeout(() => {
-              model.setAttribute('animation-mixer', 'clip: *; timeScale: 0');
-              showMentorMessage('任務完了。よくやった！ゆっくり休んでくれ。', 5000);
-              btnArea.style.display = 'block';
-              btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">Reset</button>`;
-            }, 7000);
-          }, 6000);
-        }, FADE_TRANSITION);
-      }
     </script>
+
   </body>
 </html>
