@@ -122,13 +122,13 @@
         btnArea.style.display = 'none';
         showMentorMessage("テイクオフ！健闘を祈る。", 4000);
         car.setAttribute('animation__takeoff', {
-          property: 'position', from: '0 -15 -40', to: '0 15 -25', dur: 5000, easing: 'easeInOutQuad'
+          property: 'position', from: '0 -15 -40', to: '0 30 -40', dur: 5000, easing: 'easeInOutQuad'
         });
 
         setTimeout(() => {
           setTimeout(() => {
             car.setAttribute('animation__forward', {
-              property: 'position', from: '0 15 -25', to: '0 15 -80', dur: 4000, easing: 'easeInQuad'
+              property: 'position', from: '0 30 -40', to: '30 30 -20', dur: 4000, easing: 'easeInQuad'
             });
             setTimeout(() => { fade.style.opacity = "1"; }, 3000);
             setTimeout(() => {
