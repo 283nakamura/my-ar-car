@@ -265,6 +265,7 @@
       let currentVideo = null;
       let mentorHideTimer = null;
       let mentorTextDelayTimer = null;
+      let stadiumMessageShown = false;
 
       fade.style.transition = `opacity ${FADE_TRANSITION}ms ease`;
 
@@ -370,6 +371,17 @@
         });
       });
 
+      videoBefore.addEventListener('timeupdate', () => {
+        if (
+          currentPhase === 'before' &&
+          !stadiumMessageShown &&
+          videoBefore.currentTime >= 3
+        ) {
+          stadiumMessageShown = true;
+          showMentorMessage('スタジアムに近づいてきたな！', 2500);
+        }
+      });
+
       async function handleStart() {
         if (
           typeof DeviceOrientationEvent !== 'undefined' &&
@@ -405,6 +417,8 @@
         showMentorMessage('テイクオフ！健闘を祈る。', 3500);
 
         clearAllFlightAnimations();
+
+        stadiumMessageShown = false;
 
         car.setAttribute('animation__takeoff', {
           property: 'position',
@@ -517,8 +531,10 @@
           showMentorMessage('任務完了。よくやったな！合格だ！', 0);
         }, 500);
 
-        btnArea.style.display = 'block';
-        btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">リセット</button>`;
+        setTimeout(() => {
+          btnArea.style.display = 'block';
+          btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">リセット</button>`;
+        }, 1000);
       }
     </script>
   </body>
