@@ -6,6 +6,7 @@
     <title>VTOL VR - Branch Mission</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+
     <style>
       body, html {
         margin: 0;
@@ -19,24 +20,24 @@
 
       #ui-container {
         position: fixed;
-        bottom: 10px;
         left: 0;
+        bottom: 0;
         width: 100%;
-        height: 260px;
+        height: 100%;
         z-index: 100000;
         pointer-events: none;
       }
 
       #mentor-panel {
         position: fixed;
-        left: 10%;
-        bottom: 5vh;
-        width: min(92vw, 3000px);
-        height: min(26vw, 620px);
+        left: 3vw;
+        bottom: 4vh;
+        width: min(72vw, 1200px);
+        height: min(20vw, 260px);
         background-image: url("comment.png");
         background-size: contain;
         background-repeat: no-repeat;
-        background-position: center bottom;
+        background-position: left bottom;
         display: none;
         opacity: 0;
         transition: opacity 0.5s;
@@ -45,15 +46,17 @@
 
       #mentor-text {
         position: absolute;
-        left: 18%;
+        left: 20%;
         right: 7%;
-        bottom: 5vh;
+        top: 52%;
         transform: translateY(-50%);
         color: #fff;
-        font-size: clamp(14px, 3.6vw, 24px);
+        font-size: clamp(18px, 3vw, 38px);
         font-weight: bold;
         line-height: 1.45;
         text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+        opacity: 0;
+        transition: opacity 0.3s;
       }
 
       #btn-area {
@@ -63,7 +66,7 @@
         z-index: 100001;
         pointer-events: auto;
       }
-      
+
       .action-btn,
       .choice-btn {
         pointer-events: auto;
@@ -126,10 +129,10 @@
       <div id="mentor-panel">
         <div id="mentor-text"></div>
       </div>
+    </div>
 
-      <div id="btn-area">
-        <button id="btn-main" class="action-btn" onclick="handleStart()">システム起動</button>
-      </div>
+    <div id="btn-area">
+      <button id="btn-main" class="action-btn" onclick="handleStart()">システム起動</button>
     </div>
 
     <div id="video-layer">
@@ -139,7 +142,7 @@
         webkit-playsinline
         preload="auto"
         crossorigin="anonymous"
-        src="tax_before.mp4"
+        src="taxi_before.mp4"
       ></video>
     </div>
 
@@ -205,25 +208,36 @@
       const VIDEO_AFTER_1 = 'taxi_after1.mp4';
       const VIDEO_AFTER_2 = 'taxi_after2.mp4';
 
+      const MESSAGE_DELAY = 500;
       const FINAL_MESSAGE = '任務完了。よくやった！ゆっくり休んでくれ。';
       const FINAL_MESSAGE_LEAD_TIME = 5.0;
 
       let currentPhase = 'intro';
       let finalMessageShown = false;
+      let stadiumMessageShown = false;
       let mentorHideTimer = null;
+      let mentorTextDelayTimer = null;
 
       fade.style.transition = `opacity ${FADE_TRANSITION}ms ease`;
       missionVideo.volume = VIDEO_VOLUME;
 
       function showMentorMessage(text, duration = 3000) {
         clearTimeout(mentorHideTimer);
+        clearTimeout(mentorTextDelayTimer);
 
-        mentorText.innerText = text;
+        mentorText.innerText = '';
+        mentorText.style.opacity = '0';
+
         mentorPanel.style.display = 'block';
 
         setTimeout(() => {
           mentorPanel.style.opacity = '1';
         }, 10);
+
+        mentorTextDelayTimer = setTimeout(() => {
+          mentorText.innerText = text;
+          mentorText.style.opacity = '1';
+        }, MESSAGE_DELAY);
 
         if (duration > 0) {
           mentorHideTimer = setTimeout(() => {
@@ -233,9 +247,15 @@
       }
 
       function hideMentorMessage() {
+        clearTimeout(mentorHideTimer);
+        clearTimeout(mentorTextDelayTimer);
+
+        mentorText.style.opacity = '0';
         mentorPanel.style.opacity = '0';
+
         setTimeout(() => {
           mentorPanel.style.display = 'none';
+          mentorText.innerText = '';
         }, 500);
       }
 
@@ -296,7 +316,8 @@
         }
 
         model.setAttribute('animation-mixer', 'clip: *; timeScale: 5');
-        showMentorMessage('システム正常。ミッションを開始する。');
+
+        showMentorMessage('お客さんをスタジアムまで連れて行ってくれ！', 4500);
 
         btnMain.innerText = '離陸開始';
         btnMain.setAttribute('onclick', 'handleTakeOff()');
@@ -348,6 +369,7 @@
 
             currentPhase = 'before';
             finalMessageShown = false;
+            stadiumMessageShown = false;
 
             setVideoSource(VIDEO_BEFORE);
             missionVideo.onended = triggerBranchChoice;
@@ -371,11 +393,11 @@
         missionVideo.pause();
         btnArea.style.display = 'block';
 
-        showMentorMessage('ポートが混んでる！どうする？', 0);
+        showMentorMessage('ポートが混んでいる！どうする？', 0);
 
         btnArea.innerHTML = `
           <div class="choice-container">
-            <button class="choice-btn" onclick="handleChoice(1)">少し待機</button>
+            <button class="choice-btn" onclick="handleChoice(1)">少し待機して着陸</button>
             <button class="choice-btn" onclick="handleChoice(2)">別ポートへ</button>
           </div>
         `;
@@ -408,6 +430,13 @@
       }
 
       missionVideo.addEventListener('timeupdate', () => {
+        if (currentPhase === 'before' && !stadiumMessageShown) {
+          if (missionVideo.currentTime >= 3) {
+            stadiumMessageShown = true;
+            showMentorMessage('スタジアムに近づいたな！', 3500);
+          }
+        }
+
         if (currentPhase !== 'after1' && currentPhase !== 'after2') return;
         if (finalMessageShown) return;
         if (!missionVideo.duration || isNaN(missionVideo.duration)) return;
