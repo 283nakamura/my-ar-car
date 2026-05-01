@@ -422,40 +422,40 @@
         `;
       }
 
-      function handleChoice(choiceNumber) {
-        btnArea.style.display = 'none';
-        hideMentorMessage();
+     function handleChoice(choiceNumber) {
+       btnArea.style.display = 'none';
+       hideMentorMessage();
 
-        currentPhase = choiceNumber === 1 ? 'after1' : 'after2';
-        finalMessageShown = false;
+       currentPhase = choiceNumber === 1 ? 'after1' : 'after2';
+       finalMessageShown = false;
 
-        fade.style.opacity = '1';
+       fade.style.opacity = '1';
+       
+       setTimeout(() => {
+         const nextVideo = choiceNumber === 1 ? VIDEO_AFTER_1 : VIDEO_AFTER_2;
 
-        setTimeout(() => {
-          const nextVideo = choiceNumber === 1 ? VIDEO_AFTER_1 : VIDEO_AFTER_2;
+         setVideoSource(nextVideo);
+         missionVideo.onended = handleMissionComplete;
 
-          setVideoSource(nextVideo);
-          missionVideo.onended = handleMissionComplete;
+         missionVideo.play().then(() => {
+           setTimeout(() => {
+             fade.style.opacity = '0';
+           }, 80);
+           setTimeout(() => {
+             if (choiceNumber === 1) {
+               showMentorMessage('良い判断だ！ちょうど空いたみたいだぞ。', 4000);
+             } else {
+               showMentorMessage('良い判断だ！別ポートへ向かおう。', 4000);
+             }
+           }, 1200);
 
-          missionVideo.play().then(() => {
-            setTimeout(() => {
-              fade.style.opacity = '0';
-            }, 80);
+         }).catch((err) => {
+           console.error('Branch video play failed:', err);
+           fade.style.opacity = '0';
+         });
 
-            setTimeout(() => {
-              if (choiceNumber === 1)
-                showMentorMessage('良い判断だ！ちょうど空いたみたいだぞ。', 4000);
-              } else {
-                showMentorMessage('良い判断だ！では別ポートへ向かおう。', 4000);
-              }
-            }, 1200);
-
-          }).catch((err) => {
-            console.error('Branch video play failed:', err);
-            fade.style.opacity = '0';
-          });
-        }, FADE_TRANSITION);
-      }
+       }, FADE_TRANSITION);
+     }
 
       missionVideo.addEventListener('timeupdate', () => {
 
