@@ -443,9 +443,9 @@
            }, 80);
            setTimeout(() => {
              if (choiceNumber === 1) {
-               showMentorMessage('良い判断だ！ちょうど空いたみたいだぞ。', 4000);
+               showMentorMessage('良い判断だ！ちょうど降りれるようになったぞ。', 4000);
              } else {
-               showMentorMessage('良い判断だ！別ポートへ向かおう。', 4000);
+               showMentorMessage('良い判断だ！別のポートへ向かおう。', 4000);
              }
            }, 1200);
 
@@ -458,6 +458,12 @@
      }
 
       missionVideo.addEventListener('timeupdate', () => {
+        if (currentPhase === 'before' && !stadiumMessageShown) {
+          if (missionVideo.currentTime >= 3) {
+            stadiumMessageShown = true;
+            showMentorMessage('スタジアムに近づいてきたな！', 2500);
+          }
+        }
 
         if (currentPhase !== 'after1' && currentPhase !== 'after2') return;
         if (finalMessageShown) return;
