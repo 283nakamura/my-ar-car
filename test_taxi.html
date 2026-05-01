@@ -26,6 +26,7 @@
       opacity: 0;
       z-index: 10;
       transition: opacity 0.5s;
+      pointer-events: none;
     }
 
     video {
@@ -36,6 +37,11 @@
       height: 100%;
       object-fit: cover;
       background: #000;
+      z-index: 1;
+    }
+
+    #video-before {
+      display: block;
     }
 
     #video-after1,
@@ -48,6 +54,9 @@
       right: 5vw;
       bottom: 5vh;
       z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
     button {
@@ -67,17 +76,18 @@
       z-index: 20;
       color: #fff;
       font-size: 20px;
+      font-weight: bold;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
     }
   </style>
 </head>
 
 <body>
-
   <div id="fade"></div>
 
-  <video id="video-before" src="taxi_before.mp4" preload="auto"></video>
-  <video id="video-after1" src="taxi_after1.mp4" preload="auto"></video>
-  <video id="video-after2" src="taxi_after2.mp4" preload="auto"></video>
+  <video id="video-before" src="taxi_before.mp4" preload="auto" playsinline webkit-playsinline></video>
+  <video id="video-after1" src="taxi_after1.mp4" preload="auto" playsinline webkit-playsinline></video>
+  <video id="video-after2" src="taxi_after2.mp4" preload="auto" playsinline webkit-playsinline></video>
 
   <div id="mentor"></div>
 
@@ -90,19 +100,35 @@
     const videoAfter1 = document.getElementById("video-after1");
     const videoAfter2 = document.getElementById("video-after2");
 
-    let currentVideo = videoBefore;
-
     const fade = document.getElementById("fade");
     const mentor = document.getElementById("mentor");
     const btnArea = document.getElementById("btn-area");
 
+    let currentVideo = videoBefore;
     let phase = "intro";
+    let messageTimer = null;
+
+    initializeVideos();
+
+    function initializeVideos() {
+      videoBefore.style.display = "block";
+      videoAfter1.style.display = "none";
+      videoAfter2.style.display = "none";
+
+      videoBefore.currentTime = 0;
+      videoAfter1.currentTime = 0;
+      videoAfter2.currentTime = 0;
+
+      currentVideo = videoBefore;
+    }
 
     function showMessage(text, time = 3000) {
+      clearTimeout(messageTimer);
+
       mentor.innerText = text;
 
       if (time > 0) {
-        setTimeout(() => {
+        messageTimer = setTimeout(() => {
           mentor.innerText = "";
         }, time);
       }
@@ -113,10 +139,14 @@
 
       showMessage("お客さんをスタジアムまで連れて行ってくれ！", 3000);
 
-      videoBefore.play();
       phase = "before";
 
+      videoBefore.currentTime = 0;
       videoBefore.onended = showChoice;
+
+      videoBefore.play().catch((err) => {
+        console.error("Before video play failed:", err);
+      });
     }
 
     videoBefore.addEventListener("timeupdate", () => {
@@ -129,59 +159,68 @@
     function showChoice() {
       videoBefore.pause();
 
-      btnArea.style.display = "block";
+      btnArea.style.display = "flex";
       btnArea.innerHTML = `
-        <button onclick="select(1)">少し待機</button>
-        <button onclick="select(2)">別ポートへ</button>
+        <button onclick="selectChoice(1)">少し待機</button>
+        <button onclick="selectChoice(2)">別ポートへ</button>
       `;
 
       showMessage("ポートが混んでるぞ！どうする？", 0);
     }
 
-    function select(n) {
+    function selectChoice(choiceNumber) {
       btnArea.style.display = "none";
+      mentor.innerText = "";
+
       fade.style.opacity = 1;
 
       setTimeout(() => {
-
         let nextVideo;
 
-        if (n === 1) {
+        if (choiceNumber === 1) {
           nextVideo = videoAfter1;
+          phase = "after1";
         } else {
           nextVideo = videoAfter2;
+          phase = "after2";
         }
 
+        currentVideo.pause();
         currentVideo.style.display = "none";
+
         nextVideo.style.display = "block";
+        nextVideo.currentTime = 0;
+        nextVideo.onended = finish;
 
         currentVideo = nextVideo;
-        currentVideo.currentTime = 0;
 
-        currentVideo.play();
+        currentVideo.play().then(() => {
+          fade.style.opacity = 0;
 
-        fade.style.opacity = 0;
+          setTimeout(() => {
+            if (choiceNumber === 1) {
+              showMessage("良い判断だ！もうすぐ降りられるぞ。", 3000);
+            } else {
+              showMessage("良い判断だ！別ポートへ向かおう。", 3000);
+            }
+          }, 1000);
 
-        setTimeout(() => {
-          if (n === 1) {
-            showMessage("良い判断だ！もうすぐ降りられるぞ。", 3000);
-          } else {
-            showMessage("良い判断だ！別ポートへ向かおう。", 3000);
-          }
-        }, 1000);
-
-        currentVideo.onended = finish;
+        }).catch((err) => {
+          console.error("Branch video play failed:", err);
+          fade.style.opacity = 0;
+        });
 
       }, 500);
     }
 
     function finish() {
+      phase = "complete";
+
       showMessage("任務完了。よくやったな！", 0);
 
-      btnArea.style.display = "block";
+      btnArea.style.display = "flex";
       btnArea.innerHTML = `<button onclick="location.reload()">リセット</button>`;
     }
   </script>
-
 </body>
 </html>
