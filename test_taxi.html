@@ -26,7 +26,6 @@
       opacity: 0;
       z-index: 10;
       transition: opacity 0.5s;
-      pointer-events: none;
     }
 
     video {
@@ -40,23 +39,15 @@
       z-index: 1;
     }
 
-    #video-before {
-      display: block;
-    }
-
+    #video-before { display: block; }
     #video-after1,
-    #video-after2 {
-      display: none;
-    }
+    #video-after2 { display: none; }
 
     #btn-area {
       position: fixed;
       right: 5vw;
       bottom: 5vh;
       z-index: 20;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
     }
 
     button {
@@ -76,151 +67,139 @@
       z-index: 20;
       color: #fff;
       font-size: 20px;
-      font-weight: bold;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
     }
   </style>
 </head>
 
 <body>
-  <div id="fade"></div>
 
-  <video id="video-before" src="taxi_before.mp4" preload="auto" playsinline webkit-playsinline></video>
-  <video id="video-after1" src="taxi_after1.mp4" preload="auto" playsinline webkit-playsinline></video>
-  <video id="video-after2" src="taxi_after2.mp4" preload="auto" playsinline webkit-playsinline></video>
+<div id="fade"></div>
 
-  <div id="mentor"></div>
+<video id="video-before" src="taxi_before.mp4" preload="auto"></video>
+<video id="video-after1" src="taxi_after1.mp4" preload="auto"></video>
+<video id="video-after2" src="taxi_after2.mp4" preload="auto"></video>
 
-  <div id="btn-area">
-    <button onclick="start()">スタート</button>
-  </div>
+<div id="mentor"></div>
 
-  <script>
-    const videoBefore = document.getElementById("video-before");
-    const videoAfter1 = document.getElementById("video-after1");
-    const videoAfter2 = document.getElementById("video-after2");
+<div id="btn-area">
+  <button onclick="start()">スタート</button>
+</div>
 
-    const fade = document.getElementById("fade");
-    const mentor = document.getElementById("mentor");
-    const btnArea = document.getElementById("btn-area");
+<script>
 
-    let currentVideo = videoBefore;
-    let phase = "intro";
-    let messageTimer = null;
+const videoBefore = document.getElementById("video-before");
+const videoAfter1 = document.getElementById("video-after1");
+const videoAfter2 = document.getElementById("video-after2");
 
-    initializeVideos();
+let currentVideo = videoBefore;
 
-    function initializeVideos() {
-      videoBefore.style.display = "block";
-      videoAfter1.style.display = "none";
-      videoAfter2.style.display = "none";
+const fade = document.getElementById("fade");
+const mentor = document.getElementById("mentor");
+const btnArea = document.getElementById("btn-area");
 
-      videoBefore.currentTime = 0;
-      videoAfter1.currentTime = 0;
-      videoAfter2.currentTime = 0;
+let phase = "intro";
 
-      currentVideo = videoBefore;
-    }
 
-    function showMessage(text, time = 3000) {
-      clearTimeout(messageTimer);
+// ★ 初期化（超重要）
+window.onload = () => {
+  videoBefore.style.display = "block";
+  videoAfter1.style.display = "none";
+  videoAfter2.style.display = "none";
 
-      mentor.innerText = text;
+  videoBefore.pause();
+  videoAfter1.pause();
+  videoAfter2.pause();
+};
 
-      if (time > 0) {
-        messageTimer = setTimeout(() => {
-          mentor.innerText = "";
-        }, time);
+
+// ----------------
+function showMessage(text, time = 3000) {
+  mentor.innerText = text;
+
+  if (time > 0) {
+    setTimeout(() => mentor.innerText = "", time);
+  }
+}
+
+// ----------------
+function start() {
+  btnArea.style.display = "none";
+
+  showMessage("お客さんをスタジアムまで連れて行ってくれ！", 3000);
+
+  currentVideo = videoBefore;
+
+  videoBefore.currentTime = 0;
+  videoBefore.play();
+
+  phase = "before";
+  videoBefore.onended = showChoice;
+}
+
+// ----------------
+videoBefore.addEventListener("timeupdate", () => {
+  if (phase === "before" && videoBefore.currentTime > 3) {
+    showMessage("スタジアムに近づいてきたな！", 2000);
+    phase = "before2";
+  }
+});
+
+// ----------------
+function showChoice() {
+  videoBefore.pause();
+
+  btnArea.style.display = "block";
+  btnArea.innerHTML = `
+    <button onclick="selectChoice(1)">少し待機</button>
+    <button onclick="selectChoice(2)">別ポートへ</button>
+  `;
+
+  showMessage("ポートが混んでるぞ！どうする？", 0);
+}
+
+// ----------------
+function selectChoice(n) {
+  btnArea.style.display = "none";
+  fade.style.opacity = 1;
+
+  setTimeout(() => {
+
+    let nextVideo = (n === 1) ? videoAfter1 : videoAfter2;
+
+    currentVideo.pause();
+    currentVideo.style.display = "none";
+
+    nextVideo.style.display = "block";
+    nextVideo.currentTime = 0;
+
+    currentVideo = nextVideo;
+
+    currentVideo.play();
+
+    fade.style.opacity = 0;
+
+    setTimeout(() => {
+      if (n === 1) {
+        showMessage("良い判断だ！もうすぐ降りられるぞ。", 3000);
+      } else {
+        showMessage("良い判断だ！別ポートへ向かおう。", 3000);
       }
-    }
+    }, 1000);
 
-    function start() {
-      btnArea.style.display = "none";
+    currentVideo.onended = finish;
 
-      showMessage("お客さんをスタジアムまで連れて行ってくれ！", 3000);
+  }, 500);
+}
 
-      phase = "before";
+// ----------------
+function finish() {
+  showMessage("任務完了。よくやったな！", 0);
 
-      videoBefore.currentTime = 0;
-      videoBefore.onended = showChoice;
+  btnArea.style.display = "block";
+  btnArea.innerHTML = `<button onclick="location.reload()">リセット</button>`;
+}
 
-      videoBefore.play().catch((err) => {
-        console.error("Before video play failed:", err);
-      });
-    }
+</script>
 
-    videoBefore.addEventListener("timeupdate", () => {
-      if (phase === "before" && videoBefore.currentTime > 3) {
-        showMessage("スタジアムに近づいてきたな！", 2000);
-        phase = "before2";
-      }
-    });
-
-    function showChoice() {
-      videoBefore.pause();
-
-      btnArea.style.display = "flex";
-      btnArea.innerHTML = `
-        <button onclick="selectChoice(1)">少し待機</button>
-        <button onclick="selectChoice(2)">別ポートへ</button>
-      `;
-
-      showMessage("ポートが混んでるぞ！どうする？", 0);
-    }
-
-    function selectChoice(choiceNumber) {
-      btnArea.style.display = "none";
-      mentor.innerText = "";
-
-      fade.style.opacity = 1;
-
-      setTimeout(() => {
-        let nextVideo;
-
-        if (choiceNumber === 1) {
-          nextVideo = videoAfter1;
-          phase = "after1";
-        } else {
-          nextVideo = videoAfter2;
-          phase = "after2";
-        }
-
-        currentVideo.pause();
-        currentVideo.style.display = "none";
-
-        nextVideo.style.display = "block";
-        nextVideo.currentTime = 0;
-        nextVideo.onended = finish;
-
-        currentVideo = nextVideo;
-
-        currentVideo.play().then(() => {
-          fade.style.opacity = 0;
-
-          setTimeout(() => {
-            if (choiceNumber === 1) {
-              showMessage("良い判断だ！もうすぐ降りられるぞ。", 3000);
-            } else {
-              showMessage("良い判断だ！別ポートへ向かおう。", 3000);
-            }
-          }, 1000);
-
-        }).catch((err) => {
-          console.error("Branch video play failed:", err);
-          fade.style.opacity = 0;
-        });
-
-      }, 500);
-    }
-
-    function finish() {
-      phase = "complete";
-
-      showMessage("任務完了。よくやったな！", 0);
-
-      btnArea.style.display = "flex";
-      btnArea.innerHTML = `<button onclick="location.reload()">リセット</button>`;
-    }
-  </script>
 </body>
 </html>
