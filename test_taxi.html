@@ -64,7 +64,7 @@
         left: 0;
         bottom: 0;
         width: 100%;
-        height: 100%;
+        height: 50%;
         display: none;
         opacity: 0;
         transition: opacity 0.5s;
@@ -417,8 +417,8 @@
 
         btnArea.innerHTML = `
           <div class="choice-container">
-            <button class="choice-btn" onclick="handleChoice(1)">少し待機</button>
-            <button class="choice-btn" onclick="handleChoice(2)">別ポートへ</button>
+            <button class="choice-btn" onclick="handleChoice(1)">少し待機して着陸</button>
+            <button class="choice-btn" onclick="handleChoice(2)">別ポートへ移動</button>
           </div>
         `;
       }
@@ -453,7 +453,7 @@
         if (currentPhase === 'before' && !stadiumMessageShown) {
           if (missionVideo.currentTime >= 3) {
             stadiumMessageShown = true;
-            showMentorMessage('スタジアムに近づいたな。', 3500);
+            showMentorMessage('スタジアムに近づいてきたな。', 3500);
           }
         }
 
