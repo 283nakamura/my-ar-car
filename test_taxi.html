@@ -230,7 +230,7 @@
       const VIDEO_AFTER_2 = 'taxi_after2.mp4';
 
       const MESSAGE_DELAY = 500;
-      const FINAL_MESSAGE = '任務完了。よくやった！ゆっくり休んでくれ。';
+      const FINAL_MESSAGE = '任務完了。よくやったぞ！ゆっくり休んでくれ。';
       const FINAL_MESSAGE_LEAD_TIME = 5.0;
 
       let currentPhase = 'intro';
@@ -441,6 +441,15 @@
             setTimeout(() => {
               fade.style.opacity = '0';
             }, 80);
+
+            setTimeout(() => {
+              if (choiceNumber === 1)
+                showMentorMessage('良い判断だ！ちょうど空いたみたいだぞ。', 4000);
+              } else {
+                showMentorMessage('良い判断だ！では別ポートへ向かおう。', 4000);
+              }
+            }, 1200);
+          
           }).catch((err) => {
             console.error('Branch video play failed:', err);
             fade.style.opacity = '0';
