@@ -1,485 +1,187 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL VR - Taxi Mission</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taxi Mission</title>
 
-    <style>
-      body, html {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #000;
-        font-family: sans-serif;
-      }
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
 
-      #fade-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #000;
-        opacity: 0;
-        z-index: 95000;
-        pointer-events: none;
-        transition: opacity 350ms ease;
-      }
+    #fade {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      opacity: 0;
+      z-index: 10;
+      transition: opacity 0.5s;
+    }
 
-      #video-layer {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 90000;
-        background: #000;
-        display: none;
-      }
+    video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+    }
 
-      video {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        background: #000;
-      }
+    #video-after1,
+    #video-after2 {
+      display: none;
+    }
 
-      #ui-container {
-        position: fixed;
-        left: 4vw;
-        bottom: 4vh;
-        width: 74vw;
-        height: 18vh;
-        z-index: 100000;
-        pointer-events: none;
-      }
+    #btn-area {
+      position: fixed;
+      right: 5vw;
+      bottom: 5vh;
+      z-index: 20;
+    }
 
-      #mentor-panel {
-        position: absolute;
-        left: -10px;
-        bottom: 0;
-        width: 100%;
-        height: 50%;
-        display: none;
-        opacity: 0;
-        transition: opacity 0.5s;
-      }
+    button {
+      padding: 15px 25px;
+      font-size: 18px;
+      background: #2fe0d0;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+    }
 
-      #comment-window {
-        position: absolute;
-        left: 4vw;
-        bottom: 0;
-        width: 68vw;
-        height: auto;
-      }
+    #mentor {
+      position: fixed;
+      left: 4vw;
+      bottom: 4vh;
+      z-index: 20;
+      color: #fff;
+      font-size: 20px;
+    }
+  </style>
+</head>
 
-      #instructor-img {
-        position: absolute;
-        left: 0;
-        bottom: -0.8vh;
-        width: 10.5vw;
-        max-width: 150px;
-        min-width: 82px;
-        height: auto;
-        z-index: 2;
-      }
+<body>
 
-      #mentor-text {
-        position: absolute;
-        left: 13.5vw;
-        right: 4vw;
-        bottom: 3.5vh;
-        color: #fff;
-        font-size: clamp(16px, 2.1vw, 30px);
-        font-weight: bold;
-        line-height: 1.45;
-        text-shadow: 0 2px 6px rgba(0,0,0,0.85);
-        opacity: 0;
-        transition: opacity 0.3s;
-        z-index: 3;
-      }
+  <div id="fade"></div>
 
-      #btn-area {
-        position: fixed;
-        right: 5vw;
-        bottom: 6vh;
-        z-index: 100001;
-        pointer-events: auto;
-      }
+  <video id="video-before" src="taxi_before.mp4" preload="auto"></video>
+  <video id="video-after1" src="taxi_after1.mp4" preload="auto"></video>
+  <video id="video-after2" src="taxi_after2.mp4" preload="auto"></video>
 
-      .action-btn,
-      .choice-btn {
-        pointer-events: auto;
-        background: #27e0d0;
-        color: #fff;
-        border: none;
-        padding: 17px 30px;
-        font-weight: bold;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: clamp(16px, 2vw, 24px);
-        box-shadow: 0 5px 18px rgba(0,0,0,0.35);
-        -webkit-tap-highlight-color: transparent;
-      }
+  <div id="mentor"></div>
 
-      .choice-container {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        pointer-events: auto;
-      }
+  <div id="btn-area">
+    <button onclick="start()">スタート</button>
+  </div>
 
-      a-scene {
-        width: 100%;
-        height: 100%;
-      }
-    </style>
-  </head>
+  <script>
+    const videoBefore = document.getElementById("video-before");
+    const videoAfter1 = document.getElementById("video-after1");
+    const videoAfter2 = document.getElementById("video-after2");
 
-  <body>
-    <div id="fade-overlay"></div>
+    let currentVideo = videoBefore;
 
-    <div id="ui-container">
-      <div id="mentor-panel">
-        <img id="comment-window" src="T_comment_window_long2.png">
-        <img id="instructor-img" src="T_instructor.png">
-        <div id="mentor-text"></div>
-      </div>
-    </div>
+    const fade = document.getElementById("fade");
+    const mentor = document.getElementById("mentor");
+    const btnArea = document.getElementById("btn-area");
 
-    <div id="btn-area">
-      <button id="btn-main" class="action-btn" onclick="handleStart()">スタート</button>
-    </div>
+    let phase = "intro";
 
-    <div id="video-layer">
-      <video
-        id="mission-video"
-        playsinline
-        webkit-playsinline
-        preload="auto"
-        crossorigin="anonymous"
-        src="taxi_before.mp4"
-      ></video>
-    </div>
+    function showMessage(text, time = 3000) {
+      mentor.innerText = text;
 
-    <a-scene
-      embedded
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-      renderer="antialias: true; colorManagement: true;"
-    >
-      <a-assets>
-        <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
-        <img id="virtual-bg" src="test4.jpg">
-      </a-assets>
-
-      <a-sky
-        id="sky-bg"
-        src="#virtual-bg"
-        radius="100"
-        rotation="0 -90 0"
-        segments-width="64"
-        segments-height="64"
-      ></a-sky>
-
-      <a-entity id="moving-car" position="0 -15 -70">
-        <a-gltf-model
-          id="model-entity"
-          src="#car-model"
-          scale="6 6 6"
-          rotation="0 60 0"
-        ></a-gltf-model>
-      </a-entity>
-
-      <a-entity id="camera-rig" position="0 0 0">
-        <a-entity
-          id="main-camera"
-          camera="active: true; fov: 65"
-          look-controls="magic-window-trackingEnabled: true; touchEnabled: true"
-        ></a-entity>
-      </a-entity>
-    </a-scene>
-
-    <script>
-      const btnMain = document.getElementById('btn-main');
-      const btnArea = document.getElementById('btn-area');
-      const videoLayer = document.getElementById('video-layer');
-      const missionVideo = document.getElementById('mission-video');
-      const fade = document.getElementById('fade-overlay');
-      const model = document.getElementById('model-entity');
-      const car = document.getElementById('moving-car');
-      const cam = document.getElementById('main-camera');
-      const mentorPanel = document.getElementById('mentor-panel');
-      const mentorText = document.getElementById('mentor-text');
-      const sceneEl = document.querySelector('a-scene');
-
-      const VIDEO_VOLUME = 0.3;
-
-      const TAKEOFF_DURATION = 5000;
-      const FORWARD_DURATION = 4500;
-      const FADE_LEAD_TIME = 700;
-      const FADE_TRANSITION = 350;
-
-      const VIDEO_BEFORE = 'taxi_before.mp4';
-      const VIDEO_AFTER_1 = 'taxi_after1.mp4';
-      const VIDEO_AFTER_2 = 'taxi_after2.mp4';
-
-      const MESSAGE_DELAY = 500;
-
-      let currentPhase = 'intro';
-      let finalMessageShown = false;
-      let mentorHideTimer = null;
-      let mentorTextDelayTimer = null;
-
-      fade.style.transition = `opacity ${FADE_TRANSITION}ms ease`;
-      missionVideo.volume = VIDEO_VOLUME;
-
-      function showMentorMessage(text, duration = 3000) {
-        clearTimeout(mentorHideTimer);
-        clearTimeout(mentorTextDelayTimer);
-
-        mentorText.innerText = '';
-        mentorText.style.opacity = '0';
-        mentorPanel.style.display = 'block';
-
+      if (time > 0) {
         setTimeout(() => {
-          mentorPanel.style.opacity = '1';
-        }, 10);
-
-        mentorTextDelayTimer = setTimeout(() => {
-          mentorText.innerText = text;
-          mentorText.style.opacity = '1';
-        }, MESSAGE_DELAY);
-
-        if (duration > 0) {
-          mentorHideTimer = setTimeout(() => {
-            hideMentorMessage();
-          }, duration);
-        }
+          mentor.innerText = "";
+        }, time);
       }
+    }
 
-      function hideMentorMessage() {
-        clearTimeout(mentorHideTimer);
-        clearTimeout(mentorTextDelayTimer);
+    function start() {
+      btnArea.style.display = "none";
 
-        mentorText.style.opacity = '0';
-        mentorPanel.style.opacity = '0';
+      showMessage("お客さんをスタジアムまで連れて行ってくれ！", 3000);
 
-        setTimeout(() => {
-          mentorPanel.style.display = 'none';
-          mentorText.innerText = '';
-        }, 500);
+      videoBefore.play();
+      phase = "before";
+
+      videoBefore.onended = showChoice;
+    }
+
+    videoBefore.addEventListener("timeupdate", () => {
+      if (phase === "before" && videoBefore.currentTime > 3) {
+        showMessage("スタジアムに近づいてきたな！", 2000);
+        phase = "before2";
       }
+    });
 
-      function clearAllFlightAnimations() {
-        car.removeAttribute('animation__takeoff');
-        car.removeAttribute('animation__forward');
-      }
+    function showChoice() {
+      videoBefore.pause();
 
-      function setVideoSource(src) {
-        missionVideo.pause();
-        missionVideo.src = src;
-        missionVideo.currentTime = 0;
-        missionVideo.volume = VIDEO_VOLUME;
-        missionVideo.load();
-      }
+      btnArea.style.display = "block";
+      btnArea.innerHTML = `
+        <button onclick="select(1)">少し待機</button>
+        <button onclick="select(2)">別ポートへ</button>
+      `;
 
-      function preloadVideo(src) {
-        const v = document.createElement('video');
-        v.src = src;
-        v.preload = 'auto';
-        v.playsInline = true;
-        v.muted = true;
-        v.load();
-      }
+      showMessage("ポートが混んでるぞ！どうする？", 0);
+    }
 
-      model.addEventListener('model-loaded', () => {
-        const mesh = model.getObject3D('mesh');
-        if (!mesh) return;
+    function select(n) {
+      btnArea.style.display = "none";
+      fade.style.opacity = 1;
 
-        mesh.traverse((node) => {
-          if (node.isMesh && node.material) {
-            if (Array.isArray(node.material)) {
-              node.material.forEach((mat) => {
-                if (mat.color) mat.color.set('#ffffff');
-              });
-            } else {
-              if (node.material.color) node.material.color.set('#ffffff');
-            }
-          }
-        });
-      });
+      setTimeout(() => {
 
-      async function handleStart() {
-        if (
-          typeof DeviceOrientationEvent !== 'undefined' &&
-          typeof DeviceOrientationEvent.requestPermission === 'function'
-        ) {
-          try {
-            const response = await DeviceOrientationEvent.requestPermission();
-            if (response === 'granted') {
-              cam.components['look-controls'].pause();
-              cam.setAttribute('rotation', '0 0 0');
-              cam.components['look-controls'].play();
-            }
-          } catch (e) {
-            console.error(e);
-          }
+        let nextVideo;
+
+        if (n === 1) {
+          nextVideo = videoAfter1;
+        } else {
+          nextVideo = videoAfter2;
         }
 
-        model.setAttribute('animation-mixer', 'clip: *; timeScale: 5');
+        currentVideo.style.display = "none";
+        nextVideo.style.display = "block";
 
-        showMentorMessage('お客さんをスタジアムまで連れて行ってくれ！', 4500);
+        currentVideo = nextVideo;
+        currentVideo.currentTime = 0;
 
-        btnMain.innerText = '離陸開始';
-        btnMain.setAttribute('onclick', 'handleTakeOff()');
+        currentVideo.play();
 
-        setVideoSource(VIDEO_BEFORE);
-        preloadVideo(VIDEO_AFTER_1);
-        preloadVideo(VIDEO_AFTER_2);
-
-        missionVideo.play().then(() => {
-          missionVideo.pause();
-          missionVideo.currentTime = 0;
-        }).catch((err) => {
-          console.warn('Video preload play was blocked:', err);
-        });
-      }
-
-      function handleTakeOff() {
-        btnArea.style.display = 'none';
-        showMentorMessage('テイクオフ！健闘を祈る。', 3500);
-
-        clearAllFlightAnimations();
-
-        car.setAttribute('animation__takeoff', {
-          property: 'position',
-          from: '0 -15 -70',
-          to: '0 30 -70',
-          dur: TAKEOFF_DURATION,
-          easing: 'easeInOutQuad'
-        });
+        fade.style.opacity = 0;
 
         setTimeout(() => {
-          car.setAttribute('animation__forward', {
-            property: 'position',
-            from: '0 30 -70',
-            to: '60 30 -20',
-            dur: FORWARD_DURATION,
-            easing: 'easeInQuad'
-          });
-
-          const fadeStart = Math.max(FORWARD_DURATION - FADE_LEAD_TIME, 50);
-
-          setTimeout(() => {
-            fade.style.opacity = '1';
-          }, fadeStart);
-
-          setTimeout(() => {
-            sceneEl.style.display = 'none';
-            videoLayer.style.display = 'block';
-
-            currentPhase = 'before';
-            finalMessageShown = false;
-            stadiumMessageShown = false;
-
-            setVideoSource(VIDEO_BEFORE);
-            missionVideo.onended = triggerBranchChoice;
-
-            missionVideo.play().then(() => {
-              setTimeout(() => {
-                fade.style.opacity = '0';
-              }, 80);
-            }).catch((err) => {
-              console.error('Video play failed:', err);
-              fade.style.opacity = '0';
-            });
-          }, FORWARD_DURATION);
-
-        }, TAKEOFF_DURATION);
-      }
-
-      function triggerBranchChoice() {
-        currentPhase = 'choice';
-
-        missionVideo.pause();
-        btnArea.style.display = 'block';
-
-        showMentorMessage('ポートが混んでるぞ！どうする？', 0);
-
-        btnArea.innerHTML = `
-          <div class="choice-container">
-            <button class="choice-btn" onclick="handleChoice(1)">待機後に着陸</button>
-            <button class="choice-btn" onclick="handleChoice(2)">別ポートへ</button>
-          </div>
-        `;
-      }
-
-     function handleChoice(choiceNumber) {
-       btnArea.style.display = 'none';
-       hideMentorMessage();
-
-       currentPhase = choiceNumber === 1 ? 'after1' : 'after2';
-       finalMessageShown = false;
-
-       fade.style.opacity = '1';
-       
-       setTimeout(() => {
-         const nextVideo = choiceNumber === 1 ? VIDEO_AFTER_1 : VIDEO_AFTER_2;
-
-         setVideoSource(nextVideo);
-         missionVideo.onended = handleMissionComplete;
-
-         missionVideo.play().then(() => {
-           setTimeout(() => {
-             fade.style.opacity = '0';
-           }, 80);
-           setTimeout(() => {
-             if (choiceNumber === 1) {
-               showMentorMessage('良い判断だ！そろそろ降りられるみたいぞ。', 4000);
-             } else {
-               showMentorMessage('良い判断だ！別のポートへ向かおう。', 4000);
-             }
-           }, 1200);
-
-         }).catch((err) => {
-           console.error('Branch video play failed:', err);
-           fade.style.opacity = '0';
-         });
-
-       }, FADE_TRANSITION);
-     }
-
-      missionVideo.addEventListener('timeupdate', () => {
-        if (currentPhase === 'before' && !stadiumMessageShown) {
-          if (missionVideo.currentTime >= 3) {
-            stadiumMessageShown = true;
-            showMentorMessage('スタジアムに近づいてきたな！', 2500);
+          if (n === 1) {
+            showMessage("良い判断だ！もうすぐ降りられるぞ。", 3000);
+          } else {
+            showMessage("良い判断だ！別ポートへ向かおう。", 3000);
           }
-        }
+        }, 1000);
 
-        if (currentPhase !== 'after1' && currentPhase !== 'after2') return;
-        if (finalMessageShown) return;
-        if (!missionVideo.duration || isNaN(missionVideo.duration)) return;
+        currentVideo.onended = finish;
 
-        const remaining = missionVideo.duration - missionVideo.currentTime;
-      });
+      }, 500);
+    }
 
-      function handleMissionComplete() {
-        currentPhase = 'complete';
+    function finish() {
+      showMessage("任務完了。よくやったな！", 0);
 
-          setTimeout(() => {
-            showMentorMessage('任務完了。よくやったな！', 0);
-          }, 500);
+      btnArea.style.display = "block";
+      btnArea.innerHTML = `<button onclick="location.reload()">リセット</button>`;
+    }
+  </script>
 
-        btnArea.style.display = 'block';
-        btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">リセット</button>`;
-      }
-    </script>
-  </body>
+</body>
 </html>
