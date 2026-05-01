@@ -235,7 +235,6 @@
 
       let currentPhase = 'intro';
       let finalMessageShown = false;
-      let stadiumMessageShown = false;
       let mentorHideTimer = null;
       let mentorTextDelayTimer = null;
 
@@ -450,12 +449,6 @@
       }
 
       missionVideo.addEventListener('timeupdate', () => {
-        if (currentPhase === 'before' && !stadiumMessageShown) {
-          if (missionVideo.currentTime >= 3) {
-            stadiumMessageShown = true;
-            showMentorMessage('スタジアムに近づいてきたな。', 3500);
-          }
-        }
 
         if (currentPhase !== 'after1' && currentPhase !== 'after2') return;
         if (finalMessageShown) return;
