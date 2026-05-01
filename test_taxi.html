@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL VR - Branch Mission</title>
+    <title>VTOL VR - Taxi Mission</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
@@ -18,75 +18,17 @@
         font-family: sans-serif;
       }
 
-      #ui-container {
+      #fade-overlay {
         position: fixed;
+        top: 0;
         left: 0;
-        bottom: 0;
         width: 100%;
         height: 100%;
-        z-index: 100000;
-        pointer-events: none;
-      }
-
-      #mentor-panel {
-        position: fixed;
-        left: 3vw;
-        bottom: 2vh;
-        width: min(144vw, 1200px);
-        height: min(40vw, 260px);
-        background-image: url("comment.png");
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: left bottom;
-        display: none;
+        background: #000;
         opacity: 0;
-        transition: opacity 0.5s;
+        z-index: 95000;
         pointer-events: none;
-      }
-
-      #mentor-text {
-        position: absolute;
-        left: 10%;
-        right: 7%;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #fff;
-        font-size: clamp(18px, 3vw, 38px);
-        font-weight: bold;
-        line-height: 1.45;
-        text-shadow: 0 2px 6px rgba(0,0,0,0.8);
-        opacity: 0;
-        transition: opacity 0.3s;
-      }
-
-      #btn-area {
-        position: fixed;
-        right: 5vw;
-        bottom: 5vh;
-        z-index: 100001;
-        pointer-events: auto;
-      }
-
-      .action-btn,
-      .choice-btn {
-        pointer-events: auto;
-        background: #20e6d2;
-        color: #fff;
-        border: none;
-        padding: 16px 28px;
-        font-weight: bold;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.35);
-        -webkit-tap-highlight-color: transparent;
-      }
-
-      .choice-container {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        pointer-events: auto;
+        transition: opacity 350ms ease;
       }
 
       #video-layer {
@@ -107,17 +49,94 @@
         background: #000;
       }
 
-      #fade-overlay {
+      #ui-container {
         position: fixed;
-        top: 0;
+        left: 4vw;
+        bottom: 4vh;
+        width: 74vw;
+        height: 18vh;
+        z-index: 100000;
+        pointer-events: none;
+      }
+
+      #mentor-panel {
+        position: absolute;
         left: 0;
+        bottom: 0;
         width: 100%;
         height: 100%;
-        background: #000;
+        display: none;
         opacity: 0;
-        z-index: 95000;
-        pointer-events: none;
-        transition: opacity 700ms ease;
+        transition: opacity 0.5s;
+      }
+
+      #comment-window {
+        position: absolute;
+        left: 5.5vw;
+        bottom: 0;
+        width: 68vw;
+        height: auto;
+      }
+
+      #instructor-img {
+        position: absolute;
+        left: 0;
+        bottom: -0.8vh;
+        width: 10.5vw;
+        max-width: 150px;
+        min-width: 82px;
+        height: auto;
+        z-index: 2;
+      }
+
+      #mentor-text {
+        position: absolute;
+        left: 13.5vw;
+        right: 4vw;
+        bottom: 5.2vh;
+        color: #fff;
+        font-size: clamp(16px, 2.1vw, 30px);
+        font-weight: bold;
+        line-height: 1.45;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.85);
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 3;
+      }
+
+      #btn-area {
+        position: fixed;
+        right: 5vw;
+        bottom: 6vh;
+        z-index: 100001;
+        pointer-events: auto;
+      }
+
+      .action-btn,
+      .choice-btn {
+        pointer-events: auto;
+        background: #27e0d0;
+        color: #fff;
+        border: none;
+        padding: 17px 30px;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: clamp(16px, 2vw, 24px);
+        box-shadow: 0 5px 18px rgba(0,0,0,0.35);
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .choice-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        pointer-events: auto;
+      }
+
+      a-scene {
+        width: 100%;
+        height: 100%;
       }
     </style>
   </head>
@@ -127,6 +146,8 @@
 
     <div id="ui-container">
       <div id="mentor-panel">
+        <img id="comment-window" src="T_comment_window_long.png">
+        <img id="instructor-img" src="T_instructor.png">
         <div id="mentor-text"></div>
       </div>
     </div>
@@ -202,7 +223,7 @@
       const TAKEOFF_DURATION = 5000;
       const FORWARD_DURATION = 4500;
       const FADE_LEAD_TIME = 700;
-      const FADE_TRANSITION = 700;
+      const FADE_TRANSITION = 350;
 
       const VIDEO_BEFORE = 'taxi_before.mp4';
       const VIDEO_AFTER_1 = 'taxi_after1.mp4';
@@ -227,7 +248,6 @@
 
         mentorText.innerText = '';
         mentorText.style.opacity = '0';
-
         mentorPanel.style.display = 'block';
 
         setTimeout(() => {
@@ -393,11 +413,11 @@
         missionVideo.pause();
         btnArea.style.display = 'block';
 
-        showMentorMessage('ポートが混んでいる！どうする？', 0);
+        showMentorMessage('ポートが混んでるぞ！どうする？', 0);
 
         btnArea.innerHTML = `
           <div class="choice-container">
-            <button class="choice-btn" onclick="handleChoice(1)">少し待機して着陸</button>
+            <button class="choice-btn" onclick="handleChoice(1)">少し待機</button>
             <button class="choice-btn" onclick="handleChoice(2)">別ポートへ</button>
           </div>
         `;
@@ -433,7 +453,7 @@
         if (currentPhase === 'before' && !stadiumMessageShown) {
           if (missionVideo.currentTime >= 3) {
             stadiumMessageShown = true;
-            showMentorMessage('スタジアムに近づいたな！', 3500);
+            showMentorMessage('スタジアムに近づいたな。', 3500);
           }
         }
 
