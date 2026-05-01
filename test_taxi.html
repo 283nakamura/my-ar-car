@@ -72,7 +72,7 @@
 
       #comment-window {
         position: absolute;
-        left: 5.5vw;
+        left: 4vw;
         bottom: 0;
         width: 68vw;
         height: auto;
@@ -230,8 +230,6 @@
       const VIDEO_AFTER_2 = 'taxi_after2.mp4';
 
       const MESSAGE_DELAY = 500;
-      const FINAL_MESSAGE = '任務完了。よくやったぞ！ゆっくり休んでくれ。';
-      const FINAL_MESSAGE_LEAD_TIME = 5.0;
 
       let currentPhase = 'intro';
       let finalMessageShown = false;
@@ -443,7 +441,7 @@
            }, 80);
            setTimeout(() => {
              if (choiceNumber === 1) {
-               showMentorMessage('良い判断だ！ちょうど降りれるようになったぞ。', 4000);
+               showMentorMessage('良い判断だ！そろそろ降りられるみたいぞ。', 4000);
              } else {
                showMentorMessage('良い判断だ！別のポートへ向かおう。', 4000);
              }
@@ -470,23 +468,17 @@
         if (!missionVideo.duration || isNaN(missionVideo.duration)) return;
 
         const remaining = missionVideo.duration - missionVideo.currentTime;
-
-        if (remaining <= FINAL_MESSAGE_LEAD_TIME) {
-          finalMessageShown = true;
-          showMentorMessage(FINAL_MESSAGE, 0);
-        }
       });
 
       function handleMissionComplete() {
         currentPhase = 'complete';
 
-        if (!finalMessageShown) {
-          finalMessageShown = true;
-          showMentorMessage(FINAL_MESSAGE, 0);
-        }
+          setTimeout(() => {
+            showMentorMessage('任務完了。よくやったな！', 0);
+          }, 500);
 
         btnArea.style.display = 'block';
-        btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">Reset</button>`;
+        btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">リセット</button>`;
       }
     </script>
   </body>
