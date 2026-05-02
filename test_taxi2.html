@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Flight Captain VR - Taxi Mission</title>
+
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        font-family: sans-serif;
+      }
+
+      #fade-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        opacity: 0;
+        z-index: 95000;
+        pointer-events: none;
+        transition: opacity 350ms ease;
+      }
+
+      #video-layer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 90000;
+        background: #000;
+        display: none;
+      }
+
+      .mission-video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #000;
+        display: none;
+      }
+
+      .mission-video.active-video {
+        display: block;
+      }
+
+      #ui-container {
+        position: fixed;
+        left: 4vw;
+        bottom: 4vh;
+        width: 74vw;
+        height: 18vh;
+        z-index: 100000;
+        pointer-events: none;
+      }
+
+      #mentor-panel {
+        position: absolute;
+        left: -10px;
+        bottom: 0;
+        width: 100%;
+        height: 50%;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.5s;
+      }
+
+      #comment-window {
+        position: absolute;
+        left: 4vw;
+        bottom: 0;
+        width: 68vw;
+        height: auto;
+      }
+
+      #instructor-img {
+        position: absolute;
+        left: 0;
+        bottom: -0.8vh;
+        width: 10.5vw;
+        max-width: 150px;
+        min-width: 82px;
+        height: auto;
+        z-index: 2;
+      }
+
+      #mentor-text {
+        position: absolute;
+        left: 13.5vw;
+        right: 4vw;
+        bottom: 3.5vh;
+        color: #fff;
+        font-size: clamp(16px, 2.1vw, 30px);
+        font-weight: bold;
+        line-height: 1.45;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.85);
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 3;
+      }
+
+      #btn-area {
+        position: fixed;
+        right: 5vw;
+        bottom: 6vh;
+        z-index: 100001;
+        pointer-events: auto;
+      }
+
+      .action-btn,
+      .choice-btn {
+        pointer-events: auto;
+        background: #27e0d0;
+        color: #fff;
+        border: none;
+        padding: 17px 30px;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: clamp(16px, 2vw, 24px);
+        box-shadow: 0 5px 18px rgba(0,0,0,0.35);
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .choice-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        pointer-events: auto;
+      }
+
+      a-scene {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="fade-overlay"></div>
+
+    <div id="ui-container">
+      <div id="mentor-panel">
+        <img id="comment-window" src="T_comment_window_long2.png">
+        <img id="instructor-img" src="T_instructor.png">
+        <div id="mentor-text"></div>
+      </div>
+    </div>
+
+    <div id="btn-area">
+      <button id="btn-main" class="action-btn" onclick="handleStart()">スタート</button>
+    </div>
+
+    <div id="video-layer">
+      <video
+        id="video-before"
+        class="mission-video"
+        playsinline
+        webkit-playsinline
+        preload="auto"
+        crossorigin="anonymous"
+        src="taxi_before.mp4"
+      ></video>
+
+      <video
+        id="video-after1"
+        class="mission-video"
+        playsinline
+        webkit-playsinline
+        preload="auto"
+        crossorigin="anonymous"
+        src="taxi_after1.mp4"
+      ></video>
+
+      <video
+        id="video-after2"
+        class="mission-video"
+        playsinline
+        webkit-playsinline
+        preload="auto"
+        crossorigin="anonymous"
+        src="taxi_after2.mp4"
+      ></video>
+    </div>
+
+    <a-scene
+      embedded
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      renderer="antialias: true; colorManagement: true;"
+    >
+      <a-assets>
+        <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
+        <img id="virtual-bg" src="test4.jpg">
+      </a-assets>
+
+      <a-sky
+        id="sky-bg"
+        src="#virtual-bg"
+        radius="100"
+        rotation="0 -90 0"
+        segments-width="64"
+        segments-height="64"
+      ></a-sky>
+
+      <a-entity id="moving-car" position="0 -15 -70">
+        <a-gltf-model
+          id="model-entity"
+          src="#car-model"
+          scale="6 6 6"
+          rotation="0 60 0"
+        ></a-gltf-model>
+      </a-entity>
+
+      <a-entity id="camera-rig" position="0 0 0">
+        <a-entity
+          id="main-camera"
+          camera="active: true; fov: 65"
+          look-controls="magic-window-trackingEnabled: true; touchEnabled: true"
+        ></a-entity>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      const btnMain = document.getElementById('btn-main');
+      const btnArea = document.getElementById('btn-area');
+
+      const videoLayer = document.getElementById('video-layer');
+      const videoBefore = document.getElementById('video-before');
+      const videoAfter1 = document.getElementById('video-after1');
+      const videoAfter2 = document.getElementById('video-after2');
+
+      const fade = document.getElementById('fade-overlay');
+      const model = document.getElementById('model-entity');
+      const car = document.getElementById('moving-car');
+      const cam = document.getElementById('main-camera');
+      const mentorPanel = document.getElementById('mentor-panel');
+      const mentorText = document.getElementById('mentor-text');
+      const sceneEl = document.querySelector('a-scene');
+
+      const VIDEO_VOLUME = 0.3;
+
+      const TAKEOFF_DURATION = 5000;
+      const FORWARD_DURATION = 4500;
+      const FADE_LEAD_TIME = 700;
+      const FADE_TRANSITION = 350;
+
+      const MESSAGE_DELAY = 500;
+
+      let currentPhase = 'intro';
+      let currentVideo = null;
+      let mentorHideTimer = null;
+      let mentorTextDelayTimer = null;
+      let stadiumMessageShown = false;
+
+      fade.style.transition = `opacity ${FADE_TRANSITION}ms ease`;
+
+      initializeVideos();
+
+      function initializeVideos() {
+        videoBefore.volume = VIDEO_VOLUME;
+        videoAfter1.volume = VIDEO_VOLUME;
+        videoAfter2.volume = VIDEO_VOLUME;
+
+        videoBefore.pause();
+        videoAfter1.pause();
+        videoAfter2.pause();
+
+        videoBefore.currentTime = 0;
+        videoAfter1.currentTime = 0;
+        videoAfter2.currentTime = 0;
+
+        videoBefore.classList.remove('active-video');
+        videoAfter1.classList.remove('active-video');
+        videoAfter2.classList.remove('active-video');
+
+        currentVideo = null;
+      }
+
+      function activateVideo(videoEl) {
+        videoBefore.classList.remove('active-video');
+        videoAfter1.classList.remove('active-video');
+        videoAfter2.classList.remove('active-video');
+
+        videoEl.classList.add('active-video');
+        currentVideo = videoEl;
+      }
+
+      function showMentorMessage(text, duration = 3000) {
+        clearTimeout(mentorHideTimer);
+        clearTimeout(mentorTextDelayTimer);
+
+        mentorText.innerText = '';
+        mentorText.style.opacity = '0';
+        mentorPanel.style.display = 'block';
+
+        setTimeout(() => {
+          mentorPanel.style.opacity = '1';
+        }, 10);
+
+        mentorTextDelayTimer = setTimeout(() => {
+          mentorText.innerText = text;
+          mentorText.style.opacity = '1';
+        }, MESSAGE_DELAY);
+
+        if (duration > 0) {
+          mentorHideTimer = setTimeout(() => {
+            hideMentorMessage();
+          }, duration);
+        }
+      }
+
+      function hideMentorMessage() {
+        clearTimeout(mentorHideTimer);
+        clearTimeout(mentorTextDelayTimer);
+
+        mentorText.style.opacity = '0';
+        mentorPanel.style.opacity = '0';
+
+        setTimeout(() => {
+          mentorPanel.style.display = 'none';
+          mentorText.innerText = '';
+        }, 500);
+      }
+
+      function clearAllFlightAnimations() {
+        car.removeAttribute('animation__takeoff');
+        car.removeAttribute('animation__forward');
+      }
+
+      function prepareVideo(videoEl) {
+        videoEl.pause();
+        videoEl.currentTime = 0;
+        videoEl.volume = VIDEO_VOLUME;
+        videoEl.preload = 'auto';
+        videoEl.load();
+      }
+
+      function preloadBranchVideos() {
+        prepareVideo(videoAfter1);
+        prepareVideo(videoAfter2);
+      }
+
+      function playVideoFromStart(videoEl, onSuccess, onError) {
+        videoEl.pause();
+
+        const startPlayback = () => {
+          videoEl.play().then(() => {
+            if (onSuccess) onSuccess();
+          }).catch((err) => {
+            if (onError) onError(err);
+          });
+        };
+
+        const handleSeeked = () => {
+          videoEl.removeEventListener('seeked', handleSeeked);
+          startPlayback();
+        };
+
+        videoEl.addEventListener('seeked', handleSeeked, { once: true });
+
+        try {
+          videoEl.currentTime = 0;
+        } catch (err) {
+          videoEl.removeEventListener('seeked', handleSeeked);
+          startPlayback();
+        }
+
+        setTimeout(() => {
+          if (videoEl.currentTime < 0.05 && videoEl.paused) {
+            videoEl.removeEventListener('seeked', handleSeeked);
+            startPlayback();
+          }
+        }, 300);
+      }
+
+      model.addEventListener('model-loaded', () => {
+        const mesh = model.getObject3D('mesh');
+        if (!mesh) return;
+
+        mesh.traverse((node) => {
+          if (node.isMesh && node.material) {
+            if (Array.isArray(node.material)) {
+              node.material.forEach((mat) => {
+                if (mat.color) mat.color.set('#ffffff');
+              });
+            } else {
+              if (node.material.color) node.material.color.set('#ffffff');
+            }
+          }
+        });
+      });
+
+      videoBefore.addEventListener('timeupdate', () => {
+        if (
+          currentPhase === 'before' &&
+          !stadiumMessageShown &&
+          videoBefore.currentTime >= 3
+        ) {
+          stadiumMessageShown = true;
+          showMentorMessage('スタジアムに近づいてきたな！', 2500);
+        }
+      });
+
+      async function handleStart() {
+        if (
+          typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function'
+        ) {
+          try {
+            const response = await DeviceOrientationEvent.requestPermission();
+
+            if (response === 'granted') {
+              cam.components['look-controls'].pause();
+              cam.setAttribute('rotation', '0 0 0');
+              cam.components['look-controls'].play();
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+
+        model.setAttribute('animation-mixer', 'clip: *; timeScale: 5');
+
+        showMentorMessage('お客さんをスタジアムまで連れて行ってくれ！', 4500);
+
+        btnMain.innerText = '離陸開始';
+        btnMain.setAttribute('onclick', 'handleTakeOff()');
+
+        prepareVideo(videoBefore);
+        preloadBranchVideos();
+      }
+
+      function handleTakeOff() {
+        btnArea.style.display = 'none';
+
+        showMentorMessage('テイクオフ！健闘を祈る。', 3500);
+
+        clearAllFlightAnimations();
+
+        stadiumMessageShown = false;
+
+        car.setAttribute('animation__takeoff', {
+          property: 'position',
+          from: '0 -15 -70',
+          to: '0 30 -70',
+          dur: TAKEOFF_DURATION,
+          easing: 'easeInOutQuad'
+        });
+
+        setTimeout(() => {
+          car.setAttribute('animation__forward', {
+            property: 'position',
+            from: '0 30 -70',
+            to: '60 30 -20',
+            dur: FORWARD_DURATION,
+            easing: 'easeInQuad'
+          });
+
+          const fadeStart = Math.max(FORWARD_DURATION - FADE_LEAD_TIME, 50);
+
+          setTimeout(() => {
+            fade.style.opacity = '1';
+          }, fadeStart);
+
+          setTimeout(() => {
+            sceneEl.style.display = 'none';
+            videoLayer.style.display = 'block';
+
+            currentPhase = 'before';
+
+            activateVideo(videoBefore);
+
+            videoBefore.onended = triggerBranchChoice;
+
+            playVideoFromStart(
+              videoBefore,
+              () => {
+                setTimeout(() => {
+                  fade.style.opacity = '0';
+                }, 300);
+              },
+              (err) => {
+                console.error('Before video play failed:', err);
+                fade.style.opacity = '0';
+              }
+            );
+          }, FORWARD_DURATION);
+
+        }, TAKEOFF_DURATION);
+      }
+
+      function triggerBranchChoice() {
+        currentPhase = 'choice';
+
+        videoBefore.pause();
+
+        btnArea.style.display = 'block';
+        btnArea.innerHTML = `
+          <div class="choice-container">
+            <button class="choice-btn" onclick="handleChoice(1)">少し待機</button>
+            <button class="choice-btn" onclick="handleChoice(2)">別地点へ</button>
+          </div>
+        `;
+
+        showMentorMessage('ポートが混んでるぞ！どうする？', 0);
+      }
+
+      function handleChoice(choiceNumber) {
+        btnArea.style.display = 'none';
+        hideMentorMessage();
+
+        currentPhase = choiceNumber === 1 ? 'after1' : 'after2';
+
+        fade.style.opacity = '1';
+
+        setTimeout(() => {
+          const nextVideo = choiceNumber === 1 ? videoAfter1 : videoAfter2;
+
+          if (currentVideo) {
+            currentVideo.pause();
+          }
+
+          activateVideo(nextVideo);
+
+          nextVideo.currentTime = 0;
+          nextVideo.onended = handleMissionComplete;
+
+          nextVideo.play().then(() => {
+            setTimeout(() => {
+              fade.style.opacity = '0';
+            }, 80);
+
+            setTimeout(() => {
+              if (choiceNumber === 1) {
+                showMentorMessage('良い判断だ！もうそろそろ降りられるみたいだぞ。', 4000);
+              } else {
+                showMentorMessage('良い判断だ！別の地点へ向かおう。', 4000);
+              }
+            }, 1200);
+
+          }).catch((err) => {
+            console.error('Branch video play failed:', err);
+            fade.style.opacity = '0';
+          });
+
+        }, FADE_TRANSITION);
+      }
+
+      function handleMissionComplete() {
+        currentPhase = 'complete';
+
+        setTimeout(() => {
+          showMentorMessage('任務完了だ。よくやったな！合格だ！', 0);
+        }, 500);
+
+        setTimeout(() => {
+          btnArea.style.display = 'block';
+          btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">リセット</button>`;
+        }, 1000);
+      }
+    </script>
+  </body>
+</html>
