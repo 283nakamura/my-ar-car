@@ -257,7 +257,9 @@
       const TAKEOFF_DURATION = 5000;
       const FORWARD_DURATION = 4500;
       const FADE_LEAD_TIME = 700;
-      const FADE_TRANSITION = 350;
+      
+      const FADE_TRANSITION_MAIN = 350;
+      const FADE_TRANSITION_FAST = 150;
 
       const MESSAGE_DELAY = 500;
 
@@ -267,9 +269,12 @@
       let mentorTextDelayTimer = null;
       let onsiteMessageShown = false;
 
-      fade.style.transition = `opacity ${FADE_TRANSITION}ms ease`;
-
+      setFadeTransition(FADE_TRANSITION_MAIN);
       initializeVideos();
+
+      function setFadeTransition(duration) {
+        fade.style.transition = `opacity ${duration}ms ease`;
+      }
 
       function initializeVideos() {
         videoBefore.volume = VIDEO_VOLUME;
@@ -474,6 +479,7 @@
           const fadeStart = Math.max(FORWARD_DURATION - FADE_LEAD_TIME, 50);
 
           setTimeout(() => {
+            setFadeTransition(FADE_TRANSITION_MAIN);
             fade.style.opacity = '1';
           }, fadeStart);
 
@@ -491,6 +497,7 @@
               videoBefore,
               () => {
                 setTimeout(() => {
+                  setFadeTransition(FADE_TRANSITION_MAIN);
                   fade.style.opacity = '0';
                 }, 300);
               },
@@ -526,6 +533,7 @@
 
         currentPhase = choiceNumber === 1 ? 'after1' : 'after2';
 
+        setFadeTransition(FADE_TRANSITION_FAST);
         fade.style.opacity = '1';
 
         setTimeout(() => {
@@ -542,6 +550,7 @@
 
           nextVideo.play().then(() => {
             setTimeout(() => {
+              setFadeTransition(FADE_TRANSITION_FAST);
               fade.style.opacity = '0';
             }, 80);
 
@@ -558,7 +567,7 @@
             fade.style.opacity = '0';
           });
 
-        }, FADE_TRANSITION);
+        }, FADE_TRANSITION_FAST * 0.6);
       }
 
       function handleMissionComplete() {
