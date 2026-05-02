@@ -166,72 +166,25 @@
     </div>
 
     <div id="video-layer">
-      <video
-        id="video-before"
-        class="mission-video"
-        playsinline
-        webkit-playsinline
-        preload="auto"
-        crossorigin="anonymous"
-        src="taxi_before.mp4"
-      ></video>
-
-      <video
-        id="video-after1"
-        class="mission-video"
-        playsinline
-        webkit-playsinline
-        preload="auto"
-        crossorigin="anonymous"
-        src="taxi_after1.mp4"
-      ></video>
-
-      <video
-        id="video-after2"
-        class="mission-video"
-        playsinline
-        webkit-playsinline
-        preload="auto"
-        crossorigin="anonymous"
-        src="taxi_after2.mp4"
-      ></video>
+      <video id="video-before" class="mission-video" playsinline webkit-playsinline preload="auto" crossorigin="anonymous" src="taxi_before.mp4"></video>
+      <video id="video-after1" class="mission-video" playsinline webkit-playsinline preload="auto" crossorigin="anonymous" src="taxi_after1.mp4"></video>
+      <video id="video-after2" class="mission-video" playsinline webkit-playsinline preload="auto" crossorigin="anonymous" src="taxi_after2.mp4"></video>
     </div>
 
-    <a-scene
-      embedded
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-      renderer="antialias: true; colorManagement: true;"
-    >
+    <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" renderer="antialias: true; colorManagement: true;">
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
         <img id="virtual-bg" src="test4.jpg">
       </a-assets>
 
-      <a-sky
-        id="sky-bg"
-        src="#virtual-bg"
-        radius="100"
-        rotation="0 -90 0"
-        segments-width="64"
-        segments-height="64"
-      ></a-sky>
+      <a-sky id="sky-bg" src="#virtual-bg" radius="100" rotation="0 -90 0" segments-width="64" segments-height="64"></a-sky>
 
       <a-entity id="moving-car" position="0 -15 -70">
-        <a-gltf-model
-          id="model-entity"
-          src="#car-model"
-          scale="6 6 6"
-          rotation="0 60 0"
-        ></a-gltf-model>
+        <a-gltf-model id="model-entity" src="#car-model" scale="6 6 6" rotation="0 60 0"></a-gltf-model>
       </a-entity>
 
       <a-entity id="camera-rig" position="0 0 0">
-        <a-entity
-          id="main-camera"
-          camera="active: true; fov: 65"
-          look-controls="magic-window-trackingEnabled: true; touchEnabled: true"
-        ></a-entity>
+        <a-entity id="main-camera" camera="active: true; fov: 65" look-controls="magic-window-trackingEnabled: true; touchEnabled: true"></a-entity>
       </a-entity>
     </a-scene>
 
@@ -257,7 +210,9 @@
       const TAKEOFF_DURATION = 5000;
       const FORWARD_DURATION = 4500;
       const FADE_LEAD_TIME = 700;
-      const FADE_TRANSITION = 350;
+
+      const FADE_TRANSITION_MAIN = 350;
+      const FADE_TRANSITION_FAST = 150;
 
       const MESSAGE_DELAY = 500;
 
@@ -267,9 +222,12 @@
       let mentorTextDelayTimer = null;
       let stadiumMessageShown = false;
 
-      fade.style.transition = `opacity ${FADE_TRANSITION}ms ease`;
-
+      setFadeTransition(FADE_TRANSITION_MAIN);
       initializeVideos();
+
+      function setFadeTransition(duration) {
+        fade.style.transition = `opacity ${duration}ms ease`;
+      }
 
       function initializeVideos() {
         videoBefore.volume = VIDEO_VOLUME;
@@ -474,6 +432,7 @@
           const fadeStart = Math.max(FORWARD_DURATION - FADE_LEAD_TIME, 50);
 
           setTimeout(() => {
+            setFadeTransition(FADE_TRANSITION_MAIN);
             fade.style.opacity = '1';
           }, fadeStart);
 
@@ -484,13 +443,13 @@
             currentPhase = 'before';
 
             activateVideo(videoBefore);
-
             videoBefore.onended = triggerBranchChoice;
 
             playVideoFromStart(
               videoBefore,
               () => {
                 setTimeout(() => {
+                  setFadeTransition(FADE_TRANSITION_MAIN);
                   fade.style.opacity = '0';
                 }, 300);
               },
@@ -526,6 +485,7 @@
 
         currentPhase = choiceNumber === 1 ? 'after1' : 'after2';
 
+        setFadeTransition(FADE_TRANSITION_FAST);
         fade.style.opacity = '1';
 
         setTimeout(() => {
@@ -542,8 +502,9 @@
 
           nextVideo.play().then(() => {
             setTimeout(() => {
+              setFadeTransition(FADE_TRANSITION_FAST);
               fade.style.opacity = '0';
-            }, 80);
+            }, 30);
 
             setTimeout(() => {
               if (choiceNumber === 1) {
@@ -558,7 +519,7 @@
             fade.style.opacity = '0';
           });
 
-        }, FADE_TRANSITION);
+        }, FADE_TRANSITION_FAST * 0.6);
       }
 
       function handleMissionComplete() {
