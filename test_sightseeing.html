@@ -206,6 +206,7 @@
       <a-assets>
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
         <img id="virtual-bg" src="test4.jpg">
+        <img id="landing-bg" src="test4.jpg">
       </a-assets>
 
       <a-sky
@@ -257,7 +258,9 @@
       const TAKEOFF_DURATION = 5000;
       const FORWARD_DURATION = 4500;
       const FADE_LEAD_TIME = 700;
-      const FADE_TRANSITION = 350;
+      
+      const FADE_TRANSITION_MAIN = 350;
+      const FADE_TRANSITION_FAST = 150;
 
       const MESSAGE_DELAY = 500;
 
@@ -267,9 +270,12 @@
       let mentorTextDelayTimer = null;
       let onsiteMessageShown = false;
 
-      fade.style.transition = `opacity ${FADE_TRANSITION}ms ease`;
-
+      setFadeTransition(FADE_TRANSITION_MAIN);
       initializeVideos();
+
+      function setFadeTransition(duration) {
+        fade.style.transition = `opacity ${duration}ms ease`;
+      }
 
       function initializeVideos() {
         videoBefore.volume = VIDEO_VOLUME;
@@ -474,6 +480,7 @@
           const fadeStart = Math.max(FORWARD_DURATION - FADE_LEAD_TIME, 50);
 
           setTimeout(() => {
+            setFadeTransition(FADE_TRANSITION_MAIN);
             fade.style.opacity = '1';
           }, fadeStart);
 
@@ -491,6 +498,7 @@
               videoBefore,
               () => {
                 setTimeout(() => {
+                  setFadeTransition(FADE_TRANSITION_MAIN);
                   fade.style.opacity = '0';
                 }, 300);
               },
@@ -526,6 +534,7 @@
 
         currentPhase = choiceNumber === 1 ? 'after1' : 'after2';
 
+        setFadeTransition(FADE_TRANSITION_FAST);
         fade.style.opacity = '1';
 
         setTimeout(() => {
@@ -538,10 +547,11 @@
           activateVideo(nextVideo);
 
           nextVideo.currentTime = 0;
-          nextVideo.onended = handleMissionComplete;
+          nextVideo.onended = handleLanding;
 
           nextVideo.play().then(() => {
             setTimeout(() => {
+              setFadeTransition(FADE_TRANSITION_FAST);
               fade.style.opacity = '0';
             }, 80);
 
@@ -558,21 +568,61 @@
             fade.style.opacity = '0';
           });
 
-        }, FADE_TRANSITION);
+        }, FADE_TRANSITION_FAST * 0.6);
       }
 
-      function handleMissionComplete() {
-        currentPhase = 'complete';
+      function handleLanding() {
+        setFadeTransition(FADE_TRANSITION_MAIN);
+        fade.style.opacity = '1';
 
         setTimeout(() => {
-          showMentorMessage('素早い到着だ！素晴らしい判断だったぞ！', 0);
-        }, 500);
 
+        const sky = document.getElementById('sky-bg');
+    
+        sky.setAttribute('src', '#landing-bg');
+        videoLayer.style.display = 'none';
+        sceneEl.style.display = 'block';
+        btnArea.style.display = 'none';
+    
+        clearAllFlightAnimations();
+    
+        car.setAttribute('position', '-30 15 -50');
+        car.setAttribute('rotation', '0 -90 0');
+    
         setTimeout(() => {
-          btnArea.style.display = 'block';
-          btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">リセット</button>`;
-        }, 1000);
-      }
+          setFadeTransition(FADE_TRANSITION_MAIN);
+          fade.style.opacity = '0';
+        }, 80);
+    
+        showMentorMessage('ポートへ到着した。着陸態勢に入れ。', 5000);
+    
+        car.setAttribute('animation__approach', {
+          property: 'position',
+          to: '-8 0 -50',
+          dur: 6000,
+          easing: 'easeOutQuad'
+        });
+    
+        setTimeout(() => {
+          car.setAttribute('animation__land', {
+            property: 'position',
+            to: '-5 -15 -50',
+            dur: 6000,
+            easing: 'easeInQuad'
+          });
+    
+          setTimeout(() => {
+            model.setAttribute('animation-mixer', 'clip: *; timeScale: 0');
+            showMentorMessage('任務完了だ。よくやった！ゆっくり休んでくれ。', 5000);
+    
+            btnArea.style.display = 'block';
+            btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">リセット</button>`;
+          }, 7000);
+  
+        }, 6000);
+
+      }, FADE_TRANSITION_MAIN);
+    }
     </script>
   </body>
 </html>
