@@ -346,12 +346,46 @@
         videoEl.pause();
         videoEl.currentTime = 0;
         videoEl.volume = VIDEO_VOLUME;
+        videoEl.preload = 'auto';
         videoEl.load();
       }
 
       function preloadBranchVideos() {
         prepareVideo(videoAfter1);
         prepareVideo(videoAfter2);
+      }
+
+      function playVideoFromStart(videoEl, onSuccess, onError) {
+        videoEl.pause();
+
+        const startPlayback = () => {
+          videoEl.play().then(() => {
+            if (onSuccess) onSuccess();
+          }).catch((err) => {
+            if (onError) onError(err);
+          });
+        };
+
+        const handleSeeked = () => {
+          videoEl.removeEventListener('seeked', handleSeeked);
+          startPlayback();
+        };
+
+        videoEl.addEventListener('seeked', handleSeeked, { once: true });
+
+        try {
+          videoEl.currentTime = 0;
+        } catch (err) {
+          videoEl.removeEventListener('seeked', handleSeeked);
+          startPlayback();
+        }
+
+        setTimeout(() => {
+          if (videoEl.currentTime < 0.05 && videoEl.paused) {
+            videoEl.removeEventListener('seeked', handleSeeked);
+            startPlayback();
+          }
+        }, 300);
       }
 
       model.addEventListener('model-loaded', () => {
@@ -451,17 +485,20 @@
 
             activateVideo(videoBefore);
 
-            videoBefore.currentTime = 0;
             videoBefore.onended = triggerBranchChoice;
 
-            videoBefore.play().then(() => {
-              setTimeout(() => {
+            playVideoFromStart(
+              videoBefore,
+              () => {
+                setTimeout(() => {
+                  fade.style.opacity = '0';
+                }, 300);
+              },
+              (err) => {
+                console.error('Before video play failed:', err);
                 fade.style.opacity = '0';
-              }, 80);
-            }).catch((err) => {
-              console.error('Before video play failed:', err);
-              fade.style.opacity = '0';
-            });
+              }
+            );
           }, FORWARD_DURATION);
 
         }, TAKEOFF_DURATION);
