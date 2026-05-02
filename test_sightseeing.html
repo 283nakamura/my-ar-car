@@ -418,7 +418,7 @@
           videoBefore.currentTime >= 3
         ) {
           onsiteMessageShown = true;
-          showMentorMessage('このあたりが現場だ！', 2500);
+          showMentorMessage('滝に近づいてきたな！', 2500);
         }
       });
 
@@ -546,27 +546,29 @@
 
           activateVideo(nextVideo);
 
-          nextVideo.currentTime = 0;
           nextVideo.onended = handleLanding;
-
-          nextVideo.play().then(() => {
-            setTimeout(() => {
-              setFadeTransition(FADE_TRANSITION_FAST);
+          
+          playVideoFromStart(
+            nextVideo,
+            () => {
+              setTimeout(() => {
+                setFadeTransition(FADE_TRANSITION_FAST);
+                fade.style.opacity = '0';
+              }, 120);
+          
+              setTimeout(() => {
+                if (choiceNumber === 1) {
+                  showMentorMessage('良いぞ、少し上がってから入っていこう！', 4000);
+                } else {
+                  showMentorMessage('良い判断だ！ではグッと高度を上げよう。', 4000);
+                }
+              }, 1200);
+            },
+            (err) => {
+              console.error('Branch video play failed:', err);
               fade.style.opacity = '0';
-            }, 80);
-
-            setTimeout(() => {
-              if (choiceNumber === 1) {
-                showMentorMessage('良いぞ、少し上がってから入っていこう！', 4000);
-              } else {
-                showMentorMessage('良い判断だ！ではグッと高度を上げよう。', 4000);
-              }
-            }, 1200);
-
-          }).catch((err) => {
-            console.error('Branch video play failed:', err);
-            fade.style.opacity = '0';
-          });
+            }
+          );
 
         }, FADE_TRANSITION_FAST * 0.6);
       }
