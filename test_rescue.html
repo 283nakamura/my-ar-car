@@ -378,7 +378,7 @@
           videoBefore.currentTime >= 3
         ) {
           onsiteMessageShown = true;
-          showMentorMessage('ここが現場だ！', 2000);
+          showMentorMessage('このあたりが現場だ！', 2000);
         }
       });
 
@@ -402,7 +402,7 @@
 
         model.setAttribute('animation-mixer', 'clip: *; timeScale: 5');
 
-        showMentorMessage('山の中でケガをした人を助けに行くぞ！', 4500);
+        showMentorMessage('山の中で遭難をした人を探しに行くぞ！', 4500);
 
         btnMain.innerText = '離陸開始';
         btnMain.setAttribute('onclick', 'handleTakeOff()');
@@ -510,9 +510,9 @@
 
             setTimeout(() => {
               if (choiceNumber === 1) {
-                showMentorMessage('良い判断だ！ゆっくり降りていこう。', 4000);
+                showMentorMessage('よし、ゆっくり降りていこう。', 4000);
               } else {
-                showMentorMessage('良い判断だ！別の地点へ向かおう。', 4000);
+                showMentorMessage('良い判断だ！近くの別地点へ向かおう。', 4000);
               }
             }, 1200);
 
@@ -528,7 +528,7 @@
         currentPhase = 'complete';
 
         setTimeout(() => {
-          showMentorMessage('無事に助けられそうだ！ありがとう！', 0);
+          showMentorMessage('素早い到着だ！素晴らしい判断だったぞ！', 0);
         }, 500);
 
         setTimeout(() => {
