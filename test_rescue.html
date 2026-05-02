@@ -43,6 +43,18 @@
         display: none;
       }
 
+      #preload-layer {
+        position: fixed;
+        left: -9999px;
+        top: -9999px;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: -1;
+      }
+
       .mission-video {
         position: absolute;
         top: 0;
@@ -56,6 +68,11 @@
 
       .mission-video.active-video {
         display: block;
+      }
+
+      .preload-video {
+        width: 1px;
+        height: 1px;
       }
 
       #ui-container {
@@ -175,10 +192,12 @@
         crossorigin="anonymous"
         src="rescue_before.mp4"
       ></video>
+    </div>
 
+    <div id="preload-layer">
       <video
         id="video-after1"
-        class="mission-video"
+        class="preload-video"
         playsinline
         webkit-playsinline
         preload="auto"
@@ -188,7 +207,7 @@
 
       <video
         id="video-after2"
-        class="mission-video"
+        class="preload-video"
         playsinline
         webkit-playsinline
         preload="auto"
@@ -240,6 +259,7 @@
       const btnArea = document.getElementById('btn-area');
 
       const videoLayer = document.getElementById('video-layer');
+      const preloadLayer = document.getElementById('preload-layer');
       const videoBefore = document.getElementById('video-before');
       const videoAfter1 = document.getElementById('video-after1');
       const videoAfter2 = document.getElementById('video-after2');
@@ -284,19 +304,59 @@
         videoAfter1.currentTime = 0;
         videoAfter2.currentTime = 0;
 
+        videoBefore.className = 'mission-video';
+        videoAfter1.className = 'preload-video';
+        videoAfter2.className = 'preload-video';
+
         videoBefore.classList.remove('active-video');
         videoAfter1.classList.remove('active-video');
         videoAfter2.classList.remove('active-video');
 
+        videoBefore.style.display = 'none';
+        videoAfter1.style.display = 'block';
+        videoAfter2.style.display = 'block';
+
+        if (videoAfter1.parentElement !== preloadLayer) {
+          preloadLayer.appendChild(videoAfter1);
+        }
+
+        if (videoAfter2.parentElement !== preloadLayer) {
+          preloadLayer.appendChild(videoAfter2);
+        }
+
         currentVideo = null;
+      }
+
+      function moveVideoToDisplayLayer(videoEl) {
+        if (videoEl.parentElement !== videoLayer) {
+          videoLayer.appendChild(videoEl);
+        }
+
+        videoEl.className = 'mission-video';
+        videoEl.style.display = 'none';
+      }
+
+      function moveVideoToPreloadLayer(videoEl) {
+        if (videoEl.parentElement !== preloadLayer) {
+          preloadLayer.appendChild(videoEl);
+        }
+
+        videoEl.className = 'preload-video';
+        videoEl.classList.remove('active-video');
+        videoEl.style.display = 'block';
       }
 
       function activateVideo(videoEl) {
         [videoBefore, videoAfter1, videoAfter2].forEach((video) => {
           video.pause();
           video.classList.remove('active-video');
-          video.style.display = 'none';
+
+          if (video.parentElement === videoLayer) {
+            video.style.display = 'none';
+          }
         });
+
+        moveVideoToDisplayLayer(videoEl);
 
         videoEl.style.display = 'block';
         videoEl.classList.add('active-video');
@@ -353,6 +413,9 @@
       }
 
       function preloadBranchVideos() {
+        moveVideoToPreloadLayer(videoAfter1);
+        moveVideoToPreloadLayer(videoAfter2);
+
         prepareVideo(videoAfter1);
         prepareVideo(videoAfter2);
       }
@@ -450,19 +513,13 @@
             sceneEl.style.display = 'none';
             videoLayer.style.display = 'block';
 
-            // after動画が一瞬出ないように明示的に止める
-            videoAfter1.pause();
-            videoAfter2.pause();
-            videoAfter1.classList.remove('active-video');
-            videoAfter2.classList.remove('active-video');
-            videoAfter1.style.display = 'none';
-            videoAfter2.style.display = 'none';
-            
+            moveVideoToPreloadLayer(videoAfter1);
+            moveVideoToPreloadLayer(videoAfter2);
+
             currentPhase = 'before';
 
             activateVideo(videoBefore);
 
-            videoBefore.style.display = 'block';
             videoBefore.currentTime = 0;
             videoBefore.onended = triggerBranchChoice;
 
@@ -510,6 +567,7 @@
             currentVideo.pause();
           }
 
+          moveVideoToDisplayLayer(nextVideo);
           activateVideo(nextVideo);
 
           nextVideo.currentTime = 0;
