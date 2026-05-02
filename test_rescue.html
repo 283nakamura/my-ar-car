@@ -292,10 +292,13 @@
       }
 
       function activateVideo(videoEl) {
-        videoBefore.classList.remove('active-video');
-        videoAfter1.classList.remove('active-video');
-        videoAfter2.classList.remove('active-video');
+        [videoBefore, videoAfter1, videoAfter2].forEach((video) => {
+          video.pause();
+          video.classList.remove('active-video');
+          video.style.display = 'none';
+        });
 
+        videoEl.style.display = 'block';
         videoEl.classList.add('active-video');
         currentVideo = videoEl;
       }
