@@ -265,7 +265,7 @@
       let currentVideo = null;
       let mentorHideTimer = null;
       let mentorTextDelayTimer = null;
-      let stadiumMessageShown = false;
+      let onsiteMessageShown = false;
 
       fade.style.transition = `opacity ${FADE_TRANSITION}ms ease`;
 
@@ -408,11 +408,11 @@
       videoBefore.addEventListener('timeupdate', () => {
         if (
           currentPhase === 'before' &&
-          !stadiumMessageShown &&
+          !onsiteMessageShown &&
           videoBefore.currentTime >= 3
         ) {
-          stadiumMessageShown = true;
-          showMentorMessage('スタジアムに近づいてきたな！', 2500);
+          onsiteMessageShown = true;
+          showMentorMessage('このあたりが現場だ！', 2500);
         }
       });
 
@@ -436,7 +436,7 @@
 
         model.setAttribute('animation-mixer', 'clip: *; timeScale: 5');
 
-        showMentorMessage('お客さんをスタジアムまで連れて行ってくれ！', 4500);
+        showMentorMessage('山の中で遭難をした人を探しに行くぞ！', 4500);
 
         btnMain.innerText = '離陸開始';
         btnMain.setAttribute('onclick', 'handleTakeOff()');
@@ -452,7 +452,7 @@
 
         clearAllFlightAnimations();
 
-        stadiumMessageShown = false;
+        onsiteMessageShown = false;
 
         car.setAttribute('animation__takeoff', {
           property: 'position',
@@ -512,12 +512,12 @@
         btnArea.style.display = 'block';
         btnArea.innerHTML = `
           <div class="choice-container">
-            <button class="choice-btn" onclick="handleChoice(1)">少し待機</button>
+            <button class="choice-btn" onclick="handleChoice(1)">慎重に降下</button>
             <button class="choice-btn" onclick="handleChoice(2)">別地点へ</button>
           </div>
         `;
 
-        showMentorMessage('ポートが混んでるぞ！どうする？', 0);
+        showMentorMessage('ちょっと狭い場所だな。どうする？', 0);
       }
 
       function handleChoice(choiceNumber) {
@@ -547,9 +547,9 @@
 
             setTimeout(() => {
               if (choiceNumber === 1) {
-                showMentorMessage('良い判断だ！もうそろそろ降りられるみたいだぞ。', 4000);
+                showMentorMessage('よし、ゆっくり降りていこう。', 4000);
               } else {
-                showMentorMessage('良い判断だ！別の地点へ向かおう。', 4000);
+                showMentorMessage('良い判断だ！近くの別地点へ向かおう。', 4000);
               }
             }, 1200);
 
@@ -565,7 +565,7 @@
         currentPhase = 'complete';
 
         setTimeout(() => {
-          showMentorMessage('任務完了だ。よくやったな！合格だ！', 0);
+          showMentorMessage('素早い到着だ！素晴らしい判断だったぞ！', 0);
         }, 500);
 
         setTimeout(() => {
