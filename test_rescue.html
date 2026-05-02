@@ -447,10 +447,19 @@
             sceneEl.style.display = 'none';
             videoLayer.style.display = 'block';
 
+            // after動画が一瞬出ないように明示的に止める
+            videoAfter1.pause();
+            videoAfter2.pause();
+            videoAfter1.classList.remove('active-video');
+            videoAfter2.classList.remove('active-video');
+            videoAfter1.style.display = 'none';
+            videoAfter2.style.display = 'none';
+            
             currentPhase = 'before';
 
             activateVideo(videoBefore);
 
+            videoBefore.style.display = 'block';
             videoBefore.currentTime = 0;
             videoBefore.onended = triggerBranchChoice;
 
