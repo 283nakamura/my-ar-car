@@ -43,18 +43,6 @@
         display: none;
       }
 
-      #preload-layer {
-        position: fixed;
-        left: -9999px;
-        top: -9999px;
-        width: 1px;
-        height: 1px;
-        opacity: 0;
-        overflow: hidden;
-        pointer-events: none;
-        z-index: -1;
-      }
-
       .mission-video {
         position: absolute;
         top: 0;
@@ -68,11 +56,6 @@
 
       .mission-video.active-video {
         display: block;
-      }
-
-      .preload-video {
-        width: 1px;
-        height: 1px;
       }
 
       #ui-container {
@@ -192,27 +175,25 @@
         crossorigin="anonymous"
         src="rescue_before.mp4"
       ></video>
-    </div>
 
-    <div id="preload-layer">
       <video
         id="video-after1"
-        class="preload-video"
+        class="mission-video"
         playsinline
         webkit-playsinline
         preload="auto"
         crossorigin="anonymous"
-        src="rescue_after1.mp4"
+        src="taxi_after1.mp4"
       ></video>
 
       <video
         id="video-after2"
-        class="preload-video"
+        class="mission-video"
         playsinline
         webkit-playsinline
         preload="auto"
         crossorigin="anonymous"
-        src="rescue_after2.mp4"
+        src="taxi_after2.mp4"
       ></video>
     </div>
 
@@ -259,7 +240,6 @@
       const btnArea = document.getElementById('btn-area');
 
       const videoLayer = document.getElementById('video-layer');
-      const preloadLayer = document.getElementById('preload-layer');
       const videoBefore = document.getElementById('video-before');
       const videoAfter1 = document.getElementById('video-after1');
       const videoAfter2 = document.getElementById('video-after2');
@@ -285,7 +265,7 @@
       let currentVideo = null;
       let mentorHideTimer = null;
       let mentorTextDelayTimer = null;
-      let onsiteMessageShown = false;
+      let stadiumMessageShown = false;
 
       fade.style.transition = `opacity ${FADE_TRANSITION}ms ease`;
 
@@ -304,61 +284,18 @@
         videoAfter1.currentTime = 0;
         videoAfter2.currentTime = 0;
 
-        videoBefore.className = 'mission-video';
-        videoAfter1.className = 'preload-video';
-        videoAfter2.className = 'preload-video';
-
         videoBefore.classList.remove('active-video');
         videoAfter1.classList.remove('active-video');
         videoAfter2.classList.remove('active-video');
 
-        videoBefore.style.display = 'none';
-        videoAfter1.style.display = 'block';
-        videoAfter2.style.display = 'block';
-
-        if (videoAfter1.parentElement !== preloadLayer) {
-          preloadLayer.appendChild(videoAfter1);
-        }
-
-        if (videoAfter2.parentElement !== preloadLayer) {
-          preloadLayer.appendChild(videoAfter2);
-        }
-
         currentVideo = null;
       }
 
-      function moveVideoToDisplayLayer(videoEl) {
-        if (videoEl.parentElement !== videoLayer) {
-          videoLayer.appendChild(videoEl);
-        }
-
-        videoEl.className = 'mission-video';
-        videoEl.style.display = 'none';
-      }
-
-      function moveVideoToPreloadLayer(videoEl) {
-        if (videoEl.parentElement !== preloadLayer) {
-          preloadLayer.appendChild(videoEl);
-        }
-
-        videoEl.className = 'preload-video';
-        videoEl.classList.remove('active-video');
-        videoEl.style.display = 'block';
-      }
-
       function activateVideo(videoEl) {
-        [videoBefore, videoAfter1, videoAfter2].forEach((video) => {
-          video.pause();
-          video.classList.remove('active-video');
+        videoBefore.classList.remove('active-video');
+        videoAfter1.classList.remove('active-video');
+        videoAfter2.classList.remove('active-video');
 
-          if (video.parentElement === videoLayer) {
-            video.style.display = 'none';
-          }
-        });
-
-        moveVideoToDisplayLayer(videoEl);
-
-        videoEl.style.display = 'block';
         videoEl.classList.add('active-video');
         currentVideo = videoEl;
       }
@@ -413,9 +350,6 @@
       }
 
       function preloadBranchVideos() {
-        moveVideoToPreloadLayer(videoAfter1);
-        moveVideoToPreloadLayer(videoAfter2);
-
         prepareVideo(videoAfter1);
         prepareVideo(videoAfter2);
       }
@@ -440,11 +374,11 @@
       videoBefore.addEventListener('timeupdate', () => {
         if (
           currentPhase === 'before' &&
-          !onsiteMessageShown &&
+          !stadiumMessageShown &&
           videoBefore.currentTime >= 3
         ) {
-          onsiteMessageShown = true;
-          showMentorMessage('このあたりが現場だ！', 2000);
+          stadiumMessageShown = true;
+          showMentorMessage('スタジアムに近づいてきたな！', 2500);
         }
       });
 
@@ -468,7 +402,7 @@
 
         model.setAttribute('animation-mixer', 'clip: *; timeScale: 5');
 
-        showMentorMessage('山の中で遭難をした人を探しに行くぞ！', 4500);
+        showMentorMessage('お客さんをスタジアムまで連れて行ってくれ！', 4500);
 
         btnMain.innerText = '離陸開始';
         btnMain.setAttribute('onclick', 'handleTakeOff()');
@@ -484,7 +418,7 @@
 
         clearAllFlightAnimations();
 
-        onsiteMessageShown = false;
+        stadiumMessageShown = false;
 
         car.setAttribute('animation__takeoff', {
           property: 'position',
@@ -512,9 +446,6 @@
           setTimeout(() => {
             sceneEl.style.display = 'none';
             videoLayer.style.display = 'block';
-
-            moveVideoToPreloadLayer(videoAfter1);
-            moveVideoToPreloadLayer(videoAfter2);
 
             currentPhase = 'before';
 
@@ -544,12 +475,12 @@
         btnArea.style.display = 'block';
         btnArea.innerHTML = `
           <div class="choice-container">
-            <button class="choice-btn" onclick="handleChoice(1)">慎重に降下</button>
+            <button class="choice-btn" onclick="handleChoice(1)">少し待機</button>
             <button class="choice-btn" onclick="handleChoice(2)">別地点へ</button>
           </div>
         `;
 
-        showMentorMessage('ちょっと狭い場所だな。どうする？', 0);
+        showMentorMessage('ポートが混んでるぞ！どうする？', 0);
       }
 
       function handleChoice(choiceNumber) {
@@ -567,7 +498,6 @@
             currentVideo.pause();
           }
 
-          moveVideoToDisplayLayer(nextVideo);
           activateVideo(nextVideo);
 
           nextVideo.currentTime = 0;
@@ -580,9 +510,9 @@
 
             setTimeout(() => {
               if (choiceNumber === 1) {
-                showMentorMessage('よし、ゆっくり降りていこう。', 4000);
+                showMentorMessage('良い判断だ！もうそろそろ降りられるみたいだぞ。', 4000);
               } else {
-                showMentorMessage('良い判断だ！近くの別地点へ向かおう。', 4000);
+                showMentorMessage('良い判断だ！別の地点へ向かおう。', 4000);
               }
             }, 1200);
 
@@ -598,7 +528,7 @@
         currentPhase = 'complete';
 
         setTimeout(() => {
-          showMentorMessage('素早い到着だ！素晴らしい判断だったぞ！', 0);
+          showMentorMessage('任務完了だ。よくやったな！合格だ！', 0);
         }, 500);
 
         setTimeout(() => {
