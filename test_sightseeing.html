@@ -525,7 +525,7 @@
           </div>
         `;
 
-        showMentorMessage('今日は水しぶきが少し高めだな。どうする？', 0);
+        showMentorMessage('今日は水しぶきが少し高めだ。どうする？', 0);
       }
 
       function handleChoice(choiceNumber) {
@@ -558,7 +558,7 @@
           
               setTimeout(() => {
                 if (choiceNumber === 1) {
-                  showMentorMessage('良いぞ、少し上がってから入っていこう！', 4000);
+                  showMentorMessage('良いぞ、少しだけ高度を上げてから入っていこう！', 4000);
                 } else {
                   showMentorMessage('良い判断だ！ではグッと高度を上げよう。', 4000);
                 }
@@ -589,7 +589,7 @@
         clearAllFlightAnimations();
     
         car.setAttribute('position', '-30 15 -50');
-        car.setAttribute('rotation', '0 -90 0');
+        car.setAttribute('rotation', '0 90 0');
     
         setTimeout(() => {
           setFadeTransition(FADE_TRANSITION_MAIN);
