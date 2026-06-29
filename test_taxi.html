@@ -154,13 +154,20 @@
         <video id="video-after2" src="180test.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
       </a-assets>
 
-      <a-sky id="sky-bg" src="#virtual-bg" radius="100" rotation="0 -90 0" segments-width="64" segments-height="64"></a-sky>
+      <a-sky
+        id="sky-bg"
+        src="#virtual-bg"
+        radius="100"
+        rotation="0 -90 0"
+        segments-width="64"
+        segments-height="64">
+      </a-sky>
 
       <a-entity
         id="video180-before"
         visible="false"
         geometry="primitive: sphere; radius: 100; segmentsWidth: 64; segmentsHeight: 32; thetaStart: 0; thetaLength: 180"
-        material="src: #video-before; shader: flat; side: back"
+        material="src: #video-before; shader: flat; side: double"
         scale="-1 1 1"
         rotation="0 90 0">
       </a-entity>
@@ -169,7 +176,7 @@
         id="video180-after1"
         visible="false"
         geometry="primitive: sphere; radius: 100; segmentsWidth: 64; segmentsHeight: 32; thetaStart: 0; thetaLength: 180"
-        material="src: #video-after1; shader: flat; side: back"
+        material="src: #video-after1; shader: flat; side: double"
         scale="-1 1 1"
         rotation="0 90 0">
       </a-entity>
@@ -178,26 +185,36 @@
         id="video180-after2"
         visible="false"
         geometry="primitive: sphere; radius: 100; segmentsWidth: 64; segmentsHeight: 32; thetaStart: 0; thetaLength: 180"
-        material="src: #video-after2; shader: flat; side: back"
+        material="src: #video-after2; shader: flat; side: double"
         scale="-1 1 1"
         rotation="0 90 0">
       </a-entity>
 
+      <!-- 後ろ半分を黒で覆うための半球。動画半球より少し内側に置く -->
       <a-entity
         id="back-black-sphere"
         visible="false"
-        geometry="primitive: sphere; radius: 99; segmentsWidth: 32; segmentsHeight: 16; thetaStart: 180; thetaLength: 180"
-        material="color: #000; shader: flat; side: back"
+        geometry="primitive: sphere; radius: 98; segmentsWidth: 64; segmentsHeight: 32; thetaStart: 0; thetaLength: 180"
+        material="color: #000; shader: flat; side: double"
         scale="-1 1 1"
-        rotation="0 90 0">
+        rotation="0 -90 0">
       </a-entity>
 
       <a-entity id="moving-car" position="0 -15 -70">
-        <a-gltf-model id="model-entity" src="#car-model" scale="6 6 6" rotation="0 60 0"></a-gltf-model>
+        <a-gltf-model
+          id="model-entity"
+          src="#car-model"
+          scale="6 6 6"
+          rotation="0 60 0">
+        </a-gltf-model>
       </a-entity>
 
       <a-entity id="camera-rig" position="0 0 0">
-        <a-entity id="main-camera" camera="active: true; fov: 65" look-controls="magic-window-trackingEnabled: true; touchEnabled: true"></a-entity>
+        <a-entity
+          id="main-camera"
+          camera="active: true; fov: 65"
+          look-controls="magic-window-trackingEnabled: true; touchEnabled: true">
+        </a-entity>
       </a-entity>
     </a-scene>
 
