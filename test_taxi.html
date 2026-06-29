@@ -183,6 +183,15 @@
         rotation="0 90 0">
       </a-entity>
 
+      <a-entity
+        id="back-black-sphere"
+        visible="false"
+        geometry="primitive: sphere; radius: 99; segmentsWidth: 32; segmentsHeight: 16; thetaStart: 180; thetaLength: 180"
+        material="color: #000; shader: flat; side: back"
+        scale="-1 1 1"
+        rotation="0 90 0">
+      </a-entity>
+
       <a-entity id="moving-car" position="0 -15 -70">
         <a-gltf-model id="model-entity" src="#car-model" scale="6 6 6" rotation="0 60 0"></a-gltf-model>
       </a-entity>
@@ -203,6 +212,7 @@
       const sphereBefore = document.getElementById('video180-before');
       const sphereAfter1 = document.getElementById('video180-after1');
       const sphereAfter2 = document.getElementById('video180-after2');
+      const backBlackSphere = document.getElementById('back-black-sphere');
 
       const fade = document.getElementById('fade-overlay');
       const model = document.getElementById('model-entity');
@@ -255,6 +265,7 @@
         sphereBefore.setAttribute('visible', 'false');
         sphereAfter1.setAttribute('visible', 'false');
         sphereAfter2.setAttribute('visible', 'false');
+        backBlackSphere.setAttribute('visible', 'false');
       }
 
       function showMentorMessage(text, duration = 3000) {
@@ -323,6 +334,7 @@
         car.setAttribute('visible', 'false');
 
         sphereEl.setAttribute('visible', 'true');
+        backBlackSphere.setAttribute('visible', 'true');
 
         currentVideo = videoEl;
         currentSphere = sphereEl;
@@ -372,7 +384,7 @@
                 if (mat.color) mat.color.set('#ffffff');
               });
             } else {
-              if (node.material.color) mat.color.set('#ffffff');
+              if (node.material.color) node.material.color.set('#ffffff');
             }
           }
         });
