@@ -167,7 +167,7 @@
         id="video180-before"
         visible="false"
         geometry="primitive: sphere; radius: 100; segmentsWidth: 64; segmentsHeight: 32; thetaStart: 0; thetaLength: 180"
-        material="src: #video-before; shader: flat; side: double"
+        material="src: #video-before; shader: flat; side: back"
         scale="-1 1 1"
         rotation="0 90 0">
       </a-entity>
@@ -176,7 +176,7 @@
         id="video180-after1"
         visible="false"
         geometry="primitive: sphere; radius: 100; segmentsWidth: 64; segmentsHeight: 32; thetaStart: 0; thetaLength: 180"
-        material="src: #video-after1; shader: flat; side: double"
+        material="src: #video-after1; shader: flat; side: back"
         scale="-1 1 1"
         rotation="0 90 0">
       </a-entity>
@@ -185,19 +185,9 @@
         id="video180-after2"
         visible="false"
         geometry="primitive: sphere; radius: 100; segmentsWidth: 64; segmentsHeight: 32; thetaStart: 0; thetaLength: 180"
-        material="src: #video-after2; shader: flat; side: double"
+        material="src: #video-after2; shader: flat; side: back"
         scale="-1 1 1"
         rotation="0 90 0">
-      </a-entity>
-
-      <!-- 後ろ半分を黒で覆うための半球。動画半球より少し内側に置く -->
-      <a-entity
-        id="back-black-sphere"
-        visible="false"
-        geometry="primitive: sphere; radius: 98; segmentsWidth: 64; segmentsHeight: 32; thetaStart: 0; thetaLength: 180"
-        material="color: #000; shader: flat; side: double"
-        scale="-1 1 1"
-        rotation="0 -90 0">
       </a-entity>
 
       <a-entity id="moving-car" position="0 -15 -70">
@@ -229,7 +219,6 @@
       const sphereBefore = document.getElementById('video180-before');
       const sphereAfter1 = document.getElementById('video180-after1');
       const sphereAfter2 = document.getElementById('video180-after2');
-      const backBlackSphere = document.getElementById('back-black-sphere');
 
       const fade = document.getElementById('fade-overlay');
       const model = document.getElementById('model-entity');
@@ -282,7 +271,6 @@
         sphereBefore.setAttribute('visible', 'false');
         sphereAfter1.setAttribute('visible', 'false');
         sphereAfter2.setAttribute('visible', 'false');
-        backBlackSphere.setAttribute('visible', 'false');
       }
 
       function showMentorMessage(text, duration = 3000) {
@@ -351,7 +339,6 @@
         car.setAttribute('visible', 'false');
 
         sphereEl.setAttribute('visible', 'true');
-        backBlackSphere.setAttribute('visible', 'true');
 
         currentVideo = videoEl;
         currentSphere = sphereEl;
