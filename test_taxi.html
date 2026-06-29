@@ -8,6 +8,78 @@
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
+    <script>
+      AFRAME.registerComponent('vr180-video-dome', {
+        schema: {
+          src: { type: 'selector' },
+          radius: { type: 'number', default: 100 },
+          widthSegments: { type: 'int', default: 64 },
+          heightSegments: { type: 'int', default: 32 }
+        },
+
+        init: function () {
+          const video = this.data.src;
+          const radius = this.data.radius;
+          const wSeg = this.data.widthSegments;
+          const hSeg = this.data.heightSegments;
+
+          const vertices = [];
+          const uvs = [];
+          const indices = [];
+
+          for (let y = 0; y <= hSeg; y++) {
+            const v = y / hSeg;
+            const phi = v * Math.PI;
+
+            for (let x = 0; x <= wSeg; x++) {
+              const u = x / wSeg;
+
+              // 前方180°だけを作る。A-Frameの前方は -Z
+              const theta = (u - 0.5) * Math.PI;
+
+              const px = radius * Math.sin(theta) * Math.sin(phi);
+              const py = radius * Math.cos(phi);
+              const pz = -radius * Math.cos(theta) * Math.sin(phi);
+
+              vertices.push(px, py, pz);
+              uvs.push(u, 1 - v);
+            }
+          }
+
+          for (let y = 0; y < hSeg; y++) {
+            for (let x = 0; x < wSeg; x++) {
+              const a = y * (wSeg + 1) + x;
+              const b = a + wSeg + 1;
+              const c = b + 1;
+              const d = a + 1;
+
+              indices.push(a, b, d);
+              indices.push(b, c, d);
+            }
+          }
+
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+          geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+          geometry.setIndex(indices);
+          geometry.computeVertexNormals();
+
+          const texture = new THREE.VideoTexture(video);
+          texture.minFilter = THREE.LinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.format = THREE.RGBAFormat;
+
+          const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            side: THREE.DoubleSide
+          });
+
+          const mesh = new THREE.Mesh(geometry, material);
+          this.el.setObject3D('mesh', mesh);
+        }
+      });
+    </script>
+
     <style>
       body, html {
         margin: 0;
@@ -163,31 +235,29 @@
         segments-height="64">
       </a-sky>
 
+      <a-sky
+        id="black-bg"
+        color="#000"
+        radius="120"
+        visible="false">
+      </a-sky>
+
       <a-entity
         id="video180-before"
         visible="false"
-        geometry="primitive: sphere; radius: 100; segmentsWidth: 64; segmentsHeight: 32; thetaStart: 0; thetaLength: 180"
-        material="src: #video-before; shader: flat; side: back"
-        scale="-1 1 1"
-        rotation="0 90 0">
+        vr180-video-dome="src: #video-before; radius: 100">
       </a-entity>
 
       <a-entity
         id="video180-after1"
         visible="false"
-        geometry="primitive: sphere; radius: 100; segmentsWidth: 64; segmentsHeight: 32; thetaStart: 0; thetaLength: 180"
-        material="src: #video-after1; shader: flat; side: back"
-        scale="-1 1 1"
-        rotation="0 90 0">
+        vr180-video-dome="src: #video-after1; radius: 100">
       </a-entity>
 
       <a-entity
         id="video180-after2"
         visible="false"
-        geometry="primitive: sphere; radius: 100; segmentsWidth: 64; segmentsHeight: 32; thetaStart: 0; thetaLength: 180"
-        material="src: #video-after2; shader: flat; side: back"
-        scale="-1 1 1"
-        rotation="0 90 0">
+        vr180-video-dome="src: #video-after2; radius: 100">
       </a-entity>
 
       <a-entity id="moving-car" position="0 -15 -70">
@@ -227,6 +297,7 @@
       const mentorPanel = document.getElementById('mentor-panel');
       const mentorText = document.getElementById('mentor-text');
       const skyBg = document.getElementById('sky-bg');
+      const blackBg = document.getElementById('black-bg');
 
       const VIDEO_VOLUME = 0.3;
 
@@ -271,6 +342,7 @@
         sphereBefore.setAttribute('visible', 'false');
         sphereAfter1.setAttribute('visible', 'false');
         sphereAfter2.setAttribute('visible', 'false');
+        blackBg.setAttribute('visible', 'false');
       }
 
       function showMentorMessage(text, duration = 3000) {
@@ -338,6 +410,7 @@
         skyBg.setAttribute('visible', 'false');
         car.setAttribute('visible', 'false');
 
+        blackBg.setAttribute('visible', 'true');
         sphereEl.setAttribute('visible', 'true');
 
         currentVideo = videoEl;
