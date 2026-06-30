@@ -3,82 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Flight Captain VR - Taxi Mission</title>
+    <title>Flight Captain VR - Wide Video Mission</title>
 
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
-
-    <script>
-      AFRAME.registerComponent('vr180-video-dome', {
-        schema: {
-          src: { type: 'selector' },
-          radius: { type: 'number', default: 100 },
-          widthSegments: { type: 'int', default: 64 },
-          heightSegments: { type: 'int', default: 32 }
-        },
-
-        init: function () {
-          const video = this.data.src;
-          const radius = this.data.radius;
-          const wSeg = this.data.widthSegments;
-          const hSeg = this.data.heightSegments;
-
-          const vertices = [];
-          const uvs = [];
-          const indices = [];
-
-          for (let y = 0; y <= hSeg; y++) {
-            const v = y / hSeg;
-            const phi = v * Math.PI;
-
-            for (let x = 0; x <= wSeg; x++) {
-              const u = x / wSeg;
-
-              // 前方180°だけを作る。A-Frameの前方は -Z
-              const theta = (u - 0.5) * Math.PI;
-
-              const px = radius * Math.sin(theta) * Math.sin(phi);
-              const py = radius * Math.cos(phi);
-              const pz = -radius * Math.cos(theta) * Math.sin(phi);
-
-              vertices.push(px, py, pz);
-              uvs.push(u, 1 - v);
-            }
-          }
-
-          for (let y = 0; y < hSeg; y++) {
-            for (let x = 0; x < wSeg; x++) {
-              const a = y * (wSeg + 1) + x;
-              const b = a + wSeg + 1;
-              const c = b + 1;
-              const d = a + 1;
-
-              indices.push(a, b, d);
-              indices.push(b, c, d);
-            }
-          }
-
-          const geometry = new THREE.BufferGeometry();
-          geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-          geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-          geometry.setIndex(indices);
-          geometry.computeVertexNormals();
-
-          const texture = new THREE.VideoTexture(video);
-          texture.minFilter = THREE.LinearFilter;
-          texture.magFilter = THREE.LinearFilter;
-          texture.format = THREE.RGBAFormat;
-
-          const material = new THREE.MeshBasicMaterial({
-            map: texture,
-            side: THREE.DoubleSide
-          });
-
-          const mesh = new THREE.Mesh(geometry, material);
-          this.el.setObject3D('mesh', mesh);
-        }
-      });
-    </script>
 
     <style>
       body, html {
@@ -221,9 +149,9 @@
         <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
         <img id="virtual-bg" src="test4.jpg">
 
-        <video id="video-before" src="180test.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
-        <video id="video-after1" src="180test.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
-        <video id="video-after2" src="180test.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
+        <video id="video-before" src="wide_test.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
+        <video id="video-after1" src="wide_test.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
+        <video id="video-after2" src="wide_test.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
       </a-assets>
 
       <a-sky
@@ -242,22 +170,32 @@
         visible="false">
       </a-sky>
 
+      <!-- 通常MRQの広角動画を貼る大きなスクリーン -->
       <a-entity
-        id="video180-before"
+        id="wide-screen-before"
         visible="false"
-        vr180-video-dome="src: #video-before; radius: 100">
+        geometry="primitive: plane; width: 32; height: 18"
+        material="src: #video-before; shader: flat; side: double"
+        position="0 0 -12"
+        rotation="0 0 0">
       </a-entity>
 
       <a-entity
-        id="video180-after1"
+        id="wide-screen-after1"
         visible="false"
-        vr180-video-dome="src: #video-after1; radius: 100">
+        geometry="primitive: plane; width: 32; height: 18"
+        material="src: #video-after1; shader: flat; side: double"
+        position="0 0 -12"
+        rotation="0 0 0">
       </a-entity>
 
       <a-entity
-        id="video180-after2"
+        id="wide-screen-after2"
         visible="false"
-        vr180-video-dome="src: #video-after2; radius: 100">
+        geometry="primitive: plane; width: 32; height: 18"
+        material="src: #video-after2; shader: flat; side: double"
+        position="0 0 -12"
+        rotation="0 0 0">
       </a-entity>
 
       <a-entity id="moving-car" position="0 -15 -70">
@@ -286,9 +224,9 @@
       const videoAfter1 = document.getElementById('video-after1');
       const videoAfter2 = document.getElementById('video-after2');
 
-      const sphereBefore = document.getElementById('video180-before');
-      const sphereAfter1 = document.getElementById('video180-after1');
-      const sphereAfter2 = document.getElementById('video180-after2');
+      const screenBefore = document.getElementById('wide-screen-before');
+      const screenAfter1 = document.getElementById('wide-screen-after1');
+      const screenAfter2 = document.getElementById('wide-screen-after2');
 
       const fade = document.getElementById('fade-overlay');
       const model = document.getElementById('model-entity');
@@ -312,7 +250,7 @@
 
       let currentPhase = 'intro';
       let currentVideo = null;
-      let currentSphere = null;
+      let currentScreen = null;
       let mentorHideTimer = null;
       let mentorTextDelayTimer = null;
       let stadiumMessageShown = false;
@@ -332,16 +270,16 @@
           video.preload = 'auto';
         });
 
-        hideAllVideoSpheres();
+        hideAllVideoScreens();
 
         currentVideo = null;
-        currentSphere = null;
+        currentScreen = null;
       }
 
-      function hideAllVideoSpheres() {
-        sphereBefore.setAttribute('visible', 'false');
-        sphereAfter1.setAttribute('visible', 'false');
-        sphereAfter2.setAttribute('visible', 'false');
+      function hideAllVideoScreens() {
+        screenBefore.setAttribute('visible', 'false');
+        screenAfter1.setAttribute('visible', 'false');
+        screenAfter2.setAttribute('visible', 'false');
         blackBg.setAttribute('visible', 'false');
       }
 
@@ -400,21 +338,21 @@
         prepareVideo(videoAfter2);
       }
 
-      function activateVR180Video(videoEl, sphereEl) {
+      function activateWideVideo(videoEl, screenEl) {
         if (currentVideo) {
           currentVideo.pause();
         }
 
-        hideAllVideoSpheres();
+        hideAllVideoScreens();
 
         skyBg.setAttribute('visible', 'false');
         car.setAttribute('visible', 'false');
 
         blackBg.setAttribute('visible', 'true');
-        sphereEl.setAttribute('visible', 'true');
+        screenEl.setAttribute('visible', 'true');
 
         currentVideo = videoEl;
-        currentSphere = sphereEl;
+        currentScreen = screenEl;
       }
 
       function playVideoFromStart(videoEl, onSuccess, onError) {
@@ -517,7 +455,7 @@
 
         car.setAttribute('visible', 'true');
         skyBg.setAttribute('visible', 'true');
-        hideAllVideoSpheres();
+        hideAllVideoScreens();
 
         car.setAttribute('animation__takeoff', {
           property: 'position',
@@ -546,7 +484,7 @@
           setTimeout(() => {
             currentPhase = 'before';
 
-            activateVR180Video(videoBefore, sphereBefore);
+            activateWideVideo(videoBefore, screenBefore);
             videoBefore.onended = triggerBranchChoice;
 
             playVideoFromStart(
@@ -594,13 +532,13 @@
 
         setTimeout(() => {
           const nextVideo = choiceNumber === 1 ? videoAfter1 : videoAfter2;
-          const nextSphere = choiceNumber === 1 ? sphereAfter1 : sphereAfter2;
+          const nextScreen = choiceNumber === 1 ? screenAfter1 : screenAfter2;
 
           if (currentVideo) {
             currentVideo.pause();
           }
 
-          activateVR180Video(nextVideo, nextSphere);
+          activateWideVideo(nextVideo, nextScreen);
           nextVideo.onended = handleMissionComplete;
 
           playVideoFromStart(
