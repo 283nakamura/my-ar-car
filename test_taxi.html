@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Flight Captain VR - Wide Video Mission</title>
+    <title>Flight Captain VR - 360 Mission</title>
 
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
@@ -21,10 +21,7 @@
 
       #fade-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        inset: 0;
         background: #000;
         opacity: 0;
         z-index: 95000;
@@ -163,40 +160,26 @@
         segments-height="64">
       </a-sky>
 
-      <a-sky
-        id="black-bg"
-        color="#000"
-        radius="120"
-        visible="false">
-      </a-sky>
-
-      <!-- 通常MRQの広角動画を貼る大きなスクリーン -->
-      <a-entity
-        id="wide-screen-before"
+      <a-videosphere
+        id="video-sphere-before"
+        src="#video-before"
         visible="false"
-        geometry="primitive: plane; width: 40; height: 22.5"
-        material="src: #video-before; shader: flat; side: double"
-        position="0 0 -14"
-        rotation="0 0 0">
-      </a-entity>
+        rotation="0 -90 0">
+      </a-videosphere>
 
-      <a-entity
-        id="wide-screen-after1"
+      <a-videosphere
+        id="video-sphere-after1"
+        src="#video-after1"
         visible="false"
-        geometry="primitive: plane; width: 40; height: 22.5"
-        material="src: #video-after1; shader: flat; side: double"
-        position="0 0 -14"
-        rotation="0 0 0">
-      </a-entity>
+        rotation="0 -90 0">
+      </a-videosphere>
 
-      <a-entity
-        id="wide-screen-after2"
+      <a-videosphere
+        id="video-sphere-after2"
+        src="#video-after2"
         visible="false"
-        geometry="primitive: plane; width: 40; height: 22.5"
-        material="src: #video-after2; shader: flat; side: double"
-        position="0 0 -14"
-        rotation="0 0 0">
-      </a-entity>
+        rotation="0 -90 0">
+      </a-videosphere>
 
       <a-entity id="moving-car" position="0 -15 -70">
         <a-gltf-model
@@ -224,9 +207,9 @@
       const videoAfter1 = document.getElementById('video-after1');
       const videoAfter2 = document.getElementById('video-after2');
 
-      const screenBefore = document.getElementById('wide-screen-before');
-      const screenAfter1 = document.getElementById('wide-screen-after1');
-      const screenAfter2 = document.getElementById('wide-screen-after2');
+      const sphereBefore = document.getElementById('video-sphere-before');
+      const sphereAfter1 = document.getElementById('video-sphere-after1');
+      const sphereAfter2 = document.getElementById('video-sphere-after2');
 
       const fade = document.getElementById('fade-overlay');
       const model = document.getElementById('model-entity');
@@ -235,7 +218,6 @@
       const mentorPanel = document.getElementById('mentor-panel');
       const mentorText = document.getElementById('mentor-text');
       const skyBg = document.getElementById('sky-bg');
-      const blackBg = document.getElementById('black-bg');
 
       const VIDEO_VOLUME = 0.3;
 
@@ -245,12 +227,11 @@
 
       const FADE_TRANSITION_MAIN = 350;
       const FADE_TRANSITION_FAST = 150;
-
       const MESSAGE_DELAY = 500;
 
       let currentPhase = 'intro';
       let currentVideo = null;
-      let currentScreen = null;
+      let currentSphere = null;
       let mentorHideTimer = null;
       let mentorTextDelayTimer = null;
       let stadiumMessageShown = false;
@@ -270,17 +251,16 @@
           video.preload = 'auto';
         });
 
-        hideAllVideoScreens();
+        hideAllVideoSpheres();
 
         currentVideo = null;
-        currentScreen = null;
+        currentSphere = null;
       }
 
-      function hideAllVideoScreens() {
-        screenBefore.setAttribute('visible', 'false');
-        screenAfter1.setAttribute('visible', 'false');
-        screenAfter2.setAttribute('visible', 'false');
-        blackBg.setAttribute('visible', 'false');
+      function hideAllVideoSpheres() {
+        sphereBefore.setAttribute('visible', 'false');
+        sphereAfter1.setAttribute('visible', 'false');
+        sphereAfter2.setAttribute('visible', 'false');
       }
 
       function showMentorMessage(text, duration = 3000) {
@@ -338,21 +318,20 @@
         prepareVideo(videoAfter2);
       }
 
-      function activateWideVideo(videoEl, screenEl) {
+      function activate360Video(videoEl, sphereEl) {
         if (currentVideo) {
           currentVideo.pause();
         }
 
-        hideAllVideoScreens();
+        hideAllVideoSpheres();
 
         skyBg.setAttribute('visible', 'false');
         car.setAttribute('visible', 'false');
 
-        blackBg.setAttribute('visible', 'true');
-        screenEl.setAttribute('visible', 'true');
+        sphereEl.setAttribute('visible', 'true');
 
         currentVideo = videoEl;
-        currentScreen = screenEl;
+        currentSphere = sphereEl;
       }
 
       function playVideoFromStart(videoEl, onSuccess, onError) {
@@ -455,7 +434,7 @@
 
         car.setAttribute('visible', 'true');
         skyBg.setAttribute('visible', 'true');
-        hideAllVideoScreens();
+        hideAllVideoSpheres();
 
         car.setAttribute('animation__takeoff', {
           property: 'position',
@@ -484,7 +463,7 @@
           setTimeout(() => {
             currentPhase = 'before';
 
-            activateWideVideo(videoBefore, screenBefore);
+            activate360Video(videoBefore, sphereBefore);
             videoBefore.onended = triggerBranchChoice;
 
             playVideoFromStart(
@@ -532,13 +511,13 @@
 
         setTimeout(() => {
           const nextVideo = choiceNumber === 1 ? videoAfter1 : videoAfter2;
-          const nextScreen = choiceNumber === 1 ? screenAfter1 : screenAfter2;
+          const nextSphere = choiceNumber === 1 ? sphereAfter1 : sphereAfter2;
 
           if (currentVideo) {
             currentVideo.pause();
           }
 
-          activateWideVideo(nextVideo, nextScreen);
+          activate360Video(nextVideo, nextSphere);
           nextVideo.onended = handleMissionComplete;
 
           playVideoFromStart(
