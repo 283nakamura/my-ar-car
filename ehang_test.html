@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  />
+
+  <title>EHang 216 Rotor Test</title>
+
+  <!-- 既存プロジェクトに合わせて A-Frame 1.2.0 を使用 -->
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+
+  <script>
+    /**
+     * GLB内の指定した2つのEmptyを回転させるコンポーネント
+     *
+     * 対象：
+     * - Rotor_CW_02
+     * - Rotor_CCW_02
+     */
+    AFRAME.registerComponent("spin-test-rotors", {
+      schema: {
+        speed: {
+          type: "number",
+          default: 12
+        },
+
+        // Blender上でZ軸回転だった場合は z のまま使用
+        axis: {
+          type: "string",
+          default: "z"
+        }
+      },
+
+      init: function () {
+        this.rotors = [];
+        this.modelLoaded = false;
+
+        this.el.addEventListener("model-loaded", () => {
+          const model = this.el.getObject3D("mesh");
+
+          if (!model) {
+            console.error("GLBモデルを取得できませんでした。");
+            return;
+          }
+
+          console.log("GLBモデルを読み込みました。");
+
+          model.traverse((object) => {
+            // GLB内の全オブジェクト名をConsoleへ表示
+            if (object.name) {
+              console.log("GLB object:", object.name);
+            }
+
+            if (object.name === "Rotor_CW_02") {
+              this.rotors.push({
+                object: object,
+                direction: 1
+              });
+
+              console.log("Rotor_CW_02を検出しました。");
+            }
+
+            if (object.name === "Rotor_CCW_02") {
+              this.rotors.push({
+                object: object,
+                direction: -1
+              });
+
+              console.log("Rotor_CCW_02を検出しました。");
+            }
+          });
+
+          this.modelLoaded = true;
+
+          const status = document.querySelector("#status");
+
+          if (this.rotors.length === 2) {
+            status.textContent =
+              "成功：Rotor_CW_02 と Rotor_CCW_02 を検出しました。";
+            status.style.backgroundColor = "rgba(0, 100, 0, 0.8)";
+          } else {
+            status.textContent =
+              "注意：検出できたローターは " +
+              this.rotors.length +
+              "個です。Consoleでオブジェクト名を確認してください。";
+            status.style.backgroundColor = "rgba(150, 80, 0, 0.85)";
+          }
+        });
+
+        this.el.addEventListener("model-error", (event) => {
+          console.error("GLBの読み込みに失敗しました。", event.detail);
+
+          const status = document.querySelector("#status");
+          status.textContent =
+            "GLBの読み込みに失敗しました。ファイル名と配置場所を確認してください。";
+          status.style.backgroundColor = "rgba(150, 0, 0, 0.85)";
+        });
+      },
+
+      tick: function (time, delta) {
+        if (!this.modelLoaded || this.rotors.length === 0) {
+          return;
+        }
+
+        // deltaはミリ秒なので、秒へ変換
+        const deltaSeconds = delta / 1000;
+
+        // 1秒当たりの回転量
+        const rotationAmount =
+          this.data.speed * deltaSeconds;
+
+        this.rotors.forEach((rotor) => {
+          const amount =
+            rotationAmount * rotor.direction;
+
+          switch (this.data.axis) {
+            case "x":
+              rotor.object.rotation.x += amount;
+              break;
+
+            case "y":
+              rotor.object.rotation.y += amount;
+              break;
+
+            case "z":
+            default:
+              rotor.object.rotation.z += amount;
+              break;
+          }
+        });
+      }
+    });
+  </script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    #status {
+      position: fixed;
+      z-index: 10;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      padding: 10px 12px;
+      color: white;
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: 6px;
+      font-size: 14px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="status">
+    GLBモデルを読み込んでいます。
+  </div>
+
+  <a-scene
+    embedded
+    vr-mode-ui="enabled: false"
+    background="color: #D9E4EE"
+    renderer="
+      colorManagement: true;
+      physicallyCorrectLights: true;
+      antialias: true;
+    "
+  >
+    <!-- GLBファイル -->
+    <a-assets timeout="20000">
+      <a-asset-item
+        id="ehangModel"
+        src="./Ehang216_for_AFrame_Optimization.glb"
+      ></a-asset-item>
+    </a-assets>
+
+    <!-- 環境光 -->
+    <a-entity
+      light="
+        type: ambient;
+        color: #FFFFFF;
+        intensity: 1.2;
+      "
+    ></a-entity>
+
+    <!-- 方向光 -->
+    <a-entity
+      light="
+        type: directional;
+        color: #FFFFFF;
+        intensity: 1.5;
+      "
+      position="-3 6 4"
+    ></a-entity>
+
+    <!-- 機体 -->
+    <a-entity
+      id="ehang216"
+      gltf-model="#ehangModel"
+      position="0 1.5 -6"
+      rotation="0 0 0"
+      scale="1 1 1"
+      spin-test-rotors="
+        speed: 15;
+        axis: z;
+      "
+    ></a-entity>
+
+    <!-- 地面 -->
+    <a-plane
+      position="0 0 -6"
+      rotation="-90 0 0"
+      width="20"
+      height="20"
+      color="#AAB7C2"
+      roughness="1"
+    ></a-plane>
+
+    <!-- カメラ -->
+    <a-entity
+      id="cameraRig"
+      position="0 1.6 0"
+    >
+      <a-camera
+        look-controls="enabled: true"
+        wasd-controls="enabled: true"
+      ></a-camera>
+    </a-entity>
+  </a-scene>
+</body>
+</html>
