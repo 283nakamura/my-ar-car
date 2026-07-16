@@ -5,69 +5,28 @@
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0"
+    content="
+      width=device-width,
+      initial-scale=1.0,
+      maximum-scale=1.0,
+      user-scalable=no
+    "
   >
 
   <title>EHang 216 Hover Test</title>
 
-  <!-- A-Frameをオンラインから読み込む -->
+  <!-- A-Frameをオンラインから読み込み -->
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
 
   <script>
     /**
-     * 固定カメラを、指定した座標へ一度だけ向けるコンポーネント
+     * EHang 216のローター回転とホバリングを制御
      *
-     * カメラ自体は移動せず、機体の基準位置を向いた状態で固定されます。
-     */
-    AFRAME.registerComponent("fixed-look-at", {
-      schema: {
-        target: {
-          type: "vec3",
-          default: {
-            x: 0,
-            y: 1.8,
-            z: -6
-          }
-        }
-      },
-
-      init: function () {
-        this.updateCameraDirection = () => {
-          const target = new THREE.Vector3(
-            this.data.target.x,
-            this.data.target.y,
-            this.data.target.z
-          );
-
-          this.el.object3D.lookAt(target);
-
-          /*
-           * A-Frameのカメラは、three.jsの通常オブジェクトと
-           * 向きが反対になる場合があるため、Y軸を180度補正します。
-           */
-          this.el.object3D.rotateY(Math.PI);
-        };
-
-        if (this.el.sceneEl.hasLoaded) {
-          this.updateCameraDirection();
-        } else {
-          this.el.sceneEl.addEventListener(
-            "loaded",
-            this.updateCameraDirection,
-            { once: true }
-          );
-        }
-      }
-    });
-
-
-    /**
-     * EHang 216のローター回転とホバリングを制御するコンポーネント
-     *
-     * 1. Rotor_CW / Rotor_CCWで始まる全Emptyを自動検出
-     * 2. ローターを徐々に加速
-     * 3. 機体をゆっくり上下
-     * 4. 機体をわずかに前後左右へ傾ける
+     * ・Rotor_CWで始まるEmptyを時計回り
+     * ・Rotor_CCWで始まるEmptyを反時計回り
+     * ・ローターを徐々に加速
+     * ・機体を上下にホバリング
+     * ・機体をわずかに前後左右へ傾ける
      */
     AFRAME.registerComponent("ehang-hover-animation", {
       schema: {
@@ -77,43 +36,43 @@
           default: 55
         },
 
-        // 目標回転速度へ近づく速さ
+        // 最終回転速度へ近づく速さ
         acceleration: {
           type: "number",
           default: 1.8
         },
 
-        // GLB内のローター回転軸
+        // 動作確認済みの回転軸
         rotorAxis: {
           type: "string",
           default: "y"
         },
 
-        // 上下運動の幅（メートル）
+        // ホバリングの上下幅（m）
         hoverHeight: {
           type: "number",
           default: 0.10
         },
 
-        // 上下運動の速さ
+        // ホバリングの速さ
         hoverSpeed: {
           type: "number",
           default: 1.2
         },
 
-        // 前後方向の傾き（度）
+        // 前後方向への傾き（度）
         pitchAmount: {
           type: "number",
           default: 0.8
         },
 
-        // 左右方向の傾き（度）
+        // 左右方向への傾き（度）
         rollAmount: {
           type: "number",
           default: 1.0
         },
 
-        // 傾きの速さ
+        // 傾き変化の速さ
         tiltSpeed: {
           type: "number",
           default: 0.7
@@ -122,30 +81,20 @@
 
       init: function () {
         this.rotors = [];
+        this.modelLoaded = false;
 
         this.currentRotorSpeed = 0;
         this.targetRotorSpeed = this.data.rotorSpeed;
 
-        this.modelLoaded = false;
-
-        /*
-         * HTML側で設定した機体の初期位置と初期回転を記録します。
-         * ホバリング中も、この基準値を中心に動かします。
-         */
-        this.basePosition =
-          this.el.object3D.position.clone();
-
-        this.baseRotation =
-          this.el.object3D.rotation.clone();
+        // HTMLで設定した機体の初期位置と初期回転を保存
+        this.basePosition = this.el.object3D.position.clone();
+        this.baseRotation = this.el.object3D.rotation.clone();
 
         this.el.addEventListener("model-loaded", () => {
-          const model =
-            this.el.getObject3D("mesh");
+          const model = this.el.getObject3D("mesh");
 
           if (!model) {
-            console.error(
-              "GLBモデルを取得できませんでした。"
-            );
+            console.error("GLBモデルを取得できませんでした。");
 
             this.updateStatus(
               "エラー：GLBモデルを取得できませんでした。",
@@ -167,10 +116,7 @@
                 name: name
               });
 
-              console.log(
-                "CW rotor found:",
-                name
-              );
+              console.log("CW rotor found:", name);
             }
 
             if (name.startsWith("Rotor_CCW")) {
@@ -180,10 +126,7 @@
                 name: name
               });
 
-              console.log(
-                "CCW rotor found:",
-                name
-              );
+              console.log("CCW rotor found:", name);
             }
           });
 
@@ -203,31 +146,25 @@
 
           console.log(
             "Detected rotors:",
-            this.rotors.map(
-              rotor => rotor.name
-            )
+            this.rotors.map((rotor) => rotor.name)
           );
         });
 
-        this.el.addEventListener(
-          "model-error",
-          event => {
-            console.error(
-              "GLBの読み込みに失敗しました。",
-              event.detail
-            );
+        this.el.addEventListener("model-error", (event) => {
+          console.error(
+            "GLBの読み込みに失敗しました。",
+            event.detail
+          );
 
-            this.updateStatus(
-              "GLBの読み込みに失敗しました。ファイル名と配置場所を確認してください。",
-              "error"
-            );
-          }
-        );
+          this.updateStatus(
+            "GLBの読み込みに失敗しました。ファイル名と配置場所を確認してください。",
+            "error"
+          );
+        });
       },
 
       updateStatus: function (message, type) {
-        const status =
-          document.querySelector("#status");
+        const status = document.querySelector("#status");
 
         if (!status) {
           return;
@@ -238,18 +175,16 @@
       },
 
       /**
-       * ローター速度を徐々に目標速度へ近づける
+       * ローター速度を徐々に目標値へ近づける
        */
       updateRotorSpeed: function (deltaSeconds) {
         const difference =
-          this.targetRotorSpeed -
-          this.currentRotorSpeed;
+          this.targetRotorSpeed - this.currentRotorSpeed;
 
         const interpolation =
           Math.min(
             1,
-            this.data.acceleration *
-            deltaSeconds
+            this.data.acceleration * deltaSeconds
           );
 
         this.currentRotorSpeed +=
@@ -261,59 +196,43 @@
        */
       rotateRotors: function (deltaSeconds) {
         const rotationAmount =
-          this.currentRotorSpeed *
-          deltaSeconds;
+          this.currentRotorSpeed * deltaSeconds;
 
-        this.rotors.forEach(rotor => {
+        this.rotors.forEach((rotor) => {
           const amount =
-            rotationAmount *
-            rotor.direction;
+            rotationAmount * rotor.direction;
 
           if (this.data.rotorAxis === "x") {
-            rotor.object.rotation.x +=
-              amount;
-          } else if (
-            this.data.rotorAxis === "y"
-          ) {
-            rotor.object.rotation.y +=
-              amount;
+            rotor.object.rotation.x += amount;
+          } else if (this.data.rotorAxis === "y") {
+            rotor.object.rotation.y += amount;
           } else {
-            rotor.object.rotation.z +=
-              amount;
+            rotor.object.rotation.z += amount;
           }
         });
       },
 
       /**
-       * 機体を上下させる
+       * 機体をゆっくり上下させる
        */
-      updateHoverPosition: function (
-        elapsedSeconds
-      ) {
+      updateHoverPosition: function (elapsedSeconds) {
         const verticalOffset =
           Math.sin(
-            elapsedSeconds *
-            this.data.hoverSpeed
-          ) *
-          this.data.hoverHeight;
+            elapsedSeconds * this.data.hoverSpeed
+          ) * this.data.hoverHeight;
 
         this.el.object3D.position.y =
-          this.basePosition.y +
-          verticalOffset;
+          this.basePosition.y + verticalOffset;
       },
 
       /**
        * 機体をわずかに前後左右へ傾ける
        */
-      updateHoverTilt: function (
-        elapsedSeconds
-      ) {
+      updateHoverTilt: function (elapsedSeconds) {
         const pitchDegrees =
           Math.sin(
-            elapsedSeconds *
-            this.data.tiltSpeed
-          ) *
-          this.data.pitchAmount;
+            elapsedSeconds * this.data.tiltSpeed
+          ) * this.data.pitchAmount;
 
         const rollDegrees =
           Math.sin(
@@ -321,26 +240,19 @@
             this.data.tiltSpeed *
             0.83 +
             1.4
-          ) *
-          this.data.rollAmount;
+          ) * this.data.rollAmount;
 
         const pitchRadians =
-          THREE.MathUtils.degToRad(
-            pitchDegrees
-          );
+          THREE.MathUtils.degToRad(pitchDegrees);
 
         const rollRadians =
-          THREE.MathUtils.degToRad(
-            rollDegrees
-          );
+          THREE.MathUtils.degToRad(rollDegrees);
 
         this.el.object3D.rotation.x =
-          this.baseRotation.x +
-          pitchRadians;
+          this.baseRotation.x + pitchRadians;
 
         this.el.object3D.rotation.z =
-          this.baseRotation.z +
-          rollRadians;
+          this.baseRotation.z + rollRadians;
       },
 
       tick: function (time, delta) {
@@ -348,27 +260,13 @@
           return;
         }
 
-        const deltaSeconds =
-          delta / 1000;
+        const deltaSeconds = delta / 1000;
+        const elapsedSeconds = time / 1000;
 
-        const elapsedSeconds =
-          time / 1000;
-
-        this.updateRotorSpeed(
-          deltaSeconds
-        );
-
-        this.rotateRotors(
-          deltaSeconds
-        );
-
-        this.updateHoverPosition(
-          elapsedSeconds
-        );
-
-        this.updateHoverTilt(
-          elapsedSeconds
-        );
+        this.updateRotorSpeed(deltaSeconds);
+        this.rotateRotors(deltaSeconds);
+        this.updateHoverPosition(elapsedSeconds);
+        this.updateHoverTilt(elapsedSeconds);
       }
     });
   </script>
@@ -391,11 +289,12 @@
     #status {
       position: fixed;
       z-index: 10;
+
       top: 12px;
       left: 12px;
       right: 12px;
-      max-width: 650px;
 
+      max-width: 650px;
       padding: 10px 14px;
 
       color: #ffffff;
@@ -420,12 +319,37 @@
     #status.error {
       background: rgba(170, 0, 0, 0.88);
     }
+
+    #guide {
+      position: fixed;
+      z-index: 10;
+
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+
+      padding: 8px 14px;
+
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.62);
+
+      border-radius: 20px;
+
+      font-size: 13px;
+      white-space: nowrap;
+
+      pointer-events: none;
+    }
   </style>
 </head>
 
 <body>
   <div id="status">
     EHang 216を読み込んでいます。
+  </div>
+
+  <div id="guide">
+    ドラッグまたはスマートフォンを動かして周囲を見回せます
   </div>
 
   <a-scene
@@ -442,8 +366,7 @@
     <a-assets timeout="30000">
       <a-asset-item
         id="ehangModel"
-
-        src="./models/Ehang216_for_AFrame_Optimization.glb?v=5"
+        src="./models/Ehang216_for_AFrame_Optimization.glb?v=6"
       ></a-asset-item>
     </a-assets>
 
@@ -456,26 +379,24 @@
       "
     ></a-entity>
 
-    <!-- 前方左上からの主光源 -->
+    <!-- 主光源 -->
     <a-entity
       light="
         type: directional;
         color: #FFFFFF;
         intensity: 1.8;
       "
-
-      position="-4 7 2"
+      position="-8 12 4"
     ></a-entity>
 
-    <!-- 反対側からの補助光 -->
+    <!-- 補助光 -->
     <a-entity
       light="
         type: directional;
         color: #FFFFFF;
         intensity: 0.7;
       "
-
-      position="4 3 -8"
+      position="8 5 -10"
     ></a-entity>
 
     <!-- EHang 216 -->
@@ -497,51 +418,53 @@
         tiltSpeed: 0.7;
       "
 
-      position="0 1.8 -6"
-
+      position="0 4 -12"
       rotation="0 180 0"
-
       scale="1 1 1"
     ></a-entity>
 
     <!-- 地面 -->
     <a-plane
-      position="0 0 -6"
-
+      position="0 0 -12"
       rotation="-90 0 0"
 
-      width="20"
-      height="20"
+      width="50"
+      height="50"
 
       color="#AAB7C2"
-
       roughness="1"
     ></a-plane>
 
     <!--
-      固定カメラ
+      カメラの位置は固定しますが、角度は固定しません。
 
-      機体：
-      position="0 1.8 -6"
+      desktop：
+      マウスドラッグで360度見回し
 
-      カメラ：
-      position="-3.5 2.8 -2.5"
-
-      機体の前方左上側から見る想定です。
+      smartphone：
+      指ドラッグ、または端末の向きで見回し
     -->
-    <a-camera
-      id="fixedCamera"
+    <a-entity
+      id="cameraRig"
+      position="-8 5 -2"
+      rotation="-5 -35 0"
+    >
+      <a-camera
+        id="mainCamera"
 
-      position="-3.5 2.8 -2.5"
+        look-controls="
+          enabled: true;
+          magicWindowTrackingEnabled: true;
+          touchEnabled: true;
+          mouseEnabled: true;
+          reverseMouseDrag: false;
+        "
 
-      fixed-look-at="
-        target: 0 1.8 -6;
-      "
+        wasd-controls="enabled: false"
 
-      look-controls="enabled: false"
-
-      wasd-controls="enabled: false"
-    ></a-camera>
+        cursor="rayOrigin: mouse"
+      ></a-camera>
+    </a-entity>
   </a-scene>
 </body>
 </html>
