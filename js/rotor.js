@@ -4,7 +4,12 @@ AFRAME.registerComponent("spin-rotors", {
 
         rpm: {
             type: "number",
-            default: 3000
+            default: 300
+        },
+
+        axis: {
+            type: "string",
+            default: "y"
         }
 
     },
@@ -51,22 +56,23 @@ AFRAME.registerComponent("spin-rotors", {
         if (this.cwRotors.length === 0)
             return;
 
-        // RPM → rad/sec
         const radPerSecond =
             this.data.rpm * Math.PI * 2 / 60;
 
         const angle =
             radPerSecond * delta / 1000;
 
+        const axis = this.data.axis;
+
         this.cwRotors.forEach((rotor) => {
 
-            rotor.rotation.y -= angle;
+            rotor.rotation[axis] -= angle;
 
         });
 
         this.ccwRotors.forEach((rotor) => {
 
-            rotor.rotation.y += angle;
+            rotor.rotation[axis] += angle;
 
         });
 
