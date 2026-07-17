@@ -60,13 +60,13 @@ AFRAME.registerComponent("spin-rotors", {
 
         this.cwRotors.forEach((rotor) => {
 
-            rotor.rotation.z -= angle;
+            rotor.rotation.y -= angle;
 
         });
 
         this.ccwRotors.forEach((rotor) => {
 
-            rotor.rotation.z += angle;
+            rotor.rotation.y += angle;
 
         });
 
