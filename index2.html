@@ -1,151 +1,168 @@
 <!DOCTYPE html>
-<html>
-  <head>
+<html lang="ja">
+
+<head>
+
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VTOL Pilot Mission - Final Fix</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+
+    <title>Dream On Flight Test</title>
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+
+    <!-- Rotor Component -->
+    <script src="js/rotor.js"></script>
+
     <style>
-      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: sans-serif; }
-      
-      /* UI共通：最前面かつタッチを邪魔しない */
-      #ui-container { position: fixed; bottom: 30px; left: 0; width: 100%; z-index: 100000; pointer-events: none; display: flex; flex-direction: column; align-items: center; }
-      
-      /* メンター用パネル：1行に収めるための横長デザイン */
-      #mentor-panel {
-        width: 90%; max-width: 800px; background: rgba(0, 20, 40, 0.8); border-left: 5px solid #00d4ff; border-radius: 4px; 
-        padding: 10px 20px; color: #fff; pointer-events: auto; display: none; align-items: center; justify-content: space-between;
-      }
-      #mentor-panel.active { display: flex; }
-      .mentor-msg { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 15px; }
 
-      /* ボタン */
-      .action-btn { background: #00d4ff; color: #000; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; white-space: nowrap; }
-      .choice-container { display: flex; gap: 10px; }
-      .choice-btn { background: #ffaa00; color: #000; border: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        html,
+        body {
 
-      /* 動画・フェード */
-      #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90000; background: #000; display: none; }
-      video { width: 100%; height: 100%; object-fit: cover; }
-      #fade-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 95000; pointer-events: none; transition: 1s; }
-      
-      /* AR.jsのビデオを一番奥へ */
-      #arjs-video { z-index: -1 !important; }
-      .a-canvas { pointer-events: none !important; }
-    </style>
-  </head>
-  <body style="margin: 0; overflow: hidden;">
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: black;
 
-    <div id="fade-overlay"></div>
-
-    <div id="ui-container">
-      <div id="mentor-panel" class="active">
-        <div id="mentor-text" class="mentor-msg">M: 君にこのミッションを任せる。</div>
-        <div id="btn-area">
-          <button class="action-btn" onclick="startMission()">システム起動(ズーム)</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="video-layer">
-      <video id="mission-video" playsinline crossorigin="anonymous" src="niagara.mp4"></video>
-    </div>
-
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-      <a-assets>
-        <a-asset-item id="car-model" src="beta_alia_vtol_aircraft.glb"></a-asset-item>
-      </a-assets>
-
-      <a-entity id="ar-elements">
-        <a-entity id="moving-car" position="-5 0.5 -10">
-            <a-gltf-model id="model-entity" src="#car-model" scale="0.1 0.1 0.1" rotation="0 90 0"></a-gltf-model>
-        </a-entity>
-        <a-marker-camera preset="hiro"></a-marker-camera>
-      </a-entity>
-    </a-scene>
-
-    <script>
-      const mentorPanel = document.getElementById('mentor-panel');
-      const mentorText = document.getElementById('mentor-text');
-      const btnArea = document.getElementById('btn-area');
-      const videoLayer = document.getElementById('video-layer');
-      const missionVideo = document.getElementById('mission-video');
-      const fade = document.getElementById('fade-overlay');
-      const model = document.getElementById('model-entity');
-      const car = document.getElementById('moving-car');
-
-      // iPhoneジャイロ許可リクエスト
-      async function requestGyro() {
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-          await DeviceOrientationEvent.requestPermission();
         }
-      }
 
-      // ① ミッション開始
-      function startMission() {
-        requestGyro();
-        model.setAttribute('animation-mixer', "clip: *; timeScale: 5");
-        model.setAttribute('animation__zoom', { property: 'scale', to: '0.4 0.4 0.4', dur: 1200, easing: 'easeOutBack' });
-        
-        mentorText.innerText = "M: システム正常。離陸待機せよ。";
-        btnArea.innerHTML = `<button class="action-btn" onclick="takeOff()">離陸！</button>`;
-        missionVideo.play().then(() => { missionVideo.pause(); missionVideo.currentTime = 0; });
-      }
+    </style>
 
-      // ② 離陸
-      function takeOff() {
-        mentorPanel.classList.remove('active');
-        car.setAttribute('animation__up', "property: position; from: -5 0.5 -10; to: -5 5 -10; dur: 3000; easing: easeInOutQuad");
+</head>
 
-        setTimeout(() => {
-          car.setAttribute('animation__forward', "property: position; from: -5 5 -10; to: 40 5 -10; dur: 5000; easing: easeInQuad");
-          setTimeout(() => { fade.style.opacity = "1"; }, 4000);
-          
-          setTimeout(() => {
-            document.querySelector('a-scene').style.display = 'none';
-            videoLayer.style.display = 'block';
-            missionVideo.play();
-            fade.style.opacity = "0";
+<body>
 
-            // ④ 波乱発生（10秒後に設定）
-            setTimeout(triggerTrouble, 10000); 
-          }, 5000);
-        }, 3000);
-      }
+<a-scene
+        renderer="colorManagement:true;
+                  physicallyCorrectLights:true;"
 
-      // ④ 途中で波乱発生
-      function triggerTrouble() {
-        missionVideo.pause();
-        mentorPanel.classList.add('active');
-        mentorText.innerText = "M: 水しぶきによる視界悪化！判断を。";
-        btnArea.innerHTML = `
-          <div class="choice-container">
-            <button class="choice-btn" onclick="handleChoice('A')">高度UP</button>
-            <button class="choice-btn" onclick="handleChoice('B')">回避ルート</button>
-          </div>
-        `;
-      }
+        embedded>
 
-      // ⑥ 選択肢決定
-      function handleChoice(option) {
-        mentorPanel.classList.remove('active');
-        missionVideo.play();
-        missionVideo.onended = () => { showEnding(); };
-      }
+    <!-- ===================================================== -->
+    <!-- Assets -->
+    <!-- ===================================================== -->
 
-      // ⑧ 称賛
-      function showEnding() {
-        fade.style.opacity = "1";
-        setTimeout(() => {
-          videoLayer.style.display = 'none';
-          mentorPanel.classList.add('active');
-          mentorText.innerText = "M: 見事な判断だった。任務完了だ。";
-          btnArea.innerHTML = `<button class="action-btn" onclick="location.reload()">Reset</button>`;
-          fade.style.opacity = "0";
-        }, 1000);
-      }
-    </script>
-  </body>
+    <a-assets>
+
+        <video
+
+                id="bgVideo"
+
+                src="Background360test.mp4"
+
+                autoplay
+                loop
+                muted
+
+                playsinline
+                webkit-playsinline
+
+                crossorigin="anonymous">
+
+        </video>
+
+        <a-asset-item
+
+                id="ehang"
+
+                src="models/beta_alia_vtol_aircraft.glb">
+
+        </a-asset-item>
+
+    </a-assets>
+
+    <!-- ===================================================== -->
+    <!-- 360 Background -->
+    <!-- ===================================================== -->
+
+    <a-videosphere
+
+            src="#bgVideo"
+
+            rotation="0 -90 0">
+
+    </a-videosphere>
+
+    <!-- ===================================================== -->
+    <!-- Aircraft -->
+    <!-- ===================================================== -->
+
+    <a-entity
+
+            id="aircraft"
+
+            gltf-model="#ehang"
+
+            spin-rotors="rpm:300"
+
+            position="0 -45 10"
+
+            rotation="0 270 0"
+
+            scale="0.3 0.3 0.3">
+
+    </a-entity>
+
+    <!-- ===================================================== -->
+    <!-- Camera -->
+    <!-- ===================================================== -->
+
+    <a-entity
+
+            camera
+
+            look-controls
+
+            position="0 0 0">
+
+    </a-entity>
+
+</a-scene>
+
+<script>
+
+const video = document.querySelector("#bgVideo");
+const aircraft = document.querySelector("#aircraft");
+
+document.body.addEventListener("click", async () => {
+
+    if (video.paused) {
+
+        try {
+
+            await video.play();
+
+        } catch (e) {
+
+            console.error(e);
+
+        }
+
+    }
+
+});
+
+aircraft.addEventListener("model-loaded", (e) => {
+
+    console.log("GLB Loaded");
+
+    console.log(e.detail.model);
+
+});
+
+aircraft.addEventListener("model-error", (e) => {
+
+    console.error("GLB Load Error");
+
+    console.error(e.detail);
+
+});
+
+</script>
+
+</body>
+
 </html>
