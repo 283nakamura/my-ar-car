@@ -12,9 +12,8 @@
 
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
-
-    <!-- Rotor Component -->
-    <script src="js/rotor.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.5.4/dist/aframe-extras.min.js"></script>
+    <script src="js/glass-fix.js"></script>
 
     <style>
 
@@ -94,10 +93,20 @@
 
             id="aircraft"
 
-            gltf-model="#ehang"
+            gltf-model="#alia"
 
-            spin-rotors="rpm:300; axis:y"
-
+            animation-mixer="
+                clip: Animation;
+                loop: repeat;
+                repetitions: Infinity;
+                timeScale: 1
+            "
+        
+            brighten-glass="
+                opacity: 0.18;
+                roughness: 0.08
+            "
+        
             position="0.3 -0.3 1.6"
 
             rotation="0 180 0"
