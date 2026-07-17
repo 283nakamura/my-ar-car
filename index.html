@@ -1,98 +1,168 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta charset="utf-8">
-<title>Dream On Flight Test_002</title>
 
-<meta name="viewport"
-content="width=device-width,initial-scale=1">
+    <meta charset="utf-8">
 
-<script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+    <title>Dream On Flight Test</title>
 
-<style>
-html,body{
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:black;
-}
-</style>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+
+    <!-- Rotor Component -->
+    <script src="js/rotor.js"></script>
+
+    <style>
+
+        html,
+        body {
+
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: black;
+
+        }
+
+    </style>
 
 </head>
 
 <body>
 
 <a-scene
-renderer="colorManagement:true;
-physicallyCorrectLights:true;"
+        renderer="colorManagement:true;
+                  physicallyCorrectLights:true;"
 
-embedded>
+        embedded>
 
-<a-assets>
+    <!-- ===================================================== -->
+    <!-- Assets -->
+    <!-- ===================================================== -->
 
-<video
-id="bgVideo"
-src="Background360test.mp4"
-autoplay
-loop
-muted
-playsinline
-webkit-playsinline
-crossorigin="anonymous">
-</video>
+    <a-assets>
 
-<a-asset-item
-id="ehang"
-src="models/Ehang216_for_AFrame_Optimization.glb">
-</a-asset-item>
+        <video
 
-</a-assets>
+                id="bgVideo"
 
-<!-- 360動画 -->
-<a-videosphere
-src="#bgVideo"
-rotation="0 -90 0">
-</a-videosphere>
+                src="Background360test.mp4"
 
-<!-- 機体 -->
-<a-entity
-id="aircraft"
+                autoplay
+                loop
+                muted
 
-gltf-model="#ehang"
+                playsinline
+                webkit-playsinline
 
-position="0 -45 -10"
+                crossorigin="anonymous">
 
-rotation="0 270 0"
+        </video>
 
-scale="0.3 0.3 0.3">
+        <a-asset-item
 
-</a-entity>
+                id="ehang"
 
-<!-- カメラ -->
-<a-entity
-camera
-look-controls
-position="0 0 0">
-</a-entity>
+                src="models/Ehang216_for_AFrame_Optimization.glb">
+
+        </a-asset-item>
+
+    </a-assets>
+
+    <!-- ===================================================== -->
+    <!-- 360 Background -->
+    <!-- ===================================================== -->
+
+    <a-videosphere
+
+            src="#bgVideo"
+
+            rotation="0 -90 0">
+
+    </a-videosphere>
+
+    <!-- ===================================================== -->
+    <!-- Aircraft -->
+    <!-- ===================================================== -->
+
+    <a-entity
+
+            id="aircraft"
+
+            gltf-model="#ehang"
+
+            spin-rotors="rpm:300"
+
+            position="0 -45 -10"
+
+            rotation="0 270 0"
+
+            scale="0.3 0.3 0.3">
+
+    </a-entity>
+
+    <!-- ===================================================== -->
+    <!-- Camera -->
+    <!-- ===================================================== -->
+
+    <a-entity
+
+            camera
+
+            look-controls
+
+            position="0 0 0">
+
+    </a-entity>
 
 </a-scene>
 
 <script>
 
-const video=document.querySelector("#bgVideo");
+const video = document.querySelector("#bgVideo");
+const aircraft = document.querySelector("#aircraft");
 
-document.body.addEventListener("click",()=>{
+document.body.addEventListener("click", async () => {
 
-    if(video.paused){
+    if (video.paused) {
 
-        video.play();
+        try {
+
+            await video.play();
+
+        } catch (e) {
+
+            console.error(e);
+
+        }
 
     }
+
+});
+
+aircraft.addEventListener("model-loaded", (e) => {
+
+    console.log("GLB Loaded");
+
+    console.log(e.detail.model);
+
+});
+
+aircraft.addEventListener("model-error", (e) => {
+
+    console.error("GLB Load Error");
+
+    console.error(e.detail);
 
 });
 
 </script>
 
 </body>
+
 </html>
