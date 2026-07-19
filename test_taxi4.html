@@ -778,24 +778,6 @@
         if (!mesh) {
           return;
         }
-
-        mesh.traverse((node) => {
-          if (!node.isMesh || !node.material) {
-            return;
-          }
-
-          if (Array.isArray(node.material)) {
-            node.material.forEach((material) => {
-              if (material.color) {
-                material.color.set('#ffffff');
-              }
-            });
-          } else {
-            if (node.material.color) {
-              node.material.color.set('#ffffff');
-            }
-          }
-        });
       }
 
 
