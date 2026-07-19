@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="
+      width=device-width,
+      initial-scale=1.0,
+      maximum-scale=1.0,
+      user-scalable=no,
+      viewport-fit=cover
+    "
+  >
+
+  <title>Dream On Air Taxi</title>
+
+  <!-- =====================================================
+       A-Frame
+  ====================================================== -->
+
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.5.4/dist/aframe-extras.min.js"></script>
+
+  <!-- =====================================================
+       GLBモデル調整用コンポーネント
+  ====================================================== -->
+
+  <script src="js/glass-fix.js"></script>
+  <script src="js/hide-pilot.js"></script>
+  <script src="js/rotor.js"></script>
+
+  <!-- =====================================================
+       CSS
+  ====================================================== -->
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <!-- =====================================================
+       黒フェード
+  ====================================================== -->
+
+  <div id="fade-overlay"></div>
+
+
+  <!-- =====================================================
+       ソラ教官UI
+  ====================================================== -->
+
+  <div id="ui-container">
+
+    <div id="mentor-panel">
+
+      <img
+        id="comment-window"
+        src="images/T_comment_window_long2.png"
+        alt=""
+      >
+
+      <img
+        id="instructor-img"
+        src="images/T_instructor.png"
+        alt="ソラ教官"
+      >
+
+      <div id="mentor-text"></div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       ボタンUI
+  ====================================================== -->
+
+  <div id="btn-area">
+
+    <button
+      id="btn-main"
+      class="action-btn"
+      type="button"
+    >
+      スタート
+    </button>
+
+  </div>
+
+
+  <!-- =====================================================
+       A-Frameシーン
+  ====================================================== -->
+
+  <a-scene
+    id="main-scene"
+    embedded
+
+    vr-mode-ui="enabled: false"
+
+    device-orientation-permission-ui="enabled: false"
+
+    renderer="
+      antialias: true;
+      colorManagement: true;
+      physicallyCorrectLights: true;
+    "
+  >
+
+    <!-- ===================================================
+         Assets
+    ==================================================== -->
+
+    <a-assets timeout="60000">
+
+      <!-- 機体GLB -->
+      <a-asset-item
+        id="alia-model"
+        src="models/beta_alia_vtol_aircraft.glb"
+      ></a-asset-item>
+
+
+      <!-- 最初の外部視点用背景 -->
+      <img
+        id="external-background-image"
+        src="images/test4.jpg"
+        alt=""
+      >
+
+
+      <!-- before用360°動画 -->
+      <video
+        id="video-before"
+        src="videos/Background360test.mp4"
+
+        preload="auto"
+
+        playsinline
+        webkit-playsinline
+
+        crossorigin="anonymous"
+      ></video>
+
+
+      <!-- after1用360°動画 -->
+      <video
+        id="video-after1"
+        src="videos/Background360test2.mp4"
+
+        preload="auto"
+
+        playsinline
+        webkit-playsinline
+
+        crossorigin="anonymous"
+      ></video>
+
+
+      <!-- after2用360°動画 -->
+      <video
+        id="video-after2"
+        src="videos/Background360test2.mp4"
+
+        preload="auto"
+
+        playsinline
+        webkit-playsinline
+
+        crossorigin="anonymous"
+      ></video>
+
+    </a-assets>
+
+
+    <!-- ===================================================
+         最初の外部視点シーン
+    ==================================================== -->
+
+    <a-entity id="external-scene">
+
+      <a-sky
+        id="external-sky"
+
+        src="#external-background-image"
+
+        radius="100"
+
+        rotation="0 -90 0"
+
+        segments-width="64"
+        segments-height="64"
+      ></a-sky>
+
+
+      <a-entity
+        id="external-aircraft-carrier"
+
+        position="0 -15 -70"
+      >
+
+        <a-entity
+          id="external-aircraft"
+
+          gltf-model="#alia-model"
+
+          animation-mixer="
+            clip: Animation;
+            loop: repeat;
+            repetitions: Infinity;
+            timeScale: 300;
+          "
+
+          brighten-glass="
+            opacity: 0.18;
+            roughness: 0.08;
+          "
+
+          hide-pilot="
+            nodeName: pilot_31;
+          "
+
+          position="0 0 0"
+
+          rotation="0 60 0"
+
+          scale="6 6 6"
+        ></a-entity>
+
+      </a-entity>
+
+    </a-entity>
+
+
+    <!-- ===================================================
+         before用360°動画背景
+    ==================================================== -->
+
+    <a-videosphere
+      id="sphere-before"
+
+      src="#video-before"
+
+      rotation="0 -90 0"
+
+      radius="100"
+
+      visible="false"
+    ></a-videosphere>
+
+
+    <!-- ===================================================
+         after1用360°動画背景
+    ==================================================== -->
+
+    <a-videosphere
+      id="sphere-after1"
+
+      src="#video-after1"
+
+      rotation="0 -90 0"
+
+      radius="100"
+
+      visible="false"
+    ></a-videosphere>
+
+
+    <!-- ===================================================
+         after2用360°動画背景
+    ==================================================== -->
+
+    <a-videosphere
+      id="sphere-after2"
+
+      src="#video-after2"
+
+      rotation="0 -90 0"
+
+      radius="100"
+
+      visible="false"
+    ></a-videosphere>
+
+
+    <!-- ===================================================
+         コクピット位置から見る機体
+    ==================================================== -->
+
+    <a-entity
+      id="cockpit-aircraft"
+
+      gltf-model="#alia-model"
+
+      animation-mixer="
+        clip: Animation;
+        loop: repeat;
+        repetitions: Infinity;
+        timeScale: 300;
+      "
+
+      brighten-glass="
+        opacity: 0.18;
+        roughness: 0.08;
+      "
+
+      hide-pilot="
+        nodeName: pilot_31;
+      "
+
+      position="0.3 -0.3 1.6"
+
+      rotation="0 180 0"
+
+      scale="1 1 1"
+
+      visible="false"
+    ></a-entity>
+
+
+    <!-- ===================================================
+         カメラ
+    ==================================================== -->
+
+    <a-entity id="camera-rig">
+
+      <a-entity
+        id="main-camera"
+
+        camera="
+          active: true;
+          fov: 65;
+        "
+
+        look-controls="
+          magicWindowTrackingEnabled: true;
+          touchEnabled: true;
+          mouseEnabled: true;
+        "
+
+        position="0 0 0"
+      ></a-entity>
+
+    </a-entity>
+
+  </a-scene>
+
+
+  <!-- =====================================================
+       アプリケーション用JavaScript
+
+       読み込み順が重要です。
+       main.jsは必ず最後にします。
+  ====================================================== -->
+
+  <script src="js/mentor-manager.js"></script>
+
+  <script src="js/rotor-manager.js"></script>
+
+  <script src="js/timeline-manager.js"></script>
+
+  <script src="js/scene-manager.js"></script>
+
+  <script src="js/main.js"></script>
+
+</body>
+</html>
