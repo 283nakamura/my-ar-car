@@ -1,0 +1,1034 @@
+/**
+ * Dream On AirTaxi Player
+ * Application configuration
+ *
+ * @file js/config.js
+ * @description
+ * アプリケーション全体で使用する設定値、定数、イベント名、
+ * シーン定義、タイムライン、ソラ教官のメッセージを一元管理します。
+ *
+ * このファイルではDOM操作やゲーム処理を行いません。
+ */
+
+/* ==========================================================================
+   Application metadata
+   ========================================================================== */
+
+/**
+ * アプリケーションの基本情報です。
+ */
+export const APP_INFO = Object.freeze({
+  name: 'Dream On AirTaxi Player',
+  version: '1.0.0',
+  description: 'Air taxi flight experience for Maker Faire Tokyo',
+  organization: 'Dream On',
+});
+
+
+/* ==========================================================================
+   Application states
+   ========================================================================== */
+
+/**
+ * アプリケーション全体の状態です。
+ *
+ * 状態変更はmain.jsだけが担当します。
+ */
+export const APP_STATES = Object.freeze({
+  BOOTING: 'booting',
+  READY: 'ready',
+  PLAYING: 'playing',
+  PAUSED: 'paused',
+  COMPLETED: 'completed',
+  ERROR: 'error',
+});
+
+
+/* ==========================================================================
+   Scene identifiers
+   ========================================================================== */
+
+/**
+ * シーンIDです。
+ *
+ * シーンを参照するときは文字列を直接記述せず、
+ * 必ずこの定数を使用します。
+ */
+export const SCENE_IDS = Object.freeze({
+  INTRO: 'intro',
+  DEPARTURE: 'departure',
+  FLIGHT: 'flight',
+  WAITING_ROUTE: 'waiting-route',
+  ALTERNATE_ROUTE: 'alternate-route',
+  ARRIVAL: 'arrival',
+  COMPLETED: 'completed',
+});
+
+
+/* ==========================================================================
+   Route identifiers
+   ========================================================================== */
+
+/**
+ * ユーザーが選択できるルートです。
+ */
+export const ROUTE_IDS = Object.freeze({
+  WAIT: 'wait',
+  ALTERNATE: 'alternate',
+});
+
+
+/* ==========================================================================
+   Asset paths
+   ========================================================================== */
+
+/**
+ * アセットのルートディレクトリです。
+ */
+export const ASSET_PATHS = Object.freeze({
+  models: './models',
+  videos: './videos',
+  images: './images',
+});
+
+
+/**
+ * 動画ファイルのパスです。
+ *
+ * 実際の動画ファイル名に合わせて、後からここだけ変更できます。
+ */
+export const VIDEO_PATHS = Object.freeze({
+  intro: `${ASSET_PATHS.videos}/intro.mp4`,
+  departure: `${ASSET_PATHS.videos}/departure.mp4`,
+  flight: `${ASSET_PATHS.videos}/flight.mp4`,
+  waitingRoute: `${ASSET_PATHS.videos}/waiting-route.mp4`,
+  alternateRoute: `${ASSET_PATHS.videos}/alternate-route.mp4`,
+  arrival: `${ASSET_PATHS.videos}/arrival.mp4`,
+});
+
+
+/**
+ * 画像ファイルのパスです。
+ */
+export const IMAGE_PATHS = Object.freeze({
+  mentor: `${ASSET_PATHS.images}/sora-mentor.png`,
+  logo: `${ASSET_PATHS.images}/dream-on-logo.png`,
+  poster: `${ASSET_PATHS.images}/video-poster.jpg`,
+});
+
+
+/**
+ * 3Dモデルファイルのパスです。
+ */
+export const MODEL_PATHS = Object.freeze({
+  aircraft: `${ASSET_PATHS.models}/airtaxi.glb`,
+});
+
+
+/* ==========================================================================
+   DOM selectors
+   ========================================================================== */
+
+/**
+ * HTML側で使用する要素IDです。
+ *
+ * 各ManagerではIDを直接記述せず、この定数を使用します。
+ */
+export const DOM_IDS = Object.freeze({
+  app: 'app',
+
+  aframeScene: 'airtaxi-scene',
+  assets: 'airtaxi-assets',
+  cameraRig: 'camera-rig',
+  camera: 'main-camera',
+
+  videoSphere: 'video-sphere',
+  aircraftModel: 'aircraft-model',
+
+  introVideo: 'video-intro',
+  departureVideo: 'video-departure',
+  flightVideo: 'video-flight',
+  waitingRouteVideo: 'video-waiting-route',
+  alternateRouteVideo: 'video-alternate-route',
+  arrivalVideo: 'video-arrival',
+
+  loadingScreen: 'loading-screen',
+  loadingMessage: 'loading-message',
+
+  startScreen: 'start-screen',
+  startButton: 'start-button',
+
+  controls: 'controls',
+  pauseButton: 'pause-button',
+  resumeButton: 'resume-button',
+  restartButton: 'restart-button',
+  fullscreenButton: 'fullscreen-button',
+
+  choicePanel: 'choice-panel',
+  choiceTitle: 'choice-title',
+  choiceDescription: 'choice-description',
+  waitRouteButton: 'wait-route-button',
+  alternateRouteButton: 'alternate-route-button',
+
+  mentorContainer: 'mentor-container',
+  mentorImage: 'mentor-image',
+  mentorName: 'mentor-name',
+  mentorMessage: 'mentor-message',
+
+  completionScreen: 'completion-screen',
+  completionMessage: 'completion-message',
+  replayButton: 'replay-button',
+
+  errorScreen: 'error-screen',
+  errorMessage: 'error-message',
+  errorRetryButton: 'error-retry-button',
+});
+
+
+/* ==========================================================================
+   Custom event names
+   ========================================================================== */
+
+/**
+ * アプリケーション内で使用するカスタムイベント名です。
+ *
+ * イベント名は以下の形式に統一します。
+ *
+ * namespace:action
+ */
+export const EVENTS = Object.freeze({
+  APP_STATE_CHANGED: 'app:state-changed',
+  APP_READY: 'app:ready',
+  APP_COMPLETED: 'app:completed',
+  APP_ERROR: 'app:error',
+
+  UI_START: 'ui:start',
+  UI_PAUSE: 'ui:pause',
+  UI_RESUME: 'ui:resume',
+  UI_RESTART: 'ui:restart',
+  UI_REPLAY: 'ui:replay',
+  UI_CHOICE: 'ui:choice',
+  UI_FULLSCREEN: 'ui:fullscreen',
+  UI_RETRY: 'ui:retry',
+
+  SCENE_READY: 'scene:ready',
+  SCENE_LOADING: 'scene:loading',
+  SCENE_LOADED: 'scene:loaded',
+  SCENE_STARTED: 'scene:started',
+  SCENE_PAUSED: 'scene:paused',
+  SCENE_STOPPED: 'scene:stopped',
+  SCENE_TIME_UPDATED: 'scene:time-updated',
+  SCENE_ENDED: 'scene:ended',
+  SCENE_ERROR: 'scene:error',
+
+  TIMELINE_STARTED: 'timeline:started',
+  TIMELINE_PAUSED: 'timeline:paused',
+  TIMELINE_RESUMED: 'timeline:resumed',
+  TIMELINE_RESET: 'timeline:reset',
+  TIMELINE_EVENT: 'timeline:event',
+  TIMELINE_COMPLETED: 'timeline:completed',
+  TIMELINE_ERROR: 'timeline:error',
+
+  MENTOR_SHOW: 'mentor:show',
+  MENTOR_HIDE: 'mentor:hide',
+  MENTOR_SHOWN: 'mentor:shown',
+  MENTOR_HIDDEN: 'mentor:hidden',
+  MENTOR_COMPLETED: 'mentor:completed',
+  MENTOR_ERROR: 'mentor:error',
+
+  ROTOR_READY: 'rotor:ready',
+  ROTOR_START: 'rotor:start',
+  ROTOR_STOP: 'rotor:stop',
+  ROTOR_SPEED_CHANGE: 'rotor:speed-change',
+  ROTOR_STARTED: 'rotor:started',
+  ROTOR_STOPPED: 'rotor:stopped',
+  ROTOR_ERROR: 'rotor:error',
+});
+
+
+/* ==========================================================================
+   Scene configuration
+   ========================================================================== */
+
+/**
+ * シーン設定です。
+ *
+ * @property {string} id
+ * @property {string} videoElementId
+ * @property {string} videoPath
+ * @property {string} timelineId
+ * @property {boolean} loop
+ * @property {number} volume
+ * @property {boolean} resetOnLoad
+ * @property {string|null} nextSceneId
+ */
+export const SCENES = Object.freeze({
+  [SCENE_IDS.INTRO]: Object.freeze({
+    id: SCENE_IDS.INTRO,
+    videoElementId: DOM_IDS.introVideo,
+    videoPath: VIDEO_PATHS.intro,
+    timelineId: SCENE_IDS.INTRO,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: SCENE_IDS.DEPARTURE,
+  }),
+
+  [SCENE_IDS.DEPARTURE]: Object.freeze({
+    id: SCENE_IDS.DEPARTURE,
+    videoElementId: DOM_IDS.departureVideo,
+    videoPath: VIDEO_PATHS.departure,
+    timelineId: SCENE_IDS.DEPARTURE,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: SCENE_IDS.FLIGHT,
+  }),
+
+  [SCENE_IDS.FLIGHT]: Object.freeze({
+    id: SCENE_IDS.FLIGHT,
+    videoElementId: DOM_IDS.flightVideo,
+    videoPath: VIDEO_PATHS.flight,
+    timelineId: SCENE_IDS.FLIGHT,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: null,
+  }),
+
+  [SCENE_IDS.WAITING_ROUTE]: Object.freeze({
+    id: SCENE_IDS.WAITING_ROUTE,
+    videoElementId: DOM_IDS.waitingRouteVideo,
+    videoPath: VIDEO_PATHS.waitingRoute,
+    timelineId: SCENE_IDS.WAITING_ROUTE,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: SCENE_IDS.ARRIVAL,
+  }),
+
+  [SCENE_IDS.ALTERNATE_ROUTE]: Object.freeze({
+    id: SCENE_IDS.ALTERNATE_ROUTE,
+    videoElementId: DOM_IDS.alternateRouteVideo,
+    videoPath: VIDEO_PATHS.alternateRoute,
+    timelineId: SCENE_IDS.ALTERNATE_ROUTE,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: SCENE_IDS.ARRIVAL,
+  }),
+
+  [SCENE_IDS.ARRIVAL]: Object.freeze({
+    id: SCENE_IDS.ARRIVAL,
+    videoElementId: DOM_IDS.arrivalVideo,
+    videoPath: VIDEO_PATHS.arrival,
+    timelineId: SCENE_IDS.ARRIVAL,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: SCENE_IDS.COMPLETED,
+  }),
+});
+
+
+/* ==========================================================================
+   Application configuration
+   ========================================================================== */
+
+/**
+ * アプリケーション共通設定です。
+ */
+export const APP_CONFIG = Object.freeze({
+  initialState: APP_STATES.BOOTING,
+  initialSceneId: SCENE_IDS.INTRO,
+
+  autoPauseOnVisibilityChange: true,
+  preventMultipleInitialization: true,
+  resumeAfterVisibilityChange: false,
+
+  defaultVolume: 0.3,
+  minimumVolume: 0,
+  maximumVolume: 1,
+
+  videoLoadTimeoutMs: 15000,
+  modelLoadTimeoutMs: 15000,
+  sceneLoadTimeoutMs: 15000,
+
+  timelineUpdateIntervalMs: 100,
+
+  fadeDurationMs: 500,
+  mentorDefaultDurationMs: 5000,
+
+  enableFullscreen: true,
+  enableKeyboardControls: true,
+});
+
+
+/* ==========================================================================
+   Video configuration
+   ========================================================================== */
+
+/**
+ * 映像表示に関する設定です。
+ */
+export const VIDEO_CONFIG = Object.freeze({
+  autoplay: false,
+  mutedAtStartup: true,
+  playsInline: true,
+  preload: 'auto',
+  crossOrigin: 'anonymous',
+
+  defaultVolume: APP_CONFIG.defaultVolume,
+
+  sphereRadius: 100,
+  sphereRotation: Object.freeze({
+    x: 0,
+    y: -90,
+    z: 0,
+  }),
+
+  fadeDurationMs: APP_CONFIG.fadeDurationMs,
+});
+
+
+/* ==========================================================================
+   Mentor configuration
+   ========================================================================== */
+
+/**
+ * ソラ教官の表示設定です。
+ */
+export const MENTOR_CONFIG = Object.freeze({
+  name: 'ソラ教官',
+  imagePath: IMAGE_PATHS.mentor,
+
+  defaultDurationMs: APP_CONFIG.mentorDefaultDurationMs,
+  fadeDurationMs: 300,
+
+  allowManualDismiss: false,
+  hideOnSceneChange: true,
+  useAriaLive: true,
+});
+
+
+/**
+ * ソラ教官のメッセージ定義です。
+ *
+ * durationMsがnullの場合は、自動では非表示にしません。
+ */
+export const MENTOR_MESSAGES = Object.freeze({
+  WELCOME: Object.freeze({
+    id: 'welcome',
+    speaker: MENTOR_CONFIG.name,
+    text: 'ようこそ。これからエアタクシーのフライトを体験してもらいます。',
+    durationMs: 6000,
+  }),
+
+  PREPARE_DEPARTURE: Object.freeze({
+    id: 'prepare-departure',
+    speaker: MENTOR_CONFIG.name,
+    text: 'まもなく出発します。周囲を見渡して、機体の中からの景色を確認してください。',
+    durationMs: 6000,
+  }),
+
+  TAKEOFF: Object.freeze({
+    id: 'takeoff',
+    speaker: MENTOR_CONFIG.name,
+    text: '離陸します。エアタクシーが上昇する様子を体験してください。',
+    durationMs: 5000,
+  }),
+
+  FLIGHT_GUIDE: Object.freeze({
+    id: 'flight-guide',
+    speaker: MENTOR_CONFIG.name,
+    text: '順調に飛行しています。首を動かすと、周囲の景色を見渡せます。',
+    durationMs: 6000,
+  }),
+
+  ROUTE_CHOICE: Object.freeze({
+    id: 'route-choice',
+    speaker: MENTOR_CONFIG.name,
+    text: '前方の状況が変化しました。ここで待機するか、別のルートへ向かうかを選んでください。',
+    durationMs: null,
+  }),
+
+  WAIT_ROUTE_SELECTED: Object.freeze({
+    id: 'wait-route-selected',
+    speaker: MENTOR_CONFIG.name,
+    text: '待機するルートを選びました。安全が確認できるまで、この場所で待ちましょう。',
+    durationMs: 6000,
+  }),
+
+  ALTERNATE_ROUTE_SELECTED: Object.freeze({
+    id: 'alternate-route-selected',
+    speaker: MENTOR_CONFIG.name,
+    text: '別のルートを選びました。安全な経路を通って目的地へ向かいます。',
+    durationMs: 6000,
+  }),
+
+  PREPARE_ARRIVAL: Object.freeze({
+    id: 'prepare-arrival',
+    speaker: MENTOR_CONFIG.name,
+    text: 'まもなく目的地に到着します。着陸するまでそのままお待ちください。',
+    durationMs: 6000,
+  }),
+
+  ARRIVAL_COMPLETE: Object.freeze({
+    id: 'arrival-complete',
+    speaker: MENTOR_CONFIG.name,
+    text: '目的地に到着しました。エアタクシーの旅はいかがでしたか？',
+    durationMs: 7000,
+  }),
+});
+
+
+/* ==========================================================================
+   Timeline event types
+   ========================================================================== */
+
+/**
+ * タイムラインから発行されるイベント種別です。
+ *
+ * TimelineManagerはこの値を解釈せず、
+ * main.jsがイベント内容に応じて処理を振り分けます。
+ */
+export const TIMELINE_EVENT_TYPES = Object.freeze({
+  MENTOR_SHOW: 'mentor:show',
+  MENTOR_HIDE: 'mentor:hide',
+
+  UI_SHOW_CONTROLS: 'ui:show-controls',
+  UI_HIDE_CONTROLS: 'ui:hide-controls',
+  UI_SHOW_CHOICE: 'ui:show-choice',
+  UI_HIDE_CHOICE: 'ui:hide-choice',
+
+  ROTOR_START: 'rotor:start',
+  ROTOR_STOP: 'rotor:stop',
+  ROTOR_SPEED_CHANGE: 'rotor:speed-change',
+
+  SCENE_CHANGE: 'scene:change',
+  APP_COMPLETE: 'app:complete',
+});
+
+
+/* ==========================================================================
+   Timeline definitions
+   ========================================================================== */
+
+/**
+ * 時間イベントの定義です。
+ *
+ * 各イベントには必ず一意のidを付与します。
+ *
+ * @property {string} id
+ * @property {number} time
+ * @property {string} type
+ * @property {Object} payload
+ * @property {boolean} once
+ */
+export const TIMELINES = Object.freeze({
+  [SCENE_IDS.INTRO]: Object.freeze([
+    Object.freeze({
+      id: 'intro-mentor-welcome',
+      time: 0.5,
+      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+      payload: Object.freeze({
+        messageId: MENTOR_MESSAGES.WELCOME.id,
+      }),
+      once: true,
+    }),
+  ]),
+
+  [SCENE_IDS.DEPARTURE]: Object.freeze([
+    Object.freeze({
+      id: 'departure-mentor-prepare',
+      time: 0.5,
+      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+      payload: Object.freeze({
+        messageId: MENTOR_MESSAGES.PREPARE_DEPARTURE.id,
+      }),
+      once: true,
+    }),
+
+    Object.freeze({
+      id: 'departure-rotor-start',
+      time: 2,
+      type: TIMELINE_EVENT_TYPES.ROTOR_START,
+      payload: Object.freeze({
+        speed: 20,
+      }),
+      once: true,
+    }),
+
+    Object.freeze({
+      id: 'departure-mentor-takeoff',
+      time: 6,
+      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+      payload: Object.freeze({
+        messageId: MENTOR_MESSAGES.TAKEOFF.id,
+      }),
+      once: true,
+    }),
+  ]),
+
+  [SCENE_IDS.FLIGHT]: Object.freeze([
+    Object.freeze({
+      id: 'flight-mentor-guide',
+      time: 3,
+      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+      payload: Object.freeze({
+        messageId: MENTOR_MESSAGES.FLIGHT_GUIDE.id,
+      }),
+      once: true,
+    }),
+
+    Object.freeze({
+      id: 'flight-route-choice',
+      time: 15,
+      type: TIMELINE_EVENT_TYPES.UI_SHOW_CHOICE,
+      payload: Object.freeze({
+        choiceId: 'route-choice',
+      }),
+      once: true,
+    }),
+
+    Object.freeze({
+      id: 'flight-route-choice-mentor',
+      time: 15,
+      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+      payload: Object.freeze({
+        messageId: MENTOR_MESSAGES.ROUTE_CHOICE.id,
+      }),
+      once: true,
+    }),
+  ]),
+
+  [SCENE_IDS.WAITING_ROUTE]: Object.freeze([
+    Object.freeze({
+      id: 'waiting-route-mentor',
+      time: 0.5,
+      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+      payload: Object.freeze({
+        messageId: MENTOR_MESSAGES.WAIT_ROUTE_SELECTED.id,
+      }),
+      once: true,
+    }),
+  ]),
+
+  [SCENE_IDS.ALTERNATE_ROUTE]: Object.freeze([
+    Object.freeze({
+      id: 'alternate-route-mentor',
+      time: 0.5,
+      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+      payload: Object.freeze({
+        messageId: MENTOR_MESSAGES.ALTERNATE_ROUTE_SELECTED.id,
+      }),
+      once: true,
+    }),
+  ]),
+
+  [SCENE_IDS.ARRIVAL]: Object.freeze([
+    Object.freeze({
+      id: 'arrival-mentor-prepare',
+      time: 1,
+      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+      payload: Object.freeze({
+        messageId: MENTOR_MESSAGES.PREPARE_ARRIVAL.id,
+      }),
+      once: true,
+    }),
+
+    Object.freeze({
+      id: 'arrival-rotor-stop',
+      time: 12,
+      type: TIMELINE_EVENT_TYPES.ROTOR_STOP,
+      payload: Object.freeze({}),
+      once: true,
+    }),
+
+    Object.freeze({
+      id: 'arrival-mentor-complete',
+      time: 14,
+      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+      payload: Object.freeze({
+        messageId: MENTOR_MESSAGES.ARRIVAL_COMPLETE.id,
+      }),
+      once: true,
+    }),
+  ]),
+});
+
+
+/* ==========================================================================
+   Choice configuration
+   ========================================================================== */
+
+/**
+ * 分岐選択肢の設定です。
+ */
+export const CHOICES = Object.freeze({
+  ROUTE: Object.freeze({
+    id: 'route-choice',
+    title: 'どうしますか？',
+    description: '安全な移動方法を選んでください。',
+
+    options: Object.freeze([
+      Object.freeze({
+        id: ROUTE_IDS.WAIT,
+        label: 'ここで待機する',
+        targetSceneId: SCENE_IDS.WAITING_ROUTE,
+      }),
+
+      Object.freeze({
+        id: ROUTE_IDS.ALTERNATE,
+        label: '別の場所へ向かう',
+        targetSceneId: SCENE_IDS.ALTERNATE_ROUTE,
+      }),
+    ]),
+  }),
+});
+
+
+/* ==========================================================================
+   Rotor configuration
+   ========================================================================== */
+
+/**
+ * プロペラ制御設定です。
+ */
+export const ROTOR_CONFIG = Object.freeze({
+  componentName: 'rotor-spin',
+
+  defaultSpeed: 20,
+  minimumSpeed: 0,
+  maximumSpeed: 100,
+
+  defaultAxis: 'y',
+
+  /**
+   * GLTFモデル内のプロペラノード名を検索するための文字列です。
+   *
+   * 大文字・小文字は区別しません。
+   * 実際のモデルのノード名に合わせて調整してください。
+   */
+  nodeNamePatterns: Object.freeze([
+    'rotor',
+    'propeller',
+    'prop',
+    'blade',
+  ]),
+
+  /**
+   * プロペラごとの回転方向です。
+   *
+   * 1  = 正方向
+   * -1 = 逆方向
+   *
+   * 登録されたプロペラ数が配列数を超えた場合は、
+   * 交互に回転方向を設定します。
+   */
+  rotationDirections: Object.freeze([
+    1,
+    -1,
+    -1,
+    1,
+  ]),
+
+  stopImmediately: true,
+});
+
+
+/* ==========================================================================
+   UI configuration
+   ========================================================================== */
+
+/**
+ * UI共通設定です。
+ */
+export const UI_CONFIG = Object.freeze({
+  hiddenClass: 'is-hidden',
+  visibleClass: 'is-visible',
+  disabledClass: 'is-disabled',
+  activeClass: 'is-active',
+
+  transitionDurationMs: 300,
+  preventMultipleClicksMs: 500,
+
+  loadingMessage: '読み込み中です…',
+  readyMessage: '準備ができました',
+  completionMessage: 'フライト体験は終了です。ご参加ありがとうございました。',
+
+  genericErrorMessage:
+    'アプリケーションでエラーが発生しました。もう一度お試しください。',
+
+  videoLoadErrorMessage:
+    '映像を読み込めませんでした。通信環境またはファイルを確認してください。',
+
+  modelLoadErrorMessage:
+    '機体モデルを読み込めませんでした。',
+
+  fullscreenErrorMessage:
+    '全画面表示を開始できませんでした。',
+});
+
+
+/* ==========================================================================
+   Keyboard configuration
+   ========================================================================== */
+
+/**
+ * キーボード操作設定です。
+ *
+ * Maker Faire会場での保守・デバッグ操作にも使用できます。
+ */
+export const KEYBOARD_CONFIG = Object.freeze({
+  enabled: APP_CONFIG.enableKeyboardControls,
+
+  keys: Object.freeze({
+    start: Object.freeze(['Enter']),
+    pause: Object.freeze(['Escape', 'Space']),
+    restart: Object.freeze(['KeyR']),
+    fullscreen: Object.freeze(['KeyF']),
+    waitRoute: Object.freeze(['Digit1', 'Numpad1']),
+    alternateRoute: Object.freeze(['Digit2', 'Numpad2']),
+  }),
+});
+
+
+/* ==========================================================================
+   Debug configuration
+   ========================================================================== */
+
+/**
+ * 開発時のデバッグ設定です。
+ *
+ * GitHub公開版・Maker Faire本番運用時はenabledをfalseにします。
+ */
+export const DEBUG_CONFIG = Object.freeze({
+  enabled: false,
+
+  showAFrameStats: false,
+  enableVerboseLogging: false,
+  enableTimelineLogging: false,
+  enableSceneLogging: false,
+  enableRotorLogging: false,
+
+  allowSceneSkipping: false,
+  exposeAppInstance: false,
+});
+
+
+/* ==========================================================================
+   Validation helpers
+   ========================================================================== */
+
+/**
+ * 指定されたシーンIDが存在するか確認します。
+ *
+ * @param {string} sceneId
+ * @returns {boolean}
+ */
+export function isValidSceneId(sceneId) {
+  return (
+    typeof sceneId === 'string' &&
+    Object.prototype.hasOwnProperty.call(SCENES, sceneId)
+  );
+}
+
+
+/**
+ * 指定されたアプリケーション状態が有効か確認します。
+ *
+ * @param {string} state
+ * @returns {boolean}
+ */
+export function isValidAppState(state) {
+  return Object.values(APP_STATES).includes(state);
+}
+
+
+/**
+ * シーン設定を取得します。
+ *
+ * 存在しないシーンIDが指定された場合は例外を投げます。
+ *
+ * @param {string} sceneId
+ * @returns {Readonly<Object>}
+ */
+export function getSceneConfig(sceneId) {
+  if (!isValidSceneId(sceneId)) {
+    throw new Error(`[Config] Unknown scene ID: ${String(sceneId)}`);
+  }
+
+  return SCENES[sceneId];
+}
+
+
+/**
+ * 指定されたタイムラインを取得します。
+ *
+ * タイムラインが設定されていない場合は空配列を返します。
+ *
+ * @param {string} timelineId
+ * @returns {ReadonlyArray<Object>}
+ */
+export function getTimelineConfig(timelineId) {
+  if (typeof timelineId !== 'string') {
+    return Object.freeze([]);
+  }
+
+  return TIMELINES[timelineId] ?? Object.freeze([]);
+}
+
+
+/**
+ * ソラ教官のメッセージをIDから取得します。
+ *
+ * @param {string} messageId
+ * @returns {Readonly<Object>}
+ */
+export function getMentorMessage(messageId) {
+  const message = Object.values(MENTOR_MESSAGES).find(
+    item => item.id === messageId
+  );
+
+  if (!message) {
+    throw new Error(
+      `[Config] Unknown mentor message ID: ${String(messageId)}`
+    );
+  }
+
+  return message;
+}
+
+
+/**
+ * 選択肢IDから遷移先シーンを取得します。
+ *
+ * @param {string} choiceId
+ * @param {string} optionId
+ * @returns {string}
+ */
+export function getChoiceTargetSceneId(choiceId, optionId) {
+  const choice = Object.values(CHOICES).find(item => item.id === choiceId);
+
+  if (!choice) {
+    throw new Error(`[Config] Unknown choice ID: ${String(choiceId)}`);
+  }
+
+  const option = choice.options.find(item => item.id === optionId);
+
+  if (!option) {
+    throw new Error(
+      `[Config] Unknown choice option: ${String(choiceId)} / ${String(optionId)}`
+    );
+  }
+
+  return option.targetSceneId;
+}
+
+
+/* ==========================================================================
+   Development validation
+   ========================================================================== */
+
+/**
+ * 設定値の整合性を検証します。
+ *
+ * main.jsの初期化時に一度だけ実行します。
+ *
+ * @returns {true}
+ * @throws {Error}
+ */
+export function validateConfig() {
+  if (!isValidSceneId(APP_CONFIG.initialSceneId)) {
+    throw new Error(
+      `[Config] Invalid initial scene ID: ${APP_CONFIG.initialSceneId}`
+    );
+  }
+
+  for (const [sceneId, scene] of Object.entries(SCENES)) {
+    if (scene.id !== sceneId) {
+      throw new Error(
+        `[Config] Scene key and scene.id do not match: ${sceneId}`
+      );
+    }
+
+    if (!scene.videoElementId) {
+      throw new Error(
+        `[Config] videoElementId is required for scene: ${sceneId}`
+      );
+    }
+
+    if (!scene.videoPath) {
+      throw new Error(
+        `[Config] videoPath is required for scene: ${sceneId}`
+      );
+    }
+
+    if (
+      typeof scene.volume !== 'number' ||
+      scene.volume < APP_CONFIG.minimumVolume ||
+      scene.volume > APP_CONFIG.maximumVolume
+    ) {
+      throw new Error(
+        `[Config] Invalid volume for scene "${sceneId}": ${scene.volume}`
+      );
+    }
+
+    if (scene.nextSceneId && scene.nextSceneId !== SCENE_IDS.COMPLETED) {
+      if (!isValidSceneId(scene.nextSceneId)) {
+        throw new Error(
+          `[Config] Invalid nextSceneId "${scene.nextSceneId}" in scene "${sceneId}"`
+        );
+      }
+    }
+  }
+
+  const eventIds = new Set();
+
+  for (const [timelineId, timeline] of Object.entries(TIMELINES)) {
+    let previousTime = -1;
+
+    for (const event of timeline) {
+      if (!event.id) {
+        throw new Error(
+          `[Config] Timeline event ID is required: ${timelineId}`
+        );
+      }
+
+      if (eventIds.has(event.id)) {
+        throw new Error(
+          `[Config] Duplicate timeline event ID: ${event.id}`
+        );
+      }
+
+      eventIds.add(event.id);
+
+      if (
+        typeof event.time !== 'number' ||
+        !Number.isFinite(event.time) ||
+        event.time < 0
+      ) {
+        throw new Error(
+          `[Config] Invalid event time in "${event.id}": ${event.time}`
+        );
+      }
+
+      if (event.time < previousTime) {
+        throw new Error(
+          `[Config] Timeline "${timelineId}" is not sorted by time`
+        );
+      }
+
+      if (!Object.values(TIMELINE_EVENT_TYPES).includes(event.type)) {
+        throw new Error(
+          `[Config] Unknown timeline event type in "${event.id}": ${event.type}`
+        );
+      }
+
+      previousTime = event.time;
+    }
+  }
+
+  return true;
+}
