@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+
+    <meta
+      name="viewport"
+      content="
+        width=device-width,
+        initial-scale=1.0,
+        user-scalable=no,
+        viewport-fit=cover
+      "
+    >
+
+    <title>Air Taxi 001</title>
+
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+
+    <!-- A-Frame Extras -->
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.5.4/dist/aframe-extras.min.js"></script>
+
+    <!-- 独自スクリプト -->
+    <script src="js/glass-fix.js"></script>
+    <script src="js/hide-pilot.js"></script>
+    <script src="js/rotor.js"></script>
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        font-family: sans-serif;
+      }
+
+      /* 黒フェード */
+      #fade-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+
+        width: 100%;
+        height: 100%;
+
+        background: #000;
+        opacity: 0;
+
+        z-index: 95000;
+
+        pointer-events: none;
+
+        transition: opacity 350ms ease;
+      }
+
+      /* ソラ教官UI全体 */
+      #ui-container {
+        position: fixed;
+
+        left: 4vw;
+        bottom: 4vh;
+
+        width: 74vw;
+        height: 18vh;
+
+        z-index: 100000;
+
+        pointer-events: none;
+      }
+
+      #mentor-panel {
+        position: absolute;
+
+        left: -10px;
+        bottom: 0;
+
+        width: 100%;
+        height: 50%;
+
+        display: none;
+        opacity: 0;
+
+        transition: opacity 0.5s;
+      }
+
+      #comment-window {
+        position: absolute;
+
+        left: 4vw;
+        bottom: 0;
+
+        width: 68vw;
+        height: auto;
+      }
+
+      #instructor-img {
+        position: absolute;
+
+        left: 0;
+        bottom: -0.8vh;
+
+        width: 10.5vw;
+        max-width: 150px;
+        min-width: 82px;
+
+        height: auto;
+
+        z-index: 2;
+      }
+
+      #mentor-text {
+        position: absolute;
+
+        left: 13.5vw;
+        right: 4vw;
+        bottom: 3.5vh;
+
+        color: #fff;
+
+        font-size: clamp(16px, 2.1vw, 30px);
+        font-weight: bold;
+        line-height: 1.45;
+
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+
+        opacity: 0;
+
+        transition: opacity 0.3s;
+
+        z-index: 3;
+      }
+
+      /* ボタン配置 */
+      #btn-area {
+        position: fixed;
+
+        right: 5vw;
+        bottom: 6vh;
+
+        z-index: 100001;
+
+        pointer-events: auto;
+      }
+
+      .action-btn,
+      .choice-btn {
+        pointer-events: auto;
+
+        background: #27e0d0;
+        color: #fff;
+
+        border: none;
+
+        padding: 17px 30px;
+
+        font-weight: bold;
+
+        border-radius: 8px;
+
+        cursor: pointer;
+
+        font-size: clamp(16px, 2vw, 24px);
+
+        box-shadow: 0 5px 18px rgba(0, 0, 0, 0.35);
+
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .choice-container {
+        display: flex;
+        flex-direction: column;
+
+        gap: 12px;
+
+        pointer-events: auto;
+      }
+
+      a-scene {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- フェード -->
+    <div id="fade-overlay"></div>
+
+    <!-- ソラ教官UI -->
+    <div id="ui-container">
+      <div id="mentor-panel">
+
+        <img
+          id="comment-window"
+          src="T_comment_window_long2.png"
+          alt=""
+        >
+
+        <img
+          id="instructor-img"
+          src="T_instructor.png"
+          alt="ソラ教官"
+        >
+
+        <div id="mentor-text"></div>
+
+      </div>
+    </div>
+
+    <!-- 操作用ボタン -->
+    <div id="btn-area">
+
+      <button
+        id="btn-main"
+        class="action-btn"
+        onclick="handleStart()"
+      >
+        スタート
+      </button>
+
+    </div>
+
+    <!-- A-Frame -->
+    <a-scene
+      embedded
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      renderer="
+        antialias: true;
+        colorManagement: true;
+      "
+    >
+
+      <a-assets timeout="30000">
+
+        <!-- 機体モデル -->
+        <a-asset-item
+          id="alia"
+          src="models/beta_alia_vtol_aircraft.glb"
+        ></a-asset-item>
+
+        <!-- 最初の外部視点用背景 -->
+        <img
+          id="virtual-bg"
+          src="test4.jpg"
+        >
+
+        <!-- before：2秒の360°動画 -->
+        <video
+          id="video-before"
+          playsinline
+          webkit-playsinline
+          preload="auto"
+          crossorigin="anonymous"
+          src="Background360test.mp4"
+        ></video>
+
+        <!-- after1：30秒の360°動画 -->
+        <video
+          id="video-after1"
+          playsinline
+          webkit-playsinline
+          preload="auto"
+          crossorigin="anonymous"
+          src="Background360test2.mp4"
+        ></video>
+
+        <!-- after2：同じ30秒の360°動画 -->
+        <video
+          id="video-after2"
+          playsinline
+          webkit-playsinline
+          preload="auto"
+          crossorigin="anonymous"
+          src="Background360test2.mp4"
+        ></video>
+
+      </a-assets>
+
+      <!-- =====================================================
+           最初のシーン
+           外から機体が離陸するシーン
+      ====================================================== -->
+
+      <a-entity id="external-scene">
+
+        <a-sky
+          id="sky-bg"
+          src="#virtual-bg"
+          radius="100"
+          rotation="0 -90 0"
+          segments-width="64"
+          segments-height="64"
+        ></a-sky>
+
+        <a-entity
+          id="moving-car"
+          position="0 -15 -70"
+        >
+
+          <a-gltf-model
+            id="external-aircraft"
+            src="#alia"
+            scale="6 6 6"
+            rotation="0 60 0"
+
+            brighten-glass="
+              opacity: 0.18;
+              roughness: 0.08
+            "
+
+            hide-pilot="nodeName: pilot_31"
+          ></a-gltf-model>
+
+        </a-entity>
+
+      </a-entity>
+
+      <!-- =====================================================
+           360°動画背景
+      ====================================================== -->
+
+      <!-- before用360°動画 -->
+      <a-videosphere
+        id="sphere-before"
+        src="#video-before"
+        rotation="0 -90 0"
+        radius="100"
+        visible="false"
+      ></a-videosphere>
+
+      <!-- after1用360°動画 -->
+      <a-videosphere
+        id="sphere-after1"
+        src="#video-after1"
+        rotation="0 -90 0"
+        radius="100"
+        visible="false"
+      ></a-videosphere>
+
+      <!-- after2用360°動画 -->
+      <a-videosphere
+        id="sphere-after2"
+        src="#video-after2"
+        rotation="0 -90 0"
+        radius="100"
+        visible="false"
+      ></a-videosphere>
+
+      <!-- =====================================================
+           コクピット視点で表示する機体
+      ====================================================== -->
+
+      <a-entity
+        id="aircraft"
+        gltf-model="#alia"
+
+        animation-mixer="
+          clip: Animation;
+          loop: repeat;
+          repetitions: Infinity;
+          timeScale: 300
+        "
+
+        brighten-glass="
+          opacity: 0.18;
+          roughness: 0.08
+        "
+
+        hide-pilot="nodeName: pilot_31"
+
+        position="0.3 -0.3 1.6"
+        rotation="0 180 0"
+        scale="1 1 1"
+
+        visible="false"
+      ></a-entity>
+
+      <!-- =====================================================
+           カメラ
+      ====================================================== -->
+
+      <a-entity id="camera-rig" position="0 0 0">
+
+        <a-entity
+          id="main-camera"
+          camera
+          look-controls
+          position="0 0 0"
+        ></a-entity>
+
+      </a-entity>
+
+    </a-scene>
+
+    <script>
+      /* =====================================================
+         DOM取得
+      ====================================================== */
+
+      const btnMain = document.getElementById('btn-main');
+      const btnArea = document.getElementById('btn-area');
+
+      const fade = document.getElementById('fade-overlay');
+
+      const mentorPanel = document.getElementById('mentor-panel');
+      const mentorText = document.getElementById('mentor-text');
+
+      const sceneEl = document.querySelector('a-scene');
+
+      const externalScene = document.getElementById('external-scene');
+      const externalAircraft = document.getElementById('external-aircraft');
+
+      const car = document.getElementById('moving-car');
+
+      const cockpitAircraft = document.getElementById('aircraft');
+
+      const cam = document.getElementById('main-camera');
+
+      const sphereBefore = document.getElementById('sphere-before');
+      const sphereAfter1 = document.getElementById('sphere-after1');
+      const sphereAfter2 = document.getElementById('sphere-after2');
+
+      const videoBefore = document.getElementById('video-before');
+      const videoAfter1 = document.getElementById('video-after1');
+      const videoAfter2 = document.getElementById('video-after2');
+
+
+      /* =====================================================
+         基本設定
+      ====================================================== */
+
+      const VIDEO_VOLUME = 0.3;
+
+      /*
+       * 外部視点シーン
+       */
+      const TAKEOFF_DURATION = 5000;
+      const FORWARD_DURATION = 4500;
+
+      /*
+       * フェード
+       */
+      const FADE_LEAD_TIME = 700;
+      const FADE_TRANSITION = 350;
+
+      /*
+       * 教官ウィンドウ表示後、
+       * テキストが表示されるまでの時間
+       */
+      const MESSAGE_DELAY = 500;
+
+      /*
+       * 360°動画シーン全体の尺
+       *
+       * 動画ファイル自体が終了しても、
+       * この時間まではシーンを継続する
+       */
+      const BEFORE_SCENE_DURATION = 10000;
+      const AFTER_SCENE_DURATION = 32000;
+
+      /*
+       * afterシーン内のメッセージタイミング
+       */
+      const DESCENT_MESSAGE_TIME = 15000;
+      const COMPLETE_MESSAGE_TIME = 29000;
+
+
+      /* =====================================================
+         状態管理
+      ====================================================== */
+
+      let currentPhase = 'intro';
+      let currentVideo = null;
+
+      let mentorHideTimer = null;
+      let mentorTextDelayTimer = null;
+
+      let beforeChoiceTimer = null;
+      let beforeTowerMessageTimer = null;
+
+      let afterStartMessageTimer = null;
+      let afterDescentMessageTimer = null;
+      let afterCompleteMessageTimer = null;
+      let afterEndTimer = null;
+
+      let missionCompleted = false;
+
+
+      fade.style.transition =
+        `opacity ${FADE_TRANSITION}ms ease`;
+
+
+      /* =====================================================
+         初期化
+      ====================================================== */
+
+      initializeVideos();
+      initializeSceneVisibility();
+
+
+      function initializeVideos() {
+        const videos = [
+          videoBefore,
+          videoAfter1,
+          videoAfter2
+        ];
+
+        videos.forEach((video) => {
+          video.volume = VIDEO_VOLUME;
+
+          video.pause();
+          video.currentTime = 0;
+
+          /*
+           * loopは使用しない。
+           * 1回再生したら最終フレームで止める。
+           */
+          video.loop = false;
+        });
+
+        currentVideo = null;
+      }
+
+
+      function initializeSceneVisibility() {
+        externalScene.setAttribute('visible', true);
+
+        sphereBefore.setAttribute('visible', false);
+        sphereAfter1.setAttribute('visible', false);
+        sphereAfter2.setAttribute('visible', false);
+
+        cockpitAircraft.setAttribute('visible', false);
+      }
+
+
+      /* =====================================================
+         タイマー解除
+      ====================================================== */
+
+      function clearMissionTimers() {
+        clearTimeout(beforeChoiceTimer);
+        clearTimeout(beforeTowerMessageTimer);
+
+        clearTimeout(afterStartMessageTimer);
+        clearTimeout(afterDescentMessageTimer);
+        clearTimeout(afterCompleteMessageTimer);
+        clearTimeout(afterEndTimer);
+
+        beforeChoiceTimer = null;
+        beforeTowerMessageTimer = null;
+
+        afterStartMessageTimer = null;
+        afterDescentMessageTimer = null;
+        afterCompleteMessageTimer = null;
+        afterEndTimer = null;
+      }
+
+
+      /* =====================================================
+         動画処理
+      ====================================================== */
+
+      function prepareVideo(videoEl) {
+        videoEl.pause();
+
+        try {
+          videoEl.currentTime = 0;
+        } catch (error) {
+          console.warn(
+            '動画のcurrentTimeを変更できませんでした。',
+            error
+          );
+        }
+
+        videoEl.volume = VIDEO_VOLUME;
+        videoEl.loop = false;
+        videoEl.load();
+      }
+
+
+      function pauseAllVideos() {
+        videoBefore.pause();
+        videoAfter1.pause();
+        videoAfter2.pause();
+      }
+
+
+      function hideAllVideoSpheres() {
+        sphereBefore.setAttribute('visible', false);
+        sphereAfter1.setAttribute('visible', false);
+        sphereAfter2.setAttribute('visible', false);
+      }
+
+
+      function showVideoSphere(sphereEl) {
+        hideAllVideoSpheres();
+        sphereEl.setAttribute('visible', true);
+      }
+
+
+      async function playVideoOnce(videoEl) {
+        currentVideo = videoEl;
+
+        videoEl.loop = false;
+        videoEl.volume = VIDEO_VOLUME;
+
+        try {
+          videoEl.currentTime = 0;
+        } catch (error) {
+          console.warn(
+            '動画を先頭に戻せませんでした。',
+            error
+          );
+        }
+
+        /*
+         * 動画終了後もvideosphereを非表示にしない。
+         * そのため、原則として最終フレームが残る。
+         */
+        videoEl.onended = () => {
+          videoEl.pause();
+
+          console.log(
+            `${videoEl.id}の動画再生が終了しました。`
+          );
+        };
+
+        try {
+          await videoEl.play();
+        } catch (error) {
+          console.error(
+            `${videoEl.id}の再生に失敗しました。`,
+            error
+          );
+        }
+      }
+
+
+      /*
+       * iPhoneなどの自動再生制限対策。
+       * 最初のユーザー操作時に動画を一度再生可能な状態にする。
+       */
+      async function unlockVideos() {
+        const videos = [
+          videoBefore,
+          videoAfter1,
+          videoAfter2
+        ];
+
+        for (const video of videos) {
+          const originalMuted = video.muted;
+          const originalVolume = video.volume;
+
+          try {
+            video.muted = true;
+            video.volume = 0;
+
+            await video.play();
+
+            video.pause();
+            video.currentTime = 0;
+          } catch (error) {
+            console.warn(
+              `${video.id}の事前再生許可を取得できませんでした。`,
+              error
+            );
+          } finally {
+            video.muted = originalMuted;
+            video.volume = originalVolume;
+          }
+        }
+      }
+
+
+      /* =====================================================
+         教官メッセージ
+      ====================================================== */
+
+      function showMentorMessage(text, duration = 3000) {
+        clearTimeout(mentorHideTimer);
+        clearTimeout(mentorTextDelayTimer);
+
+        mentorText.innerText = '';
+        mentorText.style.opacity = '0';
+
+        mentorPanel.style.display = 'block';
+
+        setTimeout(() => {
+          mentorPanel.style.opacity = '1';
+        }, 10);
+
+        mentorTextDelayTimer = setTimeout(() => {
+          mentorText.innerText = text;
+          mentorText.style.opacity = '1';
+        }, MESSAGE_DELAY);
+
+        if (duration > 0) {
+          mentorHideTimer = setTimeout(() => {
+            hideMentorMessage();
+          }, duration);
+        }
+      }
+
+
+      function hideMentorMessage() {
+        clearTimeout(mentorHideTimer);
+        clearTimeout(mentorTextDelayTimer);
+
+        mentorText.style.opacity = '0';
+        mentorPanel.style.opacity = '0';
+
+        setTimeout(() => {
+          mentorPanel.style.display = 'none';
+          mentorText.innerText = '';
+        }, 500);
+      }
+
+
+      /* =====================================================
+         機体アニメーション
+      ====================================================== */
+
+      function clearAllFlightAnimations() {
+        car.removeAttribute('animation__takeoff');
+        car.removeAttribute('animation__forward');
+      }
+
+
+      function startExternalRotor() {
+        externalAircraft.setAttribute(
+          'animation-mixer',
+          {
+            clip: 'Animation',
+            loop: 'repeat',
+            repetitions: Infinity,
+            timeScale: 300
+          }
+        );
+      }
+
+
+      function startCockpitRotor() {
+        cockpitAircraft.setAttribute(
+          'animation-mixer',
+          {
+            clip: 'Animation',
+            loop: 'repeat',
+            repetitions: Infinity,
+            timeScale: 300
+          }
+        );
+      }
+
+
+      function stopCockpitRotor() {
+        /*
+         * animation-mixerを削除すると、
+         * GLB内のアニメーション再生が停止する。
+         */
+        cockpitAircraft.removeAttribute('animation-mixer');
+
+        console.log('プロペラ回転を停止しました。');
+      }
+
+
+      /* =====================================================
+         モデル読み込み時の色調整
+      ====================================================== */
+
+      function whitenModelMaterials(modelEl) {
+        const mesh = modelEl.getObject3D('mesh');
+
+        if (!mesh) {
+          return;
+        }
+
+        mesh.traverse((node) => {
+          if (!node.isMesh || !node.material) {
+            return;
+          }
+
+          if (Array.isArray(node.material)) {
+            node.material.forEach((material) => {
+              if (material.color) {
+                material.color.set('#ffffff');
+              }
+            });
+          } else {
+            if (node.material.color) {
+              node.material.color.set('#ffffff');
+            }
+          }
+        });
+      }
+
+
+      externalAircraft.addEventListener(
+        'model-loaded',
+        () => {
+          whitenModelMaterials(externalAircraft);
+        }
+      );
+
+
+      cockpitAircraft.addEventListener(
+        'model-loaded',
+        () => {
+          whitenModelMaterials(cockpitAircraft);
+        }
+      );
+
+
+      /* =====================================================
+         スタートボタン
+      ====================================================== */
+
+      async function handleStart() {
+        /*
+         * iOSのジャイロ使用許可
+         */
+        if (
+          typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function'
+        ) {
+          try {
+            const response =
+              await DeviceOrientationEvent.requestPermission();
+
+            if (response === 'granted') {
+              const lookControls =
+                cam.components['look-controls'];
+
+              if (lookControls) {
+                lookControls.pause();
+
+                cam.setAttribute(
+                  'rotation',
+                  '0 0 0'
+                );
+
+                lookControls.play();
+              }
+            }
+          } catch (error) {
+            console.error(
+              '端末の向き取得許可に失敗しました。',
+              error
+            );
+          }
+        }
+
+        /*
+         * モバイル端末の動画再生制限を解除
+         */
+        await unlockVideos();
+
+        /*
+         * 動画を再準備
+         */
+        prepareVideo(videoBefore);
+        prepareVideo(videoAfter1);
+        prepareVideo(videoAfter2);
+
+        startExternalRotor();
+
+        showMentorMessage(
+          'お客さんをツインタワーまで連れて行ってくれ！',
+          4500
+        );
+
+        btnMain.innerText = '離陸開始';
+        btnMain.setAttribute(
+          'onclick',
+          'handleTakeOff()'
+        );
+      }
+
+
+      /* =====================================================
+         外部視点での離陸
+      ====================================================== */
+
+      function handleTakeOff() {
+        btnArea.style.display = 'none';
+
+        showMentorMessage(
+          'テイクオフ！健闘を祈る。',
+          3500
+        );
+
+        clearMissionTimers();
+        clearAllFlightAnimations();
+
+        car.setAttribute(
+          'animation__takeoff',
+          {
+            property: 'position',
+            from: '0 -15 -70',
+            to: '0 30 -70',
+            dur: TAKEOFF_DURATION,
+            easing: 'easeInOutQuad'
+          }
+        );
+
+        setTimeout(() => {
+          car.setAttribute(
+            'animation__forward',
+            {
+              property: 'position',
+              from: '0 30 -70',
+              to: '60 30 -20',
+              dur: FORWARD_DURATION,
+              easing: 'easeInQuad'
+            }
+          );
+
+          const fadeStart = Math.max(
+            FORWARD_DURATION - FADE_LEAD_TIME,
+            50
+          );
+
+          setTimeout(() => {
+            fade.style.opacity = '1';
+          }, fadeStart);
+
+          setTimeout(() => {
+            startBeforeScene();
+          }, FORWARD_DURATION);
+
+        }, TAKEOFF_DURATION);
+      }
+
+
+      /* =====================================================
+         beforeシーン
+      ====================================================== */
+
+      function startBeforeScene() {
+        clearMissionTimers();
+        pauseAllVideos();
+
+        currentPhase = 'before';
+
+        /*
+         * 外部視点を非表示
+         */
+        externalScene.setAttribute('visible', false);
+
+        /*
+         * 360°動画とコクピット機体を表示
+         */
+        showVideoSphere(sphereBefore);
+
+        cockpitAircraft.setAttribute('visible', true);
+        startCockpitRotor();
+
+        playVideoOnce(videoBefore);
+
+        /*
+         * フェード解除
+         */
+        setTimeout(() => {
+          fade.style.opacity = '0';
+        }, 80);
+
+        /*
+         * beforeシーン開始3秒後のメッセージ。
+         * 動画自体は2秒で終了するが、
+         * タイマーはそのまま継続する。
+         */
+        beforeTowerMessageTimer = setTimeout(() => {
+          if (currentPhase !== 'before') {
+            return;
+          }
+
+          showMentorMessage(
+            'ツインタワーに近づいてきたな！',
+            2500
+          );
+        }, 3000);
+
+        /*
+         * beforeシーンは合計10秒。
+         * 動画が2秒で終了していても、
+         * 10秒経過するまではこのシーンを維持する。
+         */
+        beforeChoiceTimer = setTimeout(() => {
+          if (currentPhase !== 'before') {
+            return;
+          }
+
+          triggerBranchChoice();
+        }, BEFORE_SCENE_DURATION);
+      }
+
+
+      /* =====================================================
+         分岐選択
+      ====================================================== */
+
+      function triggerBranchChoice() {
+        currentPhase = 'choice';
+
+        videoBefore.pause();
+
+        btnArea.style.display = 'block';
+
+        btnArea.innerHTML = `
+          <div class="choice-container">
+
+            <button
+              class="choice-btn"
+              onclick="handleChoice(1)"
+            >
+              少し待機
+            </button>
+
+            <button
+              class="choice-btn"
+              onclick="handleChoice(2)"
+            >
+              別地点へ
+            </button>
+
+          </div>
+        `;
+
+        showMentorMessage(
+          'ポートが混んでるぞ！どうする？',
+          0
+        );
+      }
+
+
+      /* =====================================================
+         afterシーン開始
+      ====================================================== */
+
+      function handleChoice(choiceNumber) {
+        btnArea.style.display = 'none';
+
+        hideMentorMessage();
+
+        clearMissionTimers();
+
+        missionCompleted = false;
+
+        currentPhase =
+          choiceNumber === 1
+            ? 'after1'
+            : 'after2';
+
+        fade.style.opacity = '1';
+
+        setTimeout(() => {
+          pauseAllVideos();
+
+          /*
+           * after1とafter2では同じ動画ファイルを使用するが、
+           * video要素とvideosphereは分けている。
+           */
+          const selectedVideo =
+            choiceNumber === 1
+              ? videoAfter1
+              : videoAfter2;
+
+          const selectedSphere =
+            choiceNumber === 1
+              ? sphereAfter1
+              : sphereAfter2;
+
+          showVideoSphere(selectedSphere);
+
+          cockpitAircraft.setAttribute('visible', true);
+          startCockpitRotor();
+
+          playVideoOnce(selectedVideo);
+
+          setTimeout(() => {
+            fade.style.opacity = '0';
+          }, 80);
+
+          scheduleAfterScene(
+            choiceNumber
+          );
+
+        }, FADE_TRANSITION);
+      }
+
+
+      /* =====================================================
+         afterシーンのタイムライン
+      ====================================================== */
+
+      function scheduleAfterScene(choiceNumber) {
+        /*
+         * シーン開始1.2秒後
+         */
+        afterStartMessageTimer = setTimeout(() => {
+          if (
+            currentPhase !== 'after1' &&
+            currentPhase !== 'after2'
+          ) {
+            return;
+          }
+
+          if (choiceNumber === 1) {
+            showMentorMessage(
+              '良い判断だ！前の機体が飛び立つのを待とう。',
+              4000
+            );
+          } else {
+            showMentorMessage(
+              '良い判断だ！別の地点へ向かおう。',
+              4000
+            );
+          }
+        }, 1200);
+
+
+        /*
+         * シーン開始15秒後
+         */
+        afterDescentMessageTimer = setTimeout(() => {
+          if (
+            currentPhase !== 'after1' &&
+            currentPhase !== 'after2'
+          ) {
+            return;
+          }
+
+          if (choiceNumber === 1) {
+            showMentorMessage(
+              'そろそろ降りられるみたいだ。高度を下げていこう！',
+              5000
+            );
+          } else {
+            showMentorMessage(
+              'こちらは問題なさそうだ。高度を下げていこう！',
+              5000
+            );
+          }
+        }, DESCENT_MESSAGE_TIME);
+
+
+        /*
+         * シーン開始29秒後
+         *
+         * ・任務完了メッセージ
+         * ・プロペラ停止
+         */
+        afterCompleteMessageTimer = setTimeout(() => {
+          if (
+            currentPhase !== 'after1' &&
+            currentPhase !== 'after2'
+          ) {
+            return;
+          }
+
+          missionCompleted = true;
+
+          stopCockpitRotor();
+
+          showMentorMessage(
+            '任務完了だ。よくやったな！合格だ！',
+            0
+          );
+        }, COMPLETE_MESSAGE_TIME);
+
+
+        /*
+         * afterシーン開始32秒後
+         *
+         * 動画は30秒で終了するが、
+         * 最終状態のまま2秒間継続する。
+         */
+        afterEndTimer = setTimeout(() => {
+          if (
+            currentPhase !== 'after1' &&
+            currentPhase !== 'after2'
+          ) {
+            return;
+          }
+
+          handleMissionComplete();
+        }, AFTER_SCENE_DURATION);
+      }
+
+
+      /* =====================================================
+         任務完了後
+      ====================================================== */
+
+      function handleMissionComplete() {
+        currentPhase = 'complete';
+
+        /*
+         * 29秒時点の処理が何らかの理由で
+         * 実行されなかった場合にも停止させる。
+         */
+        if (!missionCompleted) {
+          missionCompleted = true;
+
+          stopCockpitRotor();
+
+          showMentorMessage(
+            '任務完了だ。よくやったな！合格だ！',
+            0
+          );
+        }
+
+        btnArea.style.display = 'block';
+
+        btnArea.innerHTML = `
+          <button
+            class="action-btn"
+            onclick="location.reload()"
+          >
+            リセット
+          </button>
+        `;
+      }
+    </script>
+  </body>
+</html>
