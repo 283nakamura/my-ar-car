@@ -126,7 +126,7 @@ export const MODEL_PATHS = Object.freeze({
 
 
 /* ==========================================================================
-   DOM selectors
+   DOM element identifiers
    ========================================================================== */
 
 /**
@@ -135,16 +135,34 @@ export const MODEL_PATHS = Object.freeze({
  * 各ManagerではIDを直接記述せず、この定数を使用します。
  */
 export const DOM_IDS = Object.freeze({
+  /*
+   * Application
+   */
   app: 'app',
 
+  /*
+   * A-Frame
+   */
   aframeScene: 'airtaxi-scene',
   assets: 'airtaxi-assets',
   cameraRig: 'camera-rig',
   camera: 'main-camera',
 
+  /*
+   * Scene objects
+   */
   videoSphere: 'video-sphere',
   aircraftModel: 'aircraft-model',
 
+  /*
+   * Asset elements
+   */
+  videoPoster: 'video-poster',
+  aircraftModelAsset: 'aircraft-model-asset',
+
+  /*
+   * Video elements
+   */
   introVideo: 'video-intro',
   departureVideo: 'video-departure',
   flightVideo: 'video-flight',
@@ -152,36 +170,62 @@ export const DOM_IDS = Object.freeze({
   alternateRouteVideo: 'video-alternate-route',
   arrivalVideo: 'video-arrival',
 
+  /*
+   * Loading screen
+   */
   loadingScreen: 'loading-screen',
   loadingMessage: 'loading-message',
 
+  /*
+   * Start screen
+   */
   startScreen: 'start-screen',
   startButton: 'start-button',
 
+  /*
+   * Playback controls
+   */
   controls: 'controls',
   pauseButton: 'pause-button',
   resumeButton: 'resume-button',
   restartButton: 'restart-button',
   fullscreenButton: 'fullscreen-button',
 
+  /*
+   * Route choice
+   */
   choicePanel: 'choice-panel',
   choiceTitle: 'choice-title',
   choiceDescription: 'choice-description',
   waitRouteButton: 'wait-route-button',
   alternateRouteButton: 'alternate-route-button',
 
+  /*
+   * Mentor
+   */
   mentorContainer: 'mentor-container',
   mentorImage: 'mentor-image',
   mentorName: 'mentor-name',
   mentorMessage: 'mentor-message',
 
+  /*
+   * Completion screen
+   */
   completionScreen: 'completion-screen',
   completionMessage: 'completion-message',
   replayButton: 'replay-button',
 
+  /*
+   * Error screen
+   */
   errorScreen: 'error-screen',
   errorMessage: 'error-message',
   errorRetryButton: 'error-retry-button',
+
+  /*
+   * Transition overlay
+   */
+  screenFade: 'screen-fade',
 });
 
 
@@ -197,11 +241,17 @@ export const DOM_IDS = Object.freeze({
  * namespace:action
  */
 export const EVENTS = Object.freeze({
+  /*
+   * Application
+   */
   APP_STATE_CHANGED: 'app:state-changed',
   APP_READY: 'app:ready',
   APP_COMPLETED: 'app:completed',
   APP_ERROR: 'app:error',
 
+  /*
+   * UI
+   */
   UI_START: 'ui:start',
   UI_PAUSE: 'ui:pause',
   UI_RESUME: 'ui:resume',
@@ -211,6 +261,9 @@ export const EVENTS = Object.freeze({
   UI_FULLSCREEN: 'ui:fullscreen',
   UI_RETRY: 'ui:retry',
 
+  /*
+   * Scene
+   */
   SCENE_READY: 'scene:ready',
   SCENE_LOADING: 'scene:loading',
   SCENE_LOADED: 'scene:loaded',
@@ -221,6 +274,9 @@ export const EVENTS = Object.freeze({
   SCENE_ENDED: 'scene:ended',
   SCENE_ERROR: 'scene:error',
 
+  /*
+   * Timeline
+   */
   TIMELINE_STARTED: 'timeline:started',
   TIMELINE_PAUSED: 'timeline:paused',
   TIMELINE_RESUMED: 'timeline:resumed',
@@ -229,6 +285,9 @@ export const EVENTS = Object.freeze({
   TIMELINE_COMPLETED: 'timeline:completed',
   TIMELINE_ERROR: 'timeline:error',
 
+  /*
+   * Mentor
+   */
   MENTOR_SHOW: 'mentor:show',
   MENTOR_HIDE: 'mentor:hide',
   MENTOR_SHOWN: 'mentor:shown',
@@ -236,6 +295,9 @@ export const EVENTS = Object.freeze({
   MENTOR_COMPLETED: 'mentor:completed',
   MENTOR_ERROR: 'mentor:error',
 
+  /*
+   * Rotor
+   */
   ROTOR_READY: 'rotor:ready',
   ROTOR_START: 'rotor:start',
   ROTOR_STOP: 'rotor:stop',
@@ -381,6 +443,7 @@ export const VIDEO_CONFIG = Object.freeze({
   defaultVolume: APP_CONFIG.defaultVolume,
 
   sphereRadius: 100,
+
   sphereRotation: Object.freeze({
     x: 0,
     y: -90,
@@ -586,7 +649,7 @@ export const TIMELINES = Object.freeze({
       time: 15,
       type: TIMELINE_EVENT_TYPES.UI_SHOW_CHOICE,
       payload: Object.freeze({
-        choiceId: 'route-choice',
+        choiceId: CHOICE_IDS.ROUTE,
       }),
       once: true,
     }),
@@ -663,11 +726,19 @@ export const TIMELINES = Object.freeze({
    ========================================================================== */
 
 /**
+ * 選択肢IDです。
+ */
+export const CHOICE_IDS = Object.freeze({
+  ROUTE: 'route-choice',
+});
+
+
+/**
  * 分岐選択肢の設定です。
  */
 export const CHOICES = Object.freeze({
   ROUTE: Object.freeze({
-    id: 'route-choice',
+    id: CHOICE_IDS.ROUTE,
     title: 'どうしますか？',
     description: '安全な移動方法を選んでください。',
 
@@ -722,9 +793,6 @@ export const ROTOR_CONFIG = Object.freeze({
    *
    * 1  = 正方向
    * -1 = 逆方向
-   *
-   * 登録されたプロペラ数が配列数を超えた場合は、
-   * 交互に回転方向を設定します。
    */
   rotationDirections: Object.freeze([
     1,
@@ -755,7 +823,9 @@ export const UI_CONFIG = Object.freeze({
 
   loadingMessage: '読み込み中です…',
   readyMessage: '準備ができました',
-  completionMessage: 'フライト体験は終了です。ご参加ありがとうございました。',
+
+  completionMessage:
+    'フライト体験は終了です。ご参加ありがとうございました。',
 
   genericErrorMessage:
     'アプリケーションでエラーが発生しました。もう一度お試しください。',
@@ -777,19 +847,37 @@ export const UI_CONFIG = Object.freeze({
 
 /**
  * キーボード操作設定です。
- *
- * Maker Faire会場での保守・デバッグ操作にも使用できます。
  */
 export const KEYBOARD_CONFIG = Object.freeze({
   enabled: APP_CONFIG.enableKeyboardControls,
 
   keys: Object.freeze({
-    start: Object.freeze(['Enter']),
-    pause: Object.freeze(['Escape', 'Space']),
-    restart: Object.freeze(['KeyR']),
-    fullscreen: Object.freeze(['KeyF']),
-    waitRoute: Object.freeze(['Digit1', 'Numpad1']),
-    alternateRoute: Object.freeze(['Digit2', 'Numpad2']),
+    start: Object.freeze([
+      'Enter',
+    ]),
+
+    pause: Object.freeze([
+      'Escape',
+      'Space',
+    ]),
+
+    restart: Object.freeze([
+      'KeyR',
+    ]),
+
+    fullscreen: Object.freeze([
+      'KeyF',
+    ]),
+
+    waitRoute: Object.freeze([
+      'Digit1',
+      'Numpad1',
+    ]),
+
+    alternateRoute: Object.freeze([
+      'Digit2',
+      'Numpad2',
+    ]),
   }),
 });
 
@@ -801,7 +889,7 @@ export const KEYBOARD_CONFIG = Object.freeze({
 /**
  * 開発時のデバッグ設定です。
  *
- * GitHub公開版・Maker Faire本番運用時はenabledをfalseにします。
+ * Maker Faire本番運用時はenabledをfalseにします。
  */
 export const DEBUG_CONFIG = Object.freeze({
   enabled: false,
@@ -815,6 +903,16 @@ export const DEBUG_CONFIG = Object.freeze({
   allowSceneSkipping: false,
   exposeAppInstance: false,
 });
+
+
+/* ==========================================================================
+   Shared empty values
+   ========================================================================== */
+
+/**
+ * 空のタイムラインを返す際に使用する共有配列です。
+ */
+const EMPTY_TIMELINE = Object.freeze([]);
 
 
 /* ==========================================================================
@@ -856,7 +954,9 @@ export function isValidAppState(state) {
  */
 export function getSceneConfig(sceneId) {
   if (!isValidSceneId(sceneId)) {
-    throw new Error(`[Config] Unknown scene ID: ${String(sceneId)}`);
+    throw new Error(
+      `[Config] Unknown scene ID: ${String(sceneId)}`
+    );
   }
 
   return SCENES[sceneId];
@@ -873,10 +973,10 @@ export function getSceneConfig(sceneId) {
  */
 export function getTimelineConfig(timelineId) {
   if (typeof timelineId !== 'string') {
-    return Object.freeze([]);
+    return EMPTY_TIMELINE;
   }
 
-  return TIMELINES[timelineId] ?? Object.freeze([]);
+  return TIMELINES[timelineId] ?? EMPTY_TIMELINE;
 }
 
 
@@ -902,20 +1002,39 @@ export function getMentorMessage(messageId) {
 
 
 /**
- * 選択肢IDから遷移先シーンを取得します。
+ * 選択肢設定をIDから取得します。
+ *
+ * @param {string} choiceId
+ * @returns {Readonly<Object>}
+ */
+export function getChoiceConfig(choiceId) {
+  const choice = Object.values(CHOICES).find(
+    item => item.id === choiceId
+  );
+
+  if (!choice) {
+    throw new Error(
+      `[Config] Unknown choice ID: ${String(choiceId)}`
+    );
+  }
+
+  return choice;
+}
+
+
+/**
+ * 選択肢IDとオプションIDから遷移先シーンを取得します。
  *
  * @param {string} choiceId
  * @param {string} optionId
  * @returns {string}
  */
 export function getChoiceTargetSceneId(choiceId, optionId) {
-  const choice = Object.values(CHOICES).find(item => item.id === choiceId);
+  const choice = getChoiceConfig(choiceId);
 
-  if (!choice) {
-    throw new Error(`[Config] Unknown choice ID: ${String(choiceId)}`);
-  }
-
-  const option = choice.options.find(item => item.id === optionId);
+  const option = choice.options.find(
+    item => item.id === optionId
+  );
 
   if (!option) {
     throw new Error(
@@ -940,12 +1059,52 @@ export function getChoiceTargetSceneId(choiceId, optionId) {
  * @throws {Error}
  */
 export function validateConfig() {
+  validateInitialState();
+  validateInitialScene();
+  validateScenes();
+  validateMentorMessages();
+  validateChoices();
+  validateTimelines();
+  validateRotorConfig();
+
+  return true;
+}
+
+
+/**
+ * 初期状態を検証します。
+ *
+ * @private
+ */
+function validateInitialState() {
+  if (!isValidAppState(APP_CONFIG.initialState)) {
+    throw new Error(
+      `[Config] Invalid initial application state: ${APP_CONFIG.initialState}`
+    );
+  }
+}
+
+
+/**
+ * 初期シーンを検証します。
+ *
+ * @private
+ */
+function validateInitialScene() {
   if (!isValidSceneId(APP_CONFIG.initialSceneId)) {
     throw new Error(
       `[Config] Invalid initial scene ID: ${APP_CONFIG.initialSceneId}`
     );
   }
+}
 
+
+/**
+ * シーン設定を検証します。
+ *
+ * @private
+ */
+function validateScenes() {
   for (const [sceneId, scene] of Object.entries(SCENES)) {
     if (scene.id !== sceneId) {
       throw new Error(
@@ -953,20 +1112,36 @@ export function validateConfig() {
       );
     }
 
-    if (!scene.videoElementId) {
+    if (
+      typeof scene.videoElementId !== 'string' ||
+      scene.videoElementId.trim() === ''
+    ) {
       throw new Error(
         `[Config] videoElementId is required for scene: ${sceneId}`
       );
     }
 
-    if (!scene.videoPath) {
+    if (
+      typeof scene.videoPath !== 'string' ||
+      scene.videoPath.trim() === ''
+    ) {
       throw new Error(
         `[Config] videoPath is required for scene: ${sceneId}`
       );
     }
 
     if (
+      typeof scene.timelineId !== 'string' ||
+      scene.timelineId.trim() === ''
+    ) {
+      throw new Error(
+        `[Config] timelineId is required for scene: ${sceneId}`
+      );
+    }
+
+    if (
       typeof scene.volume !== 'number' ||
+      !Number.isFinite(scene.volume) ||
       scene.volume < APP_CONFIG.minimumVolume ||
       scene.volume > APP_CONFIG.maximumVolume
     ) {
@@ -975,22 +1150,160 @@ export function validateConfig() {
       );
     }
 
-    if (scene.nextSceneId && scene.nextSceneId !== SCENE_IDS.COMPLETED) {
-      if (!isValidSceneId(scene.nextSceneId)) {
+    if (
+      scene.nextSceneId &&
+      scene.nextSceneId !== SCENE_IDS.COMPLETED &&
+      !isValidSceneId(scene.nextSceneId)
+    ) {
+      throw new Error(
+        `[Config] Invalid nextSceneId "${scene.nextSceneId}" in scene "${sceneId}"`
+      );
+    }
+  }
+}
+
+
+/**
+ * ソラ教官メッセージを検証します。
+ *
+ * @private
+ */
+function validateMentorMessages() {
+  const messageIds = new Set();
+
+  for (const message of Object.values(MENTOR_MESSAGES)) {
+    if (
+      typeof message.id !== 'string' ||
+      message.id.trim() === ''
+    ) {
+      throw new Error(
+        '[Config] Mentor message ID is required.'
+      );
+    }
+
+    if (messageIds.has(message.id)) {
+      throw new Error(
+        `[Config] Duplicate mentor message ID: ${message.id}`
+      );
+    }
+
+    messageIds.add(message.id);
+
+    if (
+      typeof message.text !== 'string' ||
+      message.text.trim() === ''
+    ) {
+      throw new Error(
+        `[Config] Mentor message text is required: ${message.id}`
+      );
+    }
+
+    if (
+      message.durationMs !== null &&
+      (
+        typeof message.durationMs !== 'number' ||
+        !Number.isFinite(message.durationMs) ||
+        message.durationMs < 0
+      )
+    ) {
+      throw new Error(
+        `[Config] Invalid mentor duration: ${message.id}`
+      );
+    }
+  }
+}
+
+
+/**
+ * 選択肢設定を検証します。
+ *
+ * @private
+ */
+function validateChoices() {
+  const choiceIds = new Set();
+
+  for (const choice of Object.values(CHOICES)) {
+    if (
+      typeof choice.id !== 'string' ||
+      choice.id.trim() === ''
+    ) {
+      throw new Error(
+        '[Config] Choice ID is required.'
+      );
+    }
+
+    if (choiceIds.has(choice.id)) {
+      throw new Error(
+        `[Config] Duplicate choice ID: ${choice.id}`
+      );
+    }
+
+    choiceIds.add(choice.id);
+
+    if (
+      !Array.isArray(choice.options) ||
+      choice.options.length < 2
+    ) {
+      throw new Error(
+        `[Config] Choice "${choice.id}" must contain at least two options.`
+      );
+    }
+
+    const optionIds = new Set();
+
+    for (const option of choice.options) {
+      if (
+        typeof option.id !== 'string' ||
+        option.id.trim() === ''
+      ) {
         throw new Error(
-          `[Config] Invalid nextSceneId "${scene.nextSceneId}" in scene "${sceneId}"`
+          `[Config] Choice option ID is required: ${choice.id}`
+        );
+      }
+
+      if (optionIds.has(option.id)) {
+        throw new Error(
+          `[Config] Duplicate choice option ID: ${choice.id} / ${option.id}`
+        );
+      }
+
+      optionIds.add(option.id);
+
+      if (!isValidSceneId(option.targetSceneId)) {
+        throw new Error(
+          `[Config] Invalid target scene ID: ${choice.id} / ${option.id}`
         );
       }
     }
   }
+}
 
+
+/**
+ * タイムライン設定を検証します。
+ *
+ * @private
+ */
+function validateTimelines() {
   const eventIds = new Set();
+  const validTimelineTypes = Object.values(
+    TIMELINE_EVENT_TYPES
+  );
 
   for (const [timelineId, timeline] of Object.entries(TIMELINES)) {
+    if (!Array.isArray(timeline)) {
+      throw new Error(
+        `[Config] Timeline must be an array: ${timelineId}`
+      );
+    }
+
     let previousTime = -1;
 
     for (const event of timeline) {
-      if (!event.id) {
+      if (
+        typeof event.id !== 'string' ||
+        event.id.trim() === ''
+      ) {
         throw new Error(
           `[Config] Timeline event ID is required: ${timelineId}`
         );
@@ -1020,15 +1333,95 @@ export function validateConfig() {
         );
       }
 
-      if (!Object.values(TIMELINE_EVENT_TYPES).includes(event.type)) {
+      if (!validTimelineTypes.includes(event.type)) {
         throw new Error(
           `[Config] Unknown timeline event type in "${event.id}": ${event.type}`
         );
       }
 
+      validateTimelinePayload(event);
+
       previousTime = event.time;
     }
   }
+}
 
-  return true;
+
+/**
+ * タイムラインイベントのpayloadを検証します。
+ *
+ * @param {Object} event
+ * @private
+ */
+function validateTimelinePayload(event) {
+  const payload = event.payload ?? {};
+
+  switch (event.type) {
+    case TIMELINE_EVENT_TYPES.MENTOR_SHOW:
+      getMentorMessage(payload.messageId);
+      break;
+
+    case TIMELINE_EVENT_TYPES.UI_SHOW_CHOICE:
+      getChoiceConfig(payload.choiceId);
+      break;
+
+    case TIMELINE_EVENT_TYPES.ROTOR_SPEED_CHANGE:
+      if (
+        typeof payload.speed !== 'number' ||
+        !Number.isFinite(payload.speed)
+      ) {
+        throw new Error(
+          `[Config] Rotor speed is required: ${event.id}`
+        );
+      }
+      break;
+
+    case TIMELINE_EVENT_TYPES.SCENE_CHANGE:
+      if (!isValidSceneId(payload.sceneId)) {
+        throw new Error(
+          `[Config] Invalid timeline scene ID: ${event.id}`
+        );
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+
+/**
+ * プロペラ設定を検証します。
+ *
+ * @private
+ */
+function validateRotorConfig() {
+  if (
+    typeof ROTOR_CONFIG.defaultSpeed !== 'number' ||
+    !Number.isFinite(ROTOR_CONFIG.defaultSpeed) ||
+    ROTOR_CONFIG.defaultSpeed < ROTOR_CONFIG.minimumSpeed ||
+    ROTOR_CONFIG.defaultSpeed > ROTOR_CONFIG.maximumSpeed
+  ) {
+    throw new Error(
+      `[Config] Invalid default rotor speed: ${ROTOR_CONFIG.defaultSpeed}`
+    );
+  }
+
+  if (
+    !Array.isArray(ROTOR_CONFIG.nodeNamePatterns) ||
+    ROTOR_CONFIG.nodeNamePatterns.length === 0
+  ) {
+    throw new Error(
+      '[Config] At least one rotor node name pattern is required.'
+    );
+  }
+
+  if (
+    !Array.isArray(ROTOR_CONFIG.rotationDirections) ||
+    ROTOR_CONFIG.rotationDirections.length === 0
+  ) {
+    throw new Error(
+      '[Config] At least one rotor rotation direction is required.'
+    );
+  }
 }
