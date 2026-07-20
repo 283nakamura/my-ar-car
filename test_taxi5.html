@@ -1,370 +1,605 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
 
   <meta
     name="viewport"
     content="
       width=device-width,
-      initial-scale=1.0,
-      maximum-scale=1.0,
+      initial-scale=1,
+      maximum-scale=1,
       user-scalable=no,
       viewport-fit=cover
     "
   >
 
-  <title>Dream On Air Taxi</title>
+  <meta
+    name="description"
+    content="Dream On AirTaxi Player - エアタクシーの未来の移動体験"
+  >
 
-  <!-- =====================================================
-       A-Frame
-  ====================================================== -->
+  <meta name="theme-color" content="#05070b">
 
+  <title>Dream On AirTaxi Player</title>
+
+  <link rel="stylesheet" href="./css/style.css">
+
+  <!--
+    A-Frame本体
+
+    バージョンを固定し、将来的なCDN側の更新による
+    予期しない挙動変更を防止します。
+  -->
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 
+  <!--
+    aframe-extras
+
+    GLTFモデルや各種A-Frame拡張機能で使用します。
+  -->
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.5.4/dist/aframe-extras.min.js"></script>
-
-  <!-- =====================================================
-       GLBモデル調整用コンポーネント
-  ====================================================== -->
-
-  <script src="js/glass-fix.js"></script>
-  <script src="js/hide-pilot.js"></script>
-  <script src="js/rotor.js"></script>
-
-  <!-- =====================================================
-       CSS
-  ====================================================== -->
-
-  <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-
-  <!-- =====================================================
-       黒フェード
-  ====================================================== -->
-
-  <div id="fade-overlay"></div>
-
-
-  <!-- =====================================================
-       ソラ教官UI
-  ====================================================== -->
-
-  <div id="ui-container">
-
-    <div id="mentor-panel">
-
-      <img
-        id="comment-window"
-        src="images/T_comment_window_long2.png"
-        alt=""
-      >
-
-      <img
-        id="instructor-img"
-        src="images/T_instructor.png"
-        alt="ソラ教官"
-      >
-
-      <div id="mentor-text"></div>
-
+  <noscript>
+    <div class="noscript-message" role="alert">
+      このアプリを利用するにはJavaScriptを有効にしてください。
     </div>
+  </noscript>
 
-  </div>
-
-
-  <!-- =====================================================
-       ボタンUI
-  ====================================================== -->
-
-  <div id="btn-area">
-
-    <button
-      id="btn-main"
-      class="action-btn"
-      type="button"
-    >
-      スタート
-    </button>
-
-  </div>
-
-
-  <!-- =====================================================
-       A-Frameシーン
-  ====================================================== -->
-
-  <a-scene
-    id="main-scene"
-    embedded
-
-    vr-mode-ui="enabled: false"
-
-    device-orientation-permission-ui="enabled: false"
-
-    renderer="
-      antialias: true;
-      colorManagement: true;
-      physicallyCorrectLights: true;
-    "
+  <!--
+    アプリケーション全体のルート要素
+  -->
+  <main
+    id="app"
+    class="app"
+    aria-label="Dream On AirTaxi Player"
   >
+    <!-- ================================================================
+         A-Frame scene
+         ================================================================ -->
 
-    <!-- ===================================================
-         Assets
-    ==================================================== -->
+    <a-scene
+      id="airtaxi-scene"
+      class="airtaxi-scene"
+      embedded
+      loading-screen="enabled: false"
+      vr-mode-ui="enabled: false"
+      renderer="
+        antialias: true;
+        colorManagement: true;
+        physicallyCorrectLights: false;
+        sortObjects: true;
+        logarithmicDepthBuffer: false;
+        precision: high;
+      "
+      device-orientation-permission-ui="enabled: false"
+    >
+      <!-- ==============================================================
+           Assets
+           ============================================================== -->
 
-    <a-assets timeout="60000">
-
-      <!-- 機体GLB -->
-      <a-asset-item
-        id="alia-model"
-        src="models/beta_alia_vtol_aircraft.glb"
-      ></a-asset-item>
-
-
-      <!-- 最初の外部視点用背景 -->
-      <img
-        id="external-background-image"
-        src="images/test4.jpg"
-        alt=""
+      <a-assets
+        id="airtaxi-assets"
+        timeout="20000"
       >
+        <!--
+          動画は自動再生制限への対応としてmutedを指定しています。
+          ユーザー操作後にSceneManagerが音量を有効化します。
+        -->
 
+        <video
+          id="video-intro"
+          src="./videos/intro.mp4"
+          preload="auto"
+          muted
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
 
-      <!-- before用360°動画 -->
-      <video
-        id="video-before"
-        src="videos/Background360test.mp4"
+        <video
+          id="video-departure"
+          src="./videos/departure.mp4"
+          preload="auto"
+          muted
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
 
-        preload="auto"
+        <video
+          id="video-flight"
+          src="./videos/flight.mp4"
+          preload="auto"
+          muted
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
 
-        playsinline
-        webkit-playsinline
+        <video
+          id="video-waiting-route"
+          src="./videos/waiting-route.mp4"
+          preload="auto"
+          muted
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
 
-        crossorigin="anonymous"
-      ></video>
+        <video
+          id="video-alternate-route"
+          src="./videos/alternate-route.mp4"
+          preload="auto"
+          muted
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
 
+        <video
+          id="video-arrival"
+          src="./videos/arrival.mp4"
+          preload="auto"
+          muted
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
 
-      <!-- after1用360°動画 -->
-      <video
-        id="video-after1"
-        src="videos/Background360test2.mp4"
+        <!--
+          動画読み込み前に表示するポスター画像
+        -->
+        <img
+          id="video-poster"
+          src="./images/video-poster.jpg"
+          alt=""
+          crossorigin="anonymous"
+        >
 
-        preload="auto"
+        <!--
+          機体モデル
 
-        playsinline
-        webkit-playsinline
+          実際にモデルを使用しない構成の場合も、
+          後から有効化できるようにアセットとして定義します。
+        -->
+        <a-asset-item
+          id="aircraft-model-asset"
+          src="./models/airtaxi.glb"
+          crossorigin="anonymous"
+        ></a-asset-item>
+      </a-assets>
 
-        crossorigin="anonymous"
-      ></video>
+      <!-- ==============================================================
+           360-degree video display
+           ============================================================== -->
 
+      <!--
+        動画表示用の球体です。
 
-      <!-- after2用360°動画 -->
-      <video
-        id="video-after2"
-        src="videos/Background360test2.mp4"
+        初期状態ではポスター画像を表示し、
+        SceneManagerがmaterial.srcを動画要素へ切り替えます。
 
-        preload="auto"
-
-        playsinline
-        webkit-playsinline
-
-        crossorigin="anonymous"
-      ></video>
-
-    </a-assets>
-
-
-    <!-- ===================================================
-         最初の外部視点シーン
-    ==================================================== -->
-
-    <a-entity id="external-scene">
-
-      <a-sky
-        id="external-sky"
-
-        src="#external-background-image"
-
-        radius="100"
-
+        side: backにより球体内側に映像を表示します。
+      -->
+      <a-entity
+        id="video-sphere"
+        class="video-sphere"
+        geometry="
+          primitive: sphere;
+          radius: 100;
+          segmentsWidth: 64;
+          segmentsHeight: 40;
+        "
+        material="
+          shader: flat;
+          src: #video-poster;
+          side: back;
+          transparent: true;
+          opacity: 1;
+        "
         rotation="0 -90 0"
-
-        segments-width="64"
-        segments-height="64"
-      ></a-sky>
-
-
-      <a-entity
-        id="external-aircraft-carrier"
-
-        position="0 -15 -70"
-      >
-
-        <a-entity
-          id="external-aircraft"
-
-          gltf-model="#alia-model"
-
-          animation-mixer="
-            clip: Animation;
-            loop: repeat;
-            repetitions: Infinity;
-            timeScale: 300;
-          "
-
-          brighten-glass="
-            opacity: 0.18;
-            roughness: 0.08;
-          "
-
-          hide-pilot="
-            nodeName: pilot_31;
-          "
-
-          position="0 0 0"
-
-          rotation="0 60 0"
-
-          scale="6 6 6"
-        ></a-entity>
-
-      </a-entity>
-
-    </a-entity>
-
-
-    <!-- ===================================================
-         before用360°動画背景
-    ==================================================== -->
-
-    <a-videosphere
-      id="sphere-before"
-
-      src="#video-before"
-
-      rotation="0 -90 0"
-
-      radius="100"
-
-      visible="false"
-    ></a-videosphere>
-
-
-    <!-- ===================================================
-         after1用360°動画背景
-    ==================================================== -->
-
-    <a-videosphere
-      id="sphere-after1"
-
-      src="#video-after1"
-
-      rotation="0 -90 0"
-
-      radius="100"
-
-      visible="false"
-    ></a-videosphere>
-
-
-    <!-- ===================================================
-         after2用360°動画背景
-    ==================================================== -->
-
-    <a-videosphere
-      id="sphere-after2"
-
-      src="#video-after2"
-
-      rotation="0 -90 0"
-
-      radius="100"
-
-      visible="false"
-    ></a-videosphere>
-
-
-    <!-- ===================================================
-         コクピット位置から見る機体
-    ==================================================== -->
-
-    <a-entity
-      id="cockpit-aircraft"
-
-      gltf-model="#alia-model"
-
-      animation-mixer="
-        clip: Animation;
-        loop: repeat;
-        repetitions: Infinity;
-        timeScale: 300;
-      "
-
-      brighten-glass="
-        opacity: 0.18;
-        roughness: 0.08;
-      "
-
-      hide-pilot="
-        nodeName: pilot_31;
-      "
-
-      position="0.3 -0.3 1.6"
-
-      rotation="0 180 0"
-
-      scale="1 1 1"
-
-      visible="false"
-    ></a-entity>
-
-
-    <!-- ===================================================
-         カメラ
-    ==================================================== -->
-
-    <a-entity id="camera-rig">
-
-      <a-entity
-        id="main-camera"
-
-        camera="
-          active: true;
-          fov: 65;
-        "
-
-        look-controls="
-          magicWindowTrackingEnabled: true;
-          touchEnabled: true;
-          mouseEnabled: true;
-        "
-
-        position="0 0 0"
+        scale="-1 1 1"
       ></a-entity>
 
-    </a-entity>
+      <!-- ==============================================================
+           Aircraft model
+           ============================================================== -->
 
-  </a-scene>
+      <!--
+        機体モデル表示用エンティティです。
+
+        現段階では非表示にしています。
+        必要なシーンでSceneManagerまたはmain.jsから表示します。
+      -->
+      <a-entity
+        id="aircraft-model"
+        class="aircraft-model"
+        gltf-model="#aircraft-model-asset"
+        position="0 -2 -8"
+        rotation="0 0 0"
+        scale="1 1 1"
+        visible="false"
+      ></a-entity>
+
+      <!-- ==============================================================
+           Camera
+           ============================================================== -->
+
+      <!--
+        カメラ自体の向きは固定せず、
+        スマートフォンやHMDの姿勢に応じて360度見回せます。
+      -->
+      <a-entity
+        id="camera-rig"
+        class="camera-rig"
+        position="0 0 0"
+        rotation="0 0 0"
+      >
+        <a-camera
+          id="main-camera"
+          class="main-camera"
+          position="0 0 0"
+          rotation="0 0 0"
+          look-controls="
+            enabled: true;
+            magicWindowTrackingEnabled: true;
+            mouseEnabled: true;
+            touchEnabled: true;
+            reverseMouseDrag: false;
+          "
+          wasd-controls="enabled: false"
+          camera="
+            active: true;
+            fov: 80;
+            near: 0.01;
+            far: 1000;
+          "
+        ></a-camera>
+      </a-entity>
+    </a-scene>
 
 
-  <!-- =====================================================
-       アプリケーション用JavaScript
+    <!-- ================================================================
+         HTML user interface
+         ================================================================ -->
 
-       読み込み順が重要です。
-       main.jsは必ず最後にします。
-  ====================================================== -->
+    <div
+      class="ui-layer"
+      aria-live="polite"
+    >
+      <!-- ==============================================================
+           Loading screen
+           ============================================================== -->
 
-  <script src="js/mentor-manager.js"></script>
+      <section
+        id="loading-screen"
+        class="screen screen--loading"
+        role="status"
+        aria-busy="true"
+        aria-labelledby="loading-message"
+      >
+        <div class="screen__content loading-panel">
+          <div
+            class="loading-spinner"
+            aria-hidden="true"
+          ></div>
 
-  <script src="js/rotor-manager.js"></script>
+          <p
+            id="loading-message"
+            class="loading-message"
+          >
+            読み込み中です…
+          </p>
+        </div>
+      </section>
 
-  <script src="js/timeline-manager.js"></script>
 
-  <script src="js/scene-manager.js"></script>
+      <!-- ==============================================================
+           Start screen
+           ============================================================== -->
 
-  <script src="js/main.js"></script>
+      <section
+        id="start-screen"
+        class="screen screen--start is-hidden"
+        aria-labelledby="start-screen-title"
+      >
+        <div class="screen__content start-panel">
+          <img
+            class="start-panel__logo"
+            src="./images/dream-on-logo.png"
+            alt="Dream On"
+          >
 
+          <p class="start-panel__eyebrow">
+            DREAM ON
+          </p>
+
+          <h1
+            id="start-screen-title"
+            class="start-panel__title"
+          >
+            AirTaxi Player
+          </h1>
+
+          <p class="start-panel__description">
+            エアタクシーに乗って、未来の空の移動を体験しよう。
+          </p>
+
+          <p class="start-panel__guide">
+            スタート後は、端末を動かしたり画面をドラッグしたりして、
+            周囲を見渡せます。
+          </p>
+
+          <button
+            id="start-button"
+            class="button button--primary button--large"
+            type="button"
+          >
+            体験をスタート
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ==============================================================
+           Mentor
+           ============================================================== -->
+
+      <aside
+        id="mentor-container"
+        class="mentor is-hidden"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <div class="mentor__portrait-wrapper">
+          <img
+            id="mentor-image"
+            class="mentor__portrait"
+            src="./images/sora-mentor.png"
+            alt=""
+          >
+        </div>
+
+        <div class="mentor__dialogue">
+          <p
+            id="mentor-name"
+            class="mentor__name"
+          >
+            ソラ教官
+          </p>
+
+          <p
+            id="mentor-message"
+            class="mentor__message"
+          ></p>
+        </div>
+      </aside>
+
+
+      <!-- ==============================================================
+           Route choice
+           ============================================================== -->
+
+      <section
+        id="choice-panel"
+        class="choice-panel is-hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="choice-title"
+        aria-describedby="choice-description"
+      >
+        <div class="choice-panel__content">
+          <p class="choice-panel__eyebrow">
+            SELECT ROUTE
+          </p>
+
+          <h2
+            id="choice-title"
+            class="choice-panel__title"
+          >
+            どうしますか？
+          </h2>
+
+          <p
+            id="choice-description"
+            class="choice-panel__description"
+          >
+            安全な移動方法を選んでください。
+          </p>
+
+          <div class="choice-panel__actions">
+            <button
+              id="wait-route-button"
+              class="button button--choice"
+              type="button"
+              data-choice-id="route-choice"
+              data-option-id="wait"
+            >
+              <span class="button__number" aria-hidden="true">1</span>
+
+              <span class="button__label">
+                ここで待機する
+              </span>
+            </button>
+
+            <button
+              id="alternate-route-button"
+              class="button button--choice"
+              type="button"
+              data-choice-id="route-choice"
+              data-option-id="alternate"
+            >
+              <span class="button__number" aria-hidden="true">2</span>
+
+              <span class="button__label">
+                別の場所へ向かう
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==============================================================
+           Playback controls
+           ============================================================== -->
+
+      <nav
+        id="controls"
+        class="controls is-hidden"
+        aria-label="再生操作"
+      >
+        <button
+          id="pause-button"
+          class="icon-button"
+          type="button"
+          aria-label="一時停止"
+          title="一時停止"
+        >
+          <span aria-hidden="true">Ⅱ</span>
+        </button>
+
+        <button
+          id="resume-button"
+          class="icon-button is-hidden"
+          type="button"
+          aria-label="再開"
+          title="再開"
+        >
+          <span aria-hidden="true">▶</span>
+        </button>
+
+        <button
+          id="restart-button"
+          class="icon-button"
+          type="button"
+          aria-label="最初からやり直す"
+          title="最初からやり直す"
+        >
+          <span aria-hidden="true">↺</span>
+        </button>
+
+        <button
+          id="fullscreen-button"
+          class="icon-button"
+          type="button"
+          aria-label="全画面表示"
+          title="全画面表示"
+        >
+          <span aria-hidden="true">⛶</span>
+        </button>
+      </nav>
+
+
+      <!-- ==============================================================
+           Completion screen
+           ============================================================== -->
+
+      <section
+        id="completion-screen"
+        class="screen screen--completion is-hidden"
+        aria-labelledby="completion-title"
+      >
+        <div class="screen__content completion-panel">
+          <p class="completion-panel__eyebrow">
+            FLIGHT COMPLETE
+          </p>
+
+          <h2
+            id="completion-title"
+            class="completion-panel__title"
+          >
+            フライト完了
+          </h2>
+
+          <p
+            id="completion-message"
+            class="completion-panel__message"
+          >
+            フライト体験は終了です。ご参加ありがとうございました。
+          </p>
+
+          <button
+            id="replay-button"
+            class="button button--primary button--large"
+            type="button"
+          >
+            もう一度体験する
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ==============================================================
+           Error screen
+           ============================================================== -->
+
+      <section
+        id="error-screen"
+        class="screen screen--error is-hidden"
+        role="alert"
+        aria-labelledby="error-title"
+        aria-describedby="error-message"
+      >
+        <div class="screen__content error-panel">
+          <p class="error-panel__eyebrow">
+            ERROR
+          </p>
+
+          <h2
+            id="error-title"
+            class="error-panel__title"
+          >
+            エラーが発生しました
+          </h2>
+
+          <p
+            id="error-message"
+            class="error-panel__message"
+          >
+            アプリケーションでエラーが発生しました。
+            もう一度お試しください。
+          </p>
+
+          <button
+            id="error-retry-button"
+            class="button button--secondary button--large"
+            type="button"
+          >
+            再読み込み
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ==============================================================
+           Screen fade
+           ============================================================== -->
+
+      <!--
+        シーン切り替え時のフェード用オーバーレイです。
+        UIManagerまたはSceneManagerからクラスを切り替えて使用します。
+      -->
+      <div
+        id="screen-fade"
+        class="screen-fade"
+        aria-hidden="true"
+      ></div>
+    </div>
+  </main>
+
+
+  <!--
+    JavaScriptはES Modulesとして読み込みます。
+
+    main.jsから各Managerとconfig.jsをimportします。
+  -->
+  <script
+    type="module"
+    src="./js/main.js"
+  ></script>
 </body>
 </html>
