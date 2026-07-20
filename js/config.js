@@ -79,6 +79,18 @@ export const ROUTE_IDS = Object.freeze({
 
 
 /* ==========================================================================
+   Choice identifiers
+   ========================================================================== */
+
+/**
+ * 選択肢IDです。
+ */
+export const CHOICE_IDS = Object.freeze({
+  ROUTE: 'route-choice',
+});
+
+
+/* ==========================================================================
    Asset paths
    ========================================================================== */
 
@@ -309,91 +321,6 @@ export const EVENTS = Object.freeze({
 
 
 /* ==========================================================================
-   Scene configuration
-   ========================================================================== */
-
-/**
- * シーン設定です。
- *
- * @property {string} id
- * @property {string} videoElementId
- * @property {string} videoPath
- * @property {string} timelineId
- * @property {boolean} loop
- * @property {number} volume
- * @property {boolean} resetOnLoad
- * @property {string|null} nextSceneId
- */
-export const SCENES = Object.freeze({
-  [SCENE_IDS.INTRO]: Object.freeze({
-    id: SCENE_IDS.INTRO,
-    videoElementId: DOM_IDS.introVideo,
-    videoPath: VIDEO_PATHS.intro,
-    timelineId: SCENE_IDS.INTRO,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: SCENE_IDS.DEPARTURE,
-  }),
-
-  [SCENE_IDS.DEPARTURE]: Object.freeze({
-    id: SCENE_IDS.DEPARTURE,
-    videoElementId: DOM_IDS.departureVideo,
-    videoPath: VIDEO_PATHS.departure,
-    timelineId: SCENE_IDS.DEPARTURE,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: SCENE_IDS.FLIGHT,
-  }),
-
-  [SCENE_IDS.FLIGHT]: Object.freeze({
-    id: SCENE_IDS.FLIGHT,
-    videoElementId: DOM_IDS.flightVideo,
-    videoPath: VIDEO_PATHS.flight,
-    timelineId: SCENE_IDS.FLIGHT,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: null,
-  }),
-
-  [SCENE_IDS.WAITING_ROUTE]: Object.freeze({
-    id: SCENE_IDS.WAITING_ROUTE,
-    videoElementId: DOM_IDS.waitingRouteVideo,
-    videoPath: VIDEO_PATHS.waitingRoute,
-    timelineId: SCENE_IDS.WAITING_ROUTE,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: SCENE_IDS.ARRIVAL,
-  }),
-
-  [SCENE_IDS.ALTERNATE_ROUTE]: Object.freeze({
-    id: SCENE_IDS.ALTERNATE_ROUTE,
-    videoElementId: DOM_IDS.alternateRouteVideo,
-    videoPath: VIDEO_PATHS.alternateRoute,
-    timelineId: SCENE_IDS.ALTERNATE_ROUTE,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: SCENE_IDS.ARRIVAL,
-  }),
-
-  [SCENE_IDS.ARRIVAL]: Object.freeze({
-    id: SCENE_IDS.ARRIVAL,
-    videoElementId: DOM_IDS.arrivalVideo,
-    videoPath: VIDEO_PATHS.arrival,
-    timelineId: SCENE_IDS.ARRIVAL,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: SCENE_IDS.COMPLETED,
-  }),
-});
-
-
-/* ==========================================================================
    Application configuration
    ========================================================================== */
 
@@ -483,64 +410,103 @@ export const MENTOR_MESSAGES = Object.freeze({
   WELCOME: Object.freeze({
     id: 'welcome',
     speaker: MENTOR_CONFIG.name,
-    text: 'ようこそ。これからエアタクシーのフライトを体験してもらいます。',
+    text:
+      'ようこそ。これからエアタクシーのフライトを体験してもらいます。',
     durationMs: 6000,
   }),
 
   PREPARE_DEPARTURE: Object.freeze({
     id: 'prepare-departure',
     speaker: MENTOR_CONFIG.name,
-    text: 'まもなく出発します。周囲を見渡して、機体の中からの景色を確認してください。',
+    text:
+      'まもなく出発します。周囲を見渡して、機体の中からの景色を確認してください。',
     durationMs: 6000,
   }),
 
   TAKEOFF: Object.freeze({
     id: 'takeoff',
     speaker: MENTOR_CONFIG.name,
-    text: '離陸します。エアタクシーが上昇する様子を体験してください。',
+    text:
+      '離陸します。エアタクシーが上昇する様子を体験してください。',
     durationMs: 5000,
   }),
 
   FLIGHT_GUIDE: Object.freeze({
     id: 'flight-guide',
     speaker: MENTOR_CONFIG.name,
-    text: '順調に飛行しています。首を動かすと、周囲の景色を見渡せます。',
+    text:
+      '順調に飛行しています。首を動かすと、周囲の景色を見渡せます。',
     durationMs: 6000,
   }),
 
   ROUTE_CHOICE: Object.freeze({
     id: 'route-choice',
     speaker: MENTOR_CONFIG.name,
-    text: '前方の状況が変化しました。ここで待機するか、別のルートへ向かうかを選んでください。',
+    text:
+      '前方の状況が変化しました。ここで待機するか、別のルートへ向かうかを選んでください。',
     durationMs: null,
   }),
 
   WAIT_ROUTE_SELECTED: Object.freeze({
     id: 'wait-route-selected',
     speaker: MENTOR_CONFIG.name,
-    text: '待機するルートを選びました。安全が確認できるまで、この場所で待ちましょう。',
+    text:
+      '待機するルートを選びました。安全が確認できるまで、この場所で待ちましょう。',
     durationMs: 6000,
   }),
 
   ALTERNATE_ROUTE_SELECTED: Object.freeze({
     id: 'alternate-route-selected',
     speaker: MENTOR_CONFIG.name,
-    text: '別のルートを選びました。安全な経路を通って目的地へ向かいます。',
+    text:
+      '別のルートを選びました。安全な経路を通って目的地へ向かいます。',
     durationMs: 6000,
   }),
 
   PREPARE_ARRIVAL: Object.freeze({
     id: 'prepare-arrival',
     speaker: MENTOR_CONFIG.name,
-    text: 'まもなく目的地に到着します。着陸するまでそのままお待ちください。',
+    text:
+      'まもなく目的地に到着します。着陸するまでそのままお待ちください。',
     durationMs: 6000,
   }),
 
   ARRIVAL_COMPLETE: Object.freeze({
     id: 'arrival-complete',
     speaker: MENTOR_CONFIG.name,
-    text: '目的地に到着しました。エアタクシーの旅はいかがでしたか？',
+    text:
+      '目的地に到着しました。エアタクシーの旅はいかがでしたか？',
     durationMs: 7000,
+  }),
+});
+
+
+/* ==========================================================================
+   Choice configuration
+   ========================================================================== */
+
+/**
+ * 分岐選択肢の設定です。
+ */
+export const CHOICES = Object.freeze({
+  ROUTE: Object.freeze({
+    id: CHOICE_IDS.ROUTE,
+    title: 'どうしますか？',
+    description: '安全な移動方法を選んでください。',
+
+    options: Object.freeze([
+      Object.freeze({
+        id: ROUTE_IDS.WAIT,
+        label: 'ここで待機する',
+        targetSceneId: SCENE_IDS.WAITING_ROUTE,
+      }),
+
+      Object.freeze({
+        id: ROUTE_IDS.ALTERNATE,
+        label: '別の場所へ向かう',
+        targetSceneId: SCENE_IDS.ALTERNATE_ROUTE,
+      }),
+    ]),
   }),
 });
 
@@ -722,39 +688,86 @@ export const TIMELINES = Object.freeze({
 
 
 /* ==========================================================================
-   Choice configuration
+   Scene configuration
    ========================================================================== */
 
 /**
- * 選択肢IDです。
+ * シーン設定です。
+ *
+ * @property {string} id
+ * @property {string} videoElementId
+ * @property {string} videoPath
+ * @property {string} timelineId
+ * @property {boolean} loop
+ * @property {number} volume
+ * @property {boolean} resetOnLoad
+ * @property {string|null} nextSceneId
  */
-export const CHOICE_IDS = Object.freeze({
-  ROUTE: 'route-choice',
-});
+export const SCENES = Object.freeze({
+  [SCENE_IDS.INTRO]: Object.freeze({
+    id: SCENE_IDS.INTRO,
+    videoElementId: DOM_IDS.introVideo,
+    videoPath: VIDEO_PATHS.intro,
+    timelineId: SCENE_IDS.INTRO,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: SCENE_IDS.DEPARTURE,
+  }),
 
+  [SCENE_IDS.DEPARTURE]: Object.freeze({
+    id: SCENE_IDS.DEPARTURE,
+    videoElementId: DOM_IDS.departureVideo,
+    videoPath: VIDEO_PATHS.departure,
+    timelineId: SCENE_IDS.DEPARTURE,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: SCENE_IDS.FLIGHT,
+  }),
 
-/**
- * 分岐選択肢の設定です。
- */
-export const CHOICES = Object.freeze({
-  ROUTE: Object.freeze({
-    id: CHOICE_IDS.ROUTE,
-    title: 'どうしますか？',
-    description: '安全な移動方法を選んでください。',
+  [SCENE_IDS.FLIGHT]: Object.freeze({
+    id: SCENE_IDS.FLIGHT,
+    videoElementId: DOM_IDS.flightVideo,
+    videoPath: VIDEO_PATHS.flight,
+    timelineId: SCENE_IDS.FLIGHT,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: null,
+  }),
 
-    options: Object.freeze([
-      Object.freeze({
-        id: ROUTE_IDS.WAIT,
-        label: 'ここで待機する',
-        targetSceneId: SCENE_IDS.WAITING_ROUTE,
-      }),
+  [SCENE_IDS.WAITING_ROUTE]: Object.freeze({
+    id: SCENE_IDS.WAITING_ROUTE,
+    videoElementId: DOM_IDS.waitingRouteVideo,
+    videoPath: VIDEO_PATHS.waitingRoute,
+    timelineId: SCENE_IDS.WAITING_ROUTE,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: SCENE_IDS.ARRIVAL,
+  }),
 
-      Object.freeze({
-        id: ROUTE_IDS.ALTERNATE,
-        label: '別の場所へ向かう',
-        targetSceneId: SCENE_IDS.ALTERNATE_ROUTE,
-      }),
-    ]),
+  [SCENE_IDS.ALTERNATE_ROUTE]: Object.freeze({
+    id: SCENE_IDS.ALTERNATE_ROUTE,
+    videoElementId: DOM_IDS.alternateRouteVideo,
+    videoPath: VIDEO_PATHS.alternateRoute,
+    timelineId: SCENE_IDS.ALTERNATE_ROUTE,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: SCENE_IDS.ARRIVAL,
+  }),
+
+  [SCENE_IDS.ARRIVAL]: Object.freeze({
+    id: SCENE_IDS.ARRIVAL,
+    videoElementId: DOM_IDS.arrivalVideo,
+    videoPath: VIDEO_PATHS.arrival,
+    timelineId: SCENE_IDS.ARRIVAL,
+    loop: false,
+    volume: 0.3,
+    resetOnLoad: true,
+    nextSceneId: SCENE_IDS.COMPLETED,
   }),
 });
 
@@ -916,11 +929,14 @@ const EMPTY_TIMELINE = Object.freeze([]);
 
 
 /* ==========================================================================
-   Validation helpers
+   Lookup helpers
    ========================================================================== */
 
 /**
  * 指定されたシーンIDが存在するか確認します。
+ *
+ * COMPLETEDはアプリケーション終了状態を表すため、
+ * SCENES内には実体を持ちません。
  *
  * @param {string} sceneId
  * @returns {boolean}
@@ -929,6 +945,20 @@ export function isValidSceneId(sceneId) {
   return (
     typeof sceneId === 'string' &&
     Object.prototype.hasOwnProperty.call(SCENES, sceneId)
+  );
+}
+
+
+/**
+ * 指定されたシーンIDが、実在するシーンまたは完了状態か確認します。
+ *
+ * @param {string} sceneId
+ * @returns {boolean}
+ */
+export function isValidSceneDestination(sceneId) {
+  return (
+    isValidSceneId(sceneId) ||
+    sceneId === SCENE_IDS.COMPLETED
   );
 }
 
@@ -1047,7 +1077,7 @@ export function getChoiceTargetSceneId(choiceId, optionId) {
 
 
 /* ==========================================================================
-   Development validation
+   Configuration validation
    ========================================================================== */
 
 /**
@@ -1139,6 +1169,24 @@ function validateScenes() {
       );
     }
 
+    if (!Array.isArray(TIMELINES[scene.timelineId])) {
+      throw new Error(
+        `[Config] Timeline does not exist for scene "${sceneId}": ${scene.timelineId}`
+      );
+    }
+
+    if (typeof scene.loop !== 'boolean') {
+      throw new Error(
+        `[Config] loop must be a boolean for scene: ${sceneId}`
+      );
+    }
+
+    if (typeof scene.resetOnLoad !== 'boolean') {
+      throw new Error(
+        `[Config] resetOnLoad must be a boolean for scene: ${sceneId}`
+      );
+    }
+
     if (
       typeof scene.volume !== 'number' ||
       !Number.isFinite(scene.volume) ||
@@ -1151,9 +1199,8 @@ function validateScenes() {
     }
 
     if (
-      scene.nextSceneId &&
-      scene.nextSceneId !== SCENE_IDS.COMPLETED &&
-      !isValidSceneId(scene.nextSceneId)
+      scene.nextSceneId !== null &&
+      !isValidSceneDestination(scene.nextSceneId)
     ) {
       throw new Error(
         `[Config] Invalid nextSceneId "${scene.nextSceneId}" in scene "${sceneId}"`
@@ -1188,6 +1235,15 @@ function validateMentorMessages() {
     }
 
     messageIds.add(message.id);
+
+    if (
+      typeof message.speaker !== 'string' ||
+      message.speaker.trim() === ''
+    ) {
+      throw new Error(
+        `[Config] Mentor speaker is required: ${message.id}`
+      );
+    }
 
     if (
       typeof message.text !== 'string' ||
@@ -1241,6 +1297,24 @@ function validateChoices() {
     choiceIds.add(choice.id);
 
     if (
+      typeof choice.title !== 'string' ||
+      choice.title.trim() === ''
+    ) {
+      throw new Error(
+        `[Config] Choice title is required: ${choice.id}`
+      );
+    }
+
+    if (
+      typeof choice.description !== 'string' ||
+      choice.description.trim() === ''
+    ) {
+      throw new Error(
+        `[Config] Choice description is required: ${choice.id}`
+      );
+    }
+
+    if (
       !Array.isArray(choice.options) ||
       choice.options.length < 2
     ) {
@@ -1268,6 +1342,15 @@ function validateChoices() {
       }
 
       optionIds.add(option.id);
+
+      if (
+        typeof option.label !== 'string' ||
+        option.label.trim() === ''
+      ) {
+        throw new Error(
+          `[Config] Choice option label is required: ${choice.id} / ${option.id}`
+        );
+      }
 
       if (!isValidSceneId(option.targetSceneId)) {
         throw new Error(
@@ -1339,6 +1422,25 @@ function validateTimelines() {
         );
       }
 
+      if (typeof event.once !== 'boolean') {
+        throw new Error(
+          `[Config] Timeline event once must be a boolean: ${event.id}`
+        );
+      }
+
+      if (
+        event.payload !== undefined &&
+        (
+          event.payload === null ||
+          typeof event.payload !== 'object' ||
+          Array.isArray(event.payload)
+        )
+      ) {
+        throw new Error(
+          `[Config] Timeline payload must be an object: ${event.id}`
+        );
+      }
+
       validateTimelinePayload(event);
 
       previousTime = event.time;
@@ -1365,19 +1467,13 @@ function validateTimelinePayload(event) {
       getChoiceConfig(payload.choiceId);
       break;
 
+    case TIMELINE_EVENT_TYPES.ROTOR_START:
     case TIMELINE_EVENT_TYPES.ROTOR_SPEED_CHANGE:
-      if (
-        typeof payload.speed !== 'number' ||
-        !Number.isFinite(payload.speed)
-      ) {
-        throw new Error(
-          `[Config] Rotor speed is required: ${event.id}`
-        );
-      }
+      validateRotorSpeedPayload(event.id, payload.speed);
       break;
 
     case TIMELINE_EVENT_TYPES.SCENE_CHANGE:
-      if (!isValidSceneId(payload.sceneId)) {
+      if (!isValidSceneDestination(payload.sceneId)) {
         throw new Error(
           `[Config] Invalid timeline scene ID: ${event.id}`
         );
@@ -1391,11 +1487,51 @@ function validateTimelinePayload(event) {
 
 
 /**
+ * タイムライン内のローター速度を検証します。
+ *
+ * @param {string} eventId
+ * @param {*} speed
+ * @private
+ */
+function validateRotorSpeedPayload(eventId, speed) {
+  if (
+    typeof speed !== 'number' ||
+    !Number.isFinite(speed) ||
+    speed < ROTOR_CONFIG.minimumSpeed ||
+    speed > ROTOR_CONFIG.maximumSpeed
+  ) {
+    throw new Error(
+      `[Config] Invalid rotor speed in "${eventId}": ${String(speed)}`
+    );
+  }
+}
+
+
+/**
  * プロペラ設定を検証します。
  *
  * @private
  */
 function validateRotorConfig() {
+  if (
+    typeof ROTOR_CONFIG.minimumSpeed !== 'number' ||
+    !Number.isFinite(ROTOR_CONFIG.minimumSpeed)
+  ) {
+    throw new Error(
+      '[Config] Invalid minimum rotor speed.'
+    );
+  }
+
+  if (
+    typeof ROTOR_CONFIG.maximumSpeed !== 'number' ||
+    !Number.isFinite(ROTOR_CONFIG.maximumSpeed) ||
+    ROTOR_CONFIG.maximumSpeed < ROTOR_CONFIG.minimumSpeed
+  ) {
+    throw new Error(
+      '[Config] Invalid maximum rotor speed.'
+    );
+  }
+
   if (
     typeof ROTOR_CONFIG.defaultSpeed !== 'number' ||
     !Number.isFinite(ROTOR_CONFIG.defaultSpeed) ||
@@ -1408,12 +1544,31 @@ function validateRotorConfig() {
   }
 
   if (
+    !['x', 'y', 'z'].includes(ROTOR_CONFIG.defaultAxis)
+  ) {
+    throw new Error(
+      `[Config] Invalid rotor axis: ${ROTOR_CONFIG.defaultAxis}`
+    );
+  }
+
+  if (
     !Array.isArray(ROTOR_CONFIG.nodeNamePatterns) ||
     ROTOR_CONFIG.nodeNamePatterns.length === 0
   ) {
     throw new Error(
       '[Config] At least one rotor node name pattern is required.'
     );
+  }
+
+  for (const pattern of ROTOR_CONFIG.nodeNamePatterns) {
+    if (
+      typeof pattern !== 'string' ||
+      pattern.trim() === ''
+    ) {
+      throw new Error(
+        '[Config] Rotor node name patterns must be non-empty strings.'
+      );
+    }
   }
 
   if (
@@ -1423,5 +1578,13 @@ function validateRotorConfig() {
     throw new Error(
       '[Config] At least one rotor rotation direction is required.'
     );
+  }
+
+  for (const direction of ROTOR_CONFIG.rotationDirections) {
+    if (direction !== 1 && direction !== -1) {
+      throw new Error(
+        `[Config] Rotor rotation direction must be 1 or -1: ${direction}`
+      );
+    }
   }
 }
