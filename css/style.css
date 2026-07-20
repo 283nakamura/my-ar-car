@@ -1,366 +1,1333 @@
-/* ==========================================================
-   Global
-========================================================== */
+/**
+ * Dream On AirTaxi Player
+ * Main stylesheet
+ *
+ * @file css/style.css
+ * @description
+ * A-Frameシーン上に重ねるUI、スタート画面、ソラ教官、
+ * 分岐選択、再生操作、完了画面、エラー画面を定義します。
+ */
 
-*{
-    box-sizing:border-box;
-    -webkit-tap-highlight-color:transparent;
+/* ==========================================================================
+   Design tokens
+   ========================================================================== */
+
+:root {
+  --color-background: #05070b;
+  --color-background-soft: rgba(8, 12, 20, 0.82);
+  --color-background-strong: rgba(5, 7, 11, 0.94);
+
+  --color-surface: rgba(16, 22, 34, 0.88);
+  --color-surface-hover: rgba(25, 34, 51, 0.94);
+  --color-surface-active: rgba(34, 45, 66, 0.98);
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #c8d0dc;
+  --color-text-muted: #8e9bad;
+
+  --color-primary: #ffd200;
+  --color-primary-hover: #ffe04d;
+  --color-primary-active: #e6bd00;
+  --color-primary-text: #111111;
+
+  --color-secondary: #2a3547;
+  --color-secondary-hover: #36445b;
+  --color-secondary-active: #202938;
+
+  --color-border: rgba(255, 255, 255, 0.16);
+  --color-border-strong: rgba(255, 255, 255, 0.3);
+
+  --color-danger: #ff5f68;
+  --color-danger-soft: rgba(255, 95, 104, 0.16);
+
+  --shadow-panel:
+    0 18px 50px rgba(0, 0, 0, 0.45),
+    0 2px 10px rgba(0, 0, 0, 0.25);
+
+  --shadow-button:
+    0 8px 24px rgba(0, 0, 0, 0.28);
+
+  --font-family-base:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Hiragino Kaku Gothic ProN",
+    "Hiragino Sans",
+    "Yu Gothic",
+    "YuGothic",
+    "Meiryo",
+    sans-serif;
+
+  --font-family-display:
+    "Segoe UI",
+    "Hiragino Kaku Gothic ProN",
+    "Hiragino Sans",
+    sans-serif;
+
+  --radius-small: 10px;
+  --radius-medium: 16px;
+  --radius-large: 24px;
+  --radius-pill: 999px;
+
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+
+  --ui-horizontal-padding:
+    max(20px, calc(var(--safe-area-left) + 16px));
+
+  --ui-vertical-padding:
+    max(20px, calc(var(--safe-area-top) + 16px));
+}
+
+
+/* ==========================================================================
+   Reset
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html,
-body{
-
-    width:100%;
-    height:100%;
-
-    margin:0;
-    padding:0;
-
-    overflow:hidden;
-
-    background:#000;
-
-    font-family:
-        "Yu Gothic",
-        "Hiragino Sans",
-        sans-serif;
-
+body {
+  width: 100%;
+  min-width: 320px;
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
-/* ==========================================================
-   A-Frame
-========================================================== */
-
-a-scene{
-
-    position:absolute;
-
-    inset:0;
-
-    width:100%;
-    height:100%;
-
-    z-index:1;
-
+html {
+  overflow: hidden;
+  background: var(--color-background);
+  color-scheme: dark;
+  font-family: var(--font-family-base);
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ==========================================================
-   Fade
-========================================================== */
-
-#fade-overlay{
-
-    position:fixed;
-
-    inset:0;
-
-    background:black;
-
-    opacity:1;
-
-    pointer-events:none;
-
-    transition:opacity 0.8s ease;
-
-    z-index:9000;
-
+body {
+  overflow: hidden;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  font-size: 16px;
+  line-height: 1.6;
+  overscroll-behavior: none;
+  touch-action: manipulation;
 }
 
-#fade-overlay.hide{
-
-    opacity:0;
-
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
-/* ==========================================================
-   UI Layer
-========================================================== */
-
-#ui-container{
-
-    position:fixed;
-
-    inset:0;
-
-    pointer-events:none;
-
-    z-index:5000;
-
+button {
+  margin: 0;
 }
 
-/* ==========================================================
-   Mentor Panel
-========================================================== */
-
-#mentor-panel{
-
-    position:absolute;
-
-    left:50%;
-
-    bottom:2vh;
-
-    transform:translateX(-50%);
-
-    width:min(95vw,900px);
-
-    display:none;
-
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
 }
 
-/* コメント吹き出し */
-
-#comment-window{
-
-    width:100%;
-
-    display:block;
-
+[hidden] {
+  display: none !important;
 }
 
-/* ソラ教官 */
 
-#instructor-img{
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
 
-    position:absolute;
-
-    left:2%;
-
-    bottom:0;
-
-    height:95%;
-
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 4px;
 }
 
-/* セリフ */
-
-#mentor-text{
-
-    position:absolute;
-
-    left:21%;
-
-    right:6%;
-
-    top:16%;
-
-    bottom:18%;
-
-    display:flex;
-
-    align-items:center;
-
-    font-size:clamp(18px,2vw,30px);
-
-    font-weight:bold;
-
-    color:white;
-
-    line-height:1.5;
-
-    text-shadow:
-
-        0 0 8px black,
-
-        0 0 12px black;
-
+::selection {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
-/* ==========================================================
-   Button Area
-========================================================== */
+.noscript-message {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
 
-#btn-area{
+  display: grid;
+  place-items: center;
 
-    position:fixed;
+  padding: 32px;
 
-    left:50%;
+  background: var(--color-background);
+  color: var(--color-text-primary);
 
-    bottom:10vh;
-
-    transform:translateX(-50%);
-
-    display:flex;
-
-    gap:20px;
-
-    z-index:6000;
-
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
 }
 
-/* ==========================================================
+
+/* ==========================================================================
+   Application root
+   ========================================================================== */
+
+.app {
+  position: fixed;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+  background: var(--color-background);
+
+  isolation: isolate;
+}
+
+.airtaxi-scene {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background: var(--color-background);
+}
+
+.a-canvas {
+  width: 100% !important;
+  height: 100% !important;
+
+  outline: none;
+  touch-action: none;
+}
+
+
+/* ==========================================================================
+   Utility state classes
+   ========================================================================== */
+
+.is-hidden {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.is-visible {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.is-disabled {
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+}
+
+.is-active {
+  border-color: var(--color-primary) !important;
+}
+
+
+/* ==========================================================================
+   UI layer
+   ========================================================================== */
+
+.ui-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+  pointer-events: none;
+}
+
+
+/* ==========================================================================
+   Shared full-screen overlays
+   ========================================================================== */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+
+  display: grid;
+  place-items: center;
+
+  width: 100%;
+  height: 100%;
+
+  padding:
+    max(24px, calc(var(--safe-area-top) + 20px))
+    max(20px, calc(var(--safe-area-right) + 20px))
+    max(24px, calc(var(--safe-area-bottom) + 20px))
+    max(20px, calc(var(--safe-area-left) + 20px));
+
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+
+  transition:
+    opacity var(--transition-normal),
+    visibility var(--transition-normal);
+}
+
+.screen::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  content: "";
+
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(60, 78, 110, 0.24),
+      transparent 48%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 7, 11, 0.7),
+      rgba(5, 7, 11, 0.95)
+    );
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.screen__content {
+  position: relative;
+
+  width: min(100%, 560px);
+  max-height: 100%;
+
+  overflow-y: auto;
+
+  padding: clamp(24px, 5vw, 48px);
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(29, 39, 58, 0.92),
+      rgba(10, 15, 25, 0.94)
+    );
+
+  box-shadow: var(--shadow-panel);
+
+  text-align: center;
+
+  scrollbar-width: thin;
+}
+
+
+/* ==========================================================================
+   Loading screen
+   ========================================================================== */
+
+.screen--loading {
+  z-index: 90;
+}
+
+.loading-panel {
+  width: min(100%, 360px);
+  padding: 36px 28px;
+}
+
+.loading-spinner {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 20px;
+
+  border: 4px solid rgba(255, 255, 255, 0.18);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+
+  animation: loading-spin 900ms linear infinite;
+}
+
+.loading-message {
+  margin: 0;
+
+  color: var(--color-text-secondary);
+
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* ==========================================================================
+   Start screen
+   ========================================================================== */
+
+.screen--start {
+  z-index: 60;
+}
+
+.start-panel {
+  width: min(100%, 620px);
+}
+
+.start-panel__logo {
+  width: min(220px, 60%);
+  max-height: 72px;
+  margin: 0 auto 26px;
+
+  object-fit: contain;
+}
+
+.start-panel__eyebrow,
+.choice-panel__eyebrow,
+.completion-panel__eyebrow,
+.error-panel__eyebrow {
+  margin: 0 0 8px;
+
+  color: var(--color-primary);
+
+  font-family: var(--font-family-display);
+  font-size: clamp(0.72rem, 2vw, 0.86rem);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.start-panel__title {
+  margin: 0;
+
+  color: var(--color-text-primary);
+
+  font-family: var(--font-family-display);
+  font-size: clamp(2rem, 8vw, 4rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.start-panel__description {
+  margin: 24px 0 0;
+
+  color: var(--color-text-primary);
+
+  font-size: clamp(1rem, 3.4vw, 1.25rem);
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.start-panel__guide {
+  margin: 16px auto 0;
+
+  max-width: 480px;
+
+  color: var(--color-text-secondary);
+
+  font-size: clamp(0.86rem, 2.8vw, 1rem);
+  line-height: 1.8;
+}
+
+.start-panel .button {
+  margin-top: 32px;
+}
+
+
+/* ==========================================================================
    Buttons
-========================================================== */
+   ========================================================================== */
 
-.action-btn{
+.button {
+  position: relative;
 
-    appearance:none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 
-    border:none;
+  min-height: 52px;
 
-    border-radius:999px;
+  padding: 13px 24px;
+
+  border: 1px solid transparent;
+  border-radius: var(--radius-medium);
+
+  cursor: pointer;
+
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+
+  box-shadow: var(--shadow-button);
+
+  transition:
+    transform var(--transition-fast),
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    opacity var(--transition-fast),
+    box-shadow var(--transition-fast);
+
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+}
+
+.button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
+}
+
+.button--primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+}
+
+.button--primary:hover {
+  border-color: var(--color-primary-hover);
+  background: var(--color-primary-hover);
+}
+
+.button--primary:active {
+  border-color: var(--color-primary-active);
+  background: var(--color-primary-active);
+}
+
+.button--secondary {
+  border-color: var(--color-border-strong);
+  background: var(--color-secondary);
+  color: var(--color-text-primary);
+}
+
+.button--secondary:hover {
+  background: var(--color-secondary-hover);
+}
+
+.button--secondary:active {
+  background: var(--color-secondary-active);
+}
+
+.button--large {
+  min-width: min(100%, 280px);
+  min-height: 60px;
+
+  padding: 16px 30px;
+
+  border-radius: 18px;
+
+  font-size: clamp(1rem, 3vw, 1.12rem);
+}
+
+
+/* ==========================================================================
+   Mentor
+   ========================================================================== */
+
+.mentor {
+  position: absolute;
+  z-index: 32;
+
+  right: max(18px, calc(var(--safe-area-right) + 14px));
+  bottom: max(88px, calc(var(--safe-area-bottom) + 76px));
+  left: max(18px, calc(var(--safe-area-left) + 14px));
+
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+
+  max-width: 760px;
+  margin: 0 auto;
+
+  visibility: visible;
+  opacity: 1;
+  pointer-events: none;
+
+  transition:
+    opacity var(--transition-normal),
+    visibility var(--transition-normal),
+    transform var(--transition-normal);
+
+  transform: translateY(0);
+}
+
+.mentor.is-hidden {
+  transform: translateY(18px);
+}
+
+.mentor__portrait-wrapper {
+  flex: 0 0 auto;
+
+  width: clamp(72px, 14vw, 120px);
+  height: clamp(72px, 14vw, 120px);
+
+  overflow: hidden;
+
+  border: 2px solid rgba(255, 210, 0, 0.7);
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(255, 210, 0, 0.22),
+      rgba(8, 12, 20, 0.95)
+    );
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.42),
+    0 0 0 6px rgba(255, 210, 0, 0.08);
+}
+
+.mentor__portrait {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center;
+}
+
+.mentor__dialogue {
+  position: relative;
+
+  flex: 1 1 auto;
+
+  min-width: 0;
+
+  padding: 18px 22px;
+
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(21, 29, 44, 0.94),
+      rgba(8, 12, 20, 0.94)
+    );
+
+  box-shadow: var(--shadow-panel);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.mentor__dialogue::before {
+  position: absolute;
+  bottom: 22px;
+  left: -10px;
+
+  width: 18px;
+  height: 18px;
+
+  content: "";
+
+  border-bottom: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+
+  background: rgba(14, 20, 31, 0.96);
+
+  transform: rotate(45deg);
+}
+
+.mentor__name {
+  margin: 0 0 4px;
+
+  color: var(--color-primary);
+
+  font-size: clamp(0.76rem, 2.4vw, 0.9rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.mentor__message {
+  margin: 0;
+
+  color: var(--color-text-primary);
+
+  font-size: clamp(0.94rem, 3.1vw, 1.12rem);
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+
+/* ==========================================================================
+   Route choice panel
+   ========================================================================== */
+
+.choice-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+
+  display: grid;
+  place-items: center;
+
+  padding:
+    max(24px, calc(var(--safe-area-top) + 20px))
+    max(20px, calc(var(--safe-area-right) + 20px))
+    max(24px, calc(var(--safe-area-bottom) + 20px))
+    max(20px, calc(var(--safe-area-left) + 20px));
+
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+
+  background: rgba(3, 5, 9, 0.52);
+
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+
+  transition:
+    opacity var(--transition-normal),
+    visibility var(--transition-normal);
+}
+
+.choice-panel__content {
+  width: min(100%, 620px);
+
+  padding: clamp(24px, 5vw, 44px);
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(26, 35, 52, 0.96),
+      rgba(8, 12, 20, 0.97)
+    );
+
+  box-shadow: var(--shadow-panel);
+
+  text-align: center;
+}
+
+.choice-panel__title {
+  margin: 0;
+
+  color: var(--color-text-primary);
+
+  font-size: clamp(1.7rem, 6vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.choice-panel__description {
+  margin: 12px 0 0;
+
+  color: var(--color-text-secondary);
+
+  font-size: clamp(0.92rem, 3vw, 1.08rem);
+  line-height: 1.7;
+}
+
+.choice-panel__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+
+  margin-top: 28px;
+}
+
+.button--choice {
+  justify-content: flex-start;
+
+  min-height: 88px;
+  padding: 18px;
+
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+
+  text-align: left;
+}
+
+.button--choice:hover {
+  border-color: rgba(255, 210, 0, 0.7);
+  background: var(--color-surface-hover);
+}
+
+.button--choice:active {
+  background: var(--color-surface-active);
+}
+
+.button__number {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 50%;
+
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.button__label {
+  min-width: 0;
+
+  font-size: clamp(0.92rem, 2.8vw, 1.05rem);
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+
+/* ==========================================================================
+   Playback controls
+   ========================================================================== */
+
+.controls {
+  position: absolute;
+  z-index: 35;
+
+  right: max(14px, calc(var(--safe-area-right) + 10px));
+  bottom: max(14px, calc(var(--safe-area-bottom) + 10px));
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+
+  transition:
+    opacity var(--transition-normal),
+    visibility var(--transition-normal),
+    transform var(--transition-normal);
+}
+
+.controls.is-hidden {
+  transform: translateY(12px);
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+
+  padding: 0;
+
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+
+  cursor: pointer;
+
+  background: rgba(10, 15, 24, 0.78);
+  color: var(--color-text-primary);
+
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.3);
+
+  font-size: 1.05rem;
+  font-weight: 900;
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  transition:
+    transform var(--transition-fast),
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.icon-button:hover {
+  border-color: rgba(255, 210, 0, 0.8);
+  background: rgba(25, 34, 51, 0.92);
+
+  transform: translateY(-2px);
+}
+
+.icon-button:active {
+  transform: scale(0.96);
+}
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+
+/* ==========================================================================
+   Completion screen
+   ========================================================================== */
+
+.screen--completion {
+  z-index: 70;
+}
+
+.completion-panel__title {
+  margin: 0;
+
+  color: var(--color-text-primary);
+
+  font-size: clamp(2rem, 7vw, 3.4rem);
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.completion-panel__message {
+  margin: 20px auto 0;
+
+  max-width: 460px;
+
+  color: var(--color-text-secondary);
+
+  font-size: clamp(0.95rem, 3.2vw, 1.1rem);
+  line-height: 1.8;
+}
+
+.completion-panel .button {
+  margin-top: 30px;
+}
+
+
+/* ==========================================================================
+   Error screen
+   ========================================================================== */
+
+.screen--error {
+  z-index: 100;
+}
+
+.screen--error::before {
+  background:
+    radial-gradient(
+      circle at 50% 30%,
+      rgba(255, 95, 104, 0.2),
+      transparent 48%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 7, 11, 0.8),
+      rgba(5, 7, 11, 0.97)
+    );
+}
+
+.error-panel {
+  border-color: rgba(255, 95, 104, 0.36);
+}
+
+.error-panel__eyebrow {
+  color: var(--color-danger);
+}
+
+.error-panel__title {
+  margin: 0;
+
+  color: var(--color-text-primary);
+
+  font-size: clamp(1.7rem, 6vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.error-panel__message {
+  margin: 18px auto 0;
+
+  max-width: 460px;
+
+  color: var(--color-text-secondary);
+
+  font-size: clamp(0.92rem, 3vw, 1.05rem);
+  line-height: 1.8;
+}
+
+.error-panel .button {
+  margin-top: 28px;
+}
+
+
+/* ==========================================================================
+   Scene fade overlay
+   ========================================================================== */
+
+.screen-fade {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+
+  background: #000000;
+
+  transition:
+    opacity var(--transition-slow),
+    visibility var(--transition-slow);
+}
+
+.screen-fade.is-visible {
+  visibility: visible;
+  opacity: 1;
+}
+
+
+/* ==========================================================================
+   Orientation guidance
+   ========================================================================== */
+
+@media screen and (orientation: portrait) and (max-width: 520px) {
+  .start-panel__guide {
+    max-width: 320px;
+  }
+
+  .mentor {
+    align-items: center;
+  }
+
+  .mentor__portrait-wrapper {
+    width: 68px;
+    height: 68px;
+  }
+
+  .mentor__dialogue {
+    padding: 14px 16px;
+  }
+
+  .mentor__dialogue::before {
+    bottom: 18px;
+  }
+}
+
+
+/* ==========================================================================
+   Small screens
+   ========================================================================== */
+
+@media screen and (max-width: 640px) {
+  .screen {
+    align-items: end;
+    padding-top: max(20px, calc(var(--safe-area-top) + 14px));
+  }
+
+  .screen__content {
+    width: 100%;
+
+    padding: 28px 22px;
+
+    border-radius: 24px 24px 0 0;
+  }
+
+  .screen--loading {
+    align-items: center;
+  }
+
+  .screen--loading .screen__content {
+    width: min(100%, 340px);
+
+    border-radius: var(--radius-large);
+  }
+
+  .choice-panel {
+    align-items: end;
+    padding: 0;
+  }
+
+  .choice-panel__content {
+    width: 100%;
 
     padding:
+      28px
+      max(20px, calc(var(--safe-area-right) + 18px))
+      max(28px, calc(var(--safe-area-bottom) + 22px))
+      max(20px, calc(var(--safe-area-left) + 18px));
 
-        18px
-        42px;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 24px 24px 0 0;
+  }
 
-    min-width:220px;
+  .choice-panel__actions {
+    grid-template-columns: 1fr;
+  }
 
-    font-size:26px;
+  .button--choice {
+    min-height: 72px;
+  }
 
-    font-weight:bold;
+  .mentor {
+    right: max(12px, calc(var(--safe-area-right) + 10px));
+    bottom: max(78px, calc(var(--safe-area-bottom) + 70px));
+    left: max(12px, calc(var(--safe-area-left) + 10px));
+  }
 
-    color:white;
+  .controls {
+    right: max(10px, calc(var(--safe-area-right) + 8px));
+    bottom: max(10px, calc(var(--safe-area-bottom) + 8px));
 
-    cursor:pointer;
+    gap: 8px;
+  }
 
-    transition:
-
-        transform .2s,
-
-        opacity .2s,
-
-        background .2s;
-
-    pointer-events:auto;
-
+  .icon-button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
 }
 
-/* ==========================================================
-   Start
-========================================================== */
 
-.action-btn.start{
+/* ==========================================================================
+   Very small screens
+   ========================================================================== */
 
-    background:#0078ff;
+@media screen and (max-width: 380px) {
+  .screen__content {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
 
+  .start-panel__description {
+    line-height: 1.6;
+  }
+
+  .start-panel__guide {
+    line-height: 1.7;
+  }
+
+  .mentor {
+    gap: 10px;
+  }
+
+  .mentor__portrait-wrapper {
+    width: 58px;
+    height: 58px;
+  }
+
+  .mentor__dialogue {
+    padding: 12px 14px;
+  }
+
+  .mentor__message {
+    font-size: 0.9rem;
+  }
+
+  .controls {
+    gap: 6px;
+  }
+
+  .icon-button {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+  }
 }
 
-/* ==========================================================
-   Choice A
-========================================================== */
 
-.action-btn.choice1{
+/* ==========================================================================
+   Wide screens
+   ========================================================================== */
 
-    background:#00a85a;
+@media screen and (min-width: 1100px) {
+  .mentor {
+    right: auto;
+    bottom: 34px;
+    left: 34px;
 
+    max-width: 760px;
+    margin: 0;
+  }
+
+  .controls {
+    right: 34px;
+    bottom: 34px;
+  }
 }
 
-/* ==========================================================
-   Choice B
-========================================================== */
 
-.action-btn.choice2{
+/* ==========================================================================
+   Short landscape screens
+   ========================================================================== */
 
-    background:#ff8c00;
+@media screen and (orientation: landscape) and (max-height: 560px) {
+  .screen {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
 
+  .screen__content {
+    width: min(100%, 720px);
+    padding: 22px 28px;
+  }
+
+  .start-panel__logo {
+    max-height: 48px;
+    margin-bottom: 14px;
+  }
+
+  .start-panel__description {
+    margin-top: 14px;
+  }
+
+  .start-panel__guide {
+    margin-top: 8px;
+  }
+
+  .start-panel .button {
+    margin-top: 18px;
+  }
+
+  .choice-panel__content {
+    width: min(100%, 760px);
+    padding: 22px 28px;
+  }
+
+  .choice-panel__actions {
+    margin-top: 18px;
+  }
+
+  .button--choice {
+    min-height: 66px;
+  }
+
+  .mentor {
+    bottom: max(68px, calc(var(--safe-area-bottom) + 58px));
+  }
+
+  .mentor__portrait-wrapper {
+    width: 64px;
+    height: 64px;
+  }
+
+  .mentor__dialogue {
+    padding: 12px 16px;
+  }
 }
 
-/* ==========================================================
-   Hover
-========================================================== */
 
-.action-btn:hover{
+/* ==========================================================================
+   Reduced motion
+   ========================================================================== */
 
-    transform:scale(1.04);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
 
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .loading-spinner {
+    animation-duration: 1.8s !important;
+  }
 }
 
-/* ==========================================================
-   Click
-========================================================== */
 
-.action-btn:active{
+/* ==========================================================================
+   High contrast
+   ========================================================================== */
 
-    transform:scale(.98);
+@media (prefers-contrast: more) {
+  :root {
+    --color-border: rgba(255, 255, 255, 0.42);
+    --color-border-strong: rgba(255, 255, 255, 0.7);
+  }
 
+  .button--primary {
+    border: 2px solid #ffffff;
+  }
+
+  .mentor__dialogue,
+  .choice-panel__content,
+  .screen__content {
+    border-width: 2px;
+  }
 }
 
-/* ==========================================================
-   Hidden
-========================================================== */
 
-.hidden{
+/* ==========================================================================
+   Hover-disabled devices
+   ========================================================================== */
 
-    display:none !important;
+@media (hover: none) {
+  .button:hover,
+  .icon-button:hover {
+    transform: none;
+  }
 
+  .button:active {
+    transform: scale(0.98);
+  }
+
+  .icon-button:active {
+    transform: scale(0.94);
+  }
 }
 
-/* ==========================================================
-   Fade Utility
-========================================================== */
 
-.fade-in{
+/* ==========================================================================
+   Print
+   ========================================================================== */
 
-    animation:fadein .5s forwards;
+@media print {
+  html,
+  body,
+  .app {
+    position: static;
 
-}
+    width: auto;
+    height: auto;
 
-.fade-out{
+    overflow: visible;
 
-    animation:fadeout .5s forwards;
+    background: #ffffff;
+    color: #000000;
+  }
 
-}
-
-@keyframes fadein{
-
-    from{
-
-        opacity:0;
-
-    }
-
-    to{
-
-        opacity:1;
-
-    }
-
-}
-
-@keyframes fadeout{
-
-    from{
-
-        opacity:1;
-
-    }
-
-    to{
-
-        opacity:0;
-
-    }
-
-}
-
-/* ==========================================================
-   Smartphone
-========================================================== */
-
-@media (max-width:768px){
-
-    #mentor-panel{
-
-        width:98vw;
-
-    }
-
-    #mentor-text{
-
-        font-size:18px;
-
-    }
-
-    .action-btn{
-
-        min-width:170px;
-
-        font-size:20px;
-
-        padding:16px 24px;
-
-    }
-
+  .airtaxi-scene,
+  .ui-layer,
+  .screen-fade {
+    display: none !important;
+  }
 }
