@@ -10,6 +10,7 @@
  * このファイルではDOM操作やゲーム処理を行いません。
  */
 
+
 /* ==========================================================================
    Application metadata
    ========================================================================== */
@@ -20,7 +21,8 @@
 export const APP_INFO = Object.freeze({
   name: 'Dream On AirTaxi Player',
   version: '1.0.0',
-  description: 'Air taxi flight experience for Maker Faire Tokyo',
+  description:
+    'Air taxi flight experience for Maker Faire Tokyo',
   organization: 'Dream On',
 });
 
@@ -39,8 +41,11 @@ export const APP_STATES = Object.freeze({
   READY: 'ready',
   PLAYING: 'playing',
   PAUSED: 'paused',
+  WAITING_FOR_CHOICE: 'waiting-for-choice',
+  TRANSITIONING: 'transitioning',
   COMPLETED: 'completed',
   ERROR: 'error',
+  DESTROYED: 'destroyed',
 });
 
 
@@ -107,15 +112,27 @@ export const ASSET_PATHS = Object.freeze({
 /**
  * 動画ファイルのパスです。
  *
- * 実際の動画ファイル名に合わせて、後からここだけ変更できます。
+ * 実際の動画ファイル名に合わせて、
+ * 後からここだけ変更できます。
  */
 export const VIDEO_PATHS = Object.freeze({
-  intro: `${ASSET_PATHS.videos}/intro.mp4`,
-  departure: `${ASSET_PATHS.videos}/departure.mp4`,
-  flight: `${ASSET_PATHS.videos}/flight.mp4`,
-  waitingRoute: `${ASSET_PATHS.videos}/waiting-route.mp4`,
-  alternateRoute: `${ASSET_PATHS.videos}/alternate-route.mp4`,
-  arrival: `${ASSET_PATHS.videos}/arrival.mp4`,
+  intro:
+    `${ASSET_PATHS.videos}/intro.mp4`,
+
+  departure:
+    `${ASSET_PATHS.videos}/departure.mp4`,
+
+  flight:
+    `${ASSET_PATHS.videos}/flight.mp4`,
+
+  waitingRoute:
+    `${ASSET_PATHS.videos}/waiting-route.mp4`,
+
+  alternateRoute:
+    `${ASSET_PATHS.videos}/alternate-route.mp4`,
+
+  arrival:
+    `${ASSET_PATHS.videos}/arrival.mp4`,
 });
 
 
@@ -123,9 +140,14 @@ export const VIDEO_PATHS = Object.freeze({
  * 画像ファイルのパスです。
  */
 export const IMAGE_PATHS = Object.freeze({
-  mentor: `${ASSET_PATHS.images}/sora-mentor.png`,
-  logo: `${ASSET_PATHS.images}/dream-on-logo.png`,
-  poster: `${ASSET_PATHS.images}/video-poster.jpg`,
+  mentor:
+    `${ASSET_PATHS.images}/sora-mentor.png`,
+
+  logo:
+    `${ASSET_PATHS.images}/dream-on-logo.png`,
+
+  poster:
+    `${ASSET_PATHS.images}/video-poster.jpg`,
 });
 
 
@@ -133,7 +155,8 @@ export const IMAGE_PATHS = Object.freeze({
  * 3Dモデルファイルのパスです。
  */
 export const MODEL_PATHS = Object.freeze({
-  aircraft: `${ASSET_PATHS.models}/airtaxi.glb`,
+  aircraft:
+    `${ASSET_PATHS.models}/airtaxi.glb`,
 });
 
 
@@ -144,7 +167,8 @@ export const MODEL_PATHS = Object.freeze({
 /**
  * HTML側で使用する要素IDです。
  *
- * 各ManagerではIDを直接記述せず、この定数を使用します。
+ * 各ManagerではIDを直接記述せず、
+ * この定数を使用します。
  */
 export const DOM_IDS = Object.freeze({
   /*
@@ -210,7 +234,8 @@ export const DOM_IDS = Object.freeze({
   choiceTitle: 'choice-title',
   choiceDescription: 'choice-description',
   waitRouteButton: 'wait-route-button',
-  alternateRouteButton: 'alternate-route-button',
+  alternateRouteButton:
+    'alternate-route-button',
 
   /*
    * Mentor
@@ -256,67 +281,178 @@ export const EVENTS = Object.freeze({
   /*
    * Application
    */
-  APP_STATE_CHANGED: 'app:state-changed',
-  APP_READY: 'app:ready',
-  APP_COMPLETED: 'app:completed',
-  APP_ERROR: 'app:error',
+  APP_STATE_CHANGED:
+    'app:state-changed',
+
+  APP_READY:
+    'app:ready',
+
+  APP_COMPLETED:
+    'app:completed',
+
+  APP_ERROR:
+    'app:error',
 
   /*
-   * UI
+   * UI requests
+   *
+   * UIManagerからmain.jsへ送信されるイベントです。
    */
-  UI_START: 'ui:start',
-  UI_PAUSE: 'ui:pause',
-  UI_RESUME: 'ui:resume',
-  UI_RESTART: 'ui:restart',
-  UI_REPLAY: 'ui:replay',
-  UI_CHOICE: 'ui:choice',
-  UI_FULLSCREEN: 'ui:fullscreen',
-  UI_RETRY: 'ui:retry',
+  UI_START_REQUESTED:
+    'ui:start-requested',
+
+  UI_PAUSE_REQUESTED:
+    'ui:pause-requested',
+
+  UI_RESUME_REQUESTED:
+    'ui:resume-requested',
+
+  UI_RESTART_REQUESTED:
+    'ui:restart-requested',
+
+  UI_REPLAY_REQUESTED:
+    'ui:replay-requested',
+
+  UI_CHOICE_SELECTED:
+    'ui:choice-selected',
+
+  UI_FULLSCREEN_REQUESTED:
+    'ui:fullscreen-requested',
+
+  UI_RETRY_REQUESTED:
+    'ui:retry-requested',
+
+  UI_ERROR:
+    'ui:error',
+
+  /*
+   * UI event aliases
+   *
+   * 以前のUIManagerが旧名称を参照していても
+   * 同じイベント文字列を使用できるようにしています。
+   */
+  UI_START:
+    'ui:start-requested',
+
+  UI_PAUSE:
+    'ui:pause-requested',
+
+  UI_RESUME:
+    'ui:resume-requested',
+
+  UI_RESTART:
+    'ui:restart-requested',
+
+  UI_REPLAY:
+    'ui:replay-requested',
+
+  UI_CHOICE:
+    'ui:choice-selected',
+
+  UI_FULLSCREEN:
+    'ui:fullscreen-requested',
+
+  UI_RETRY:
+    'ui:retry-requested',
 
   /*
    * Scene
    */
-  SCENE_READY: 'scene:ready',
-  SCENE_LOADING: 'scene:loading',
-  SCENE_LOADED: 'scene:loaded',
-  SCENE_STARTED: 'scene:started',
-  SCENE_PAUSED: 'scene:paused',
-  SCENE_STOPPED: 'scene:stopped',
-  SCENE_TIME_UPDATED: 'scene:time-updated',
-  SCENE_ENDED: 'scene:ended',
-  SCENE_ERROR: 'scene:error',
+  SCENE_READY:
+    'scene:ready',
+
+  SCENE_LOADING:
+    'scene:loading',
+
+  SCENE_LOADED:
+    'scene:loaded',
+
+  SCENE_STARTED:
+    'scene:started',
+
+  SCENE_PAUSED:
+    'scene:paused',
+
+  SCENE_STOPPED:
+    'scene:stopped',
+
+  SCENE_TIME_UPDATED:
+    'scene:time-updated',
+
+  SCENE_ENDED:
+    'scene:ended',
+
+  SCENE_ERROR:
+    'scene:error',
 
   /*
    * Timeline
    */
-  TIMELINE_STARTED: 'timeline:started',
-  TIMELINE_PAUSED: 'timeline:paused',
-  TIMELINE_RESUMED: 'timeline:resumed',
-  TIMELINE_RESET: 'timeline:reset',
-  TIMELINE_EVENT: 'timeline:event',
-  TIMELINE_COMPLETED: 'timeline:completed',
-  TIMELINE_ERROR: 'timeline:error',
+  TIMELINE_STARTED:
+    'timeline:started',
+
+  TIMELINE_PAUSED:
+    'timeline:paused',
+
+  TIMELINE_RESUMED:
+    'timeline:resumed',
+
+  TIMELINE_RESET:
+    'timeline:reset',
+
+  TIMELINE_EVENT:
+    'timeline:event',
+
+  TIMELINE_COMPLETED:
+    'timeline:completed',
+
+  TIMELINE_ERROR:
+    'timeline:error',
 
   /*
-   * Mentor
+   * Mentor requests and lifecycle
    */
-  MENTOR_SHOW: 'mentor:show',
-  MENTOR_HIDE: 'mentor:hide',
-  MENTOR_SHOWN: 'mentor:shown',
-  MENTOR_HIDDEN: 'mentor:hidden',
-  MENTOR_COMPLETED: 'mentor:completed',
-  MENTOR_ERROR: 'mentor:error',
+  MENTOR_SHOW:
+    'mentor:show',
+
+  MENTOR_HIDE:
+    'mentor:hide',
+
+  MENTOR_SHOWN:
+    'mentor:shown',
+
+  MENTOR_HIDDEN:
+    'mentor:hidden',
+
+  MENTOR_COMPLETED:
+    'mentor:completed',
+
+  MENTOR_ERROR:
+    'mentor:error',
 
   /*
-   * Rotor
+   * Rotor requests and lifecycle
    */
-  ROTOR_READY: 'rotor:ready',
-  ROTOR_START: 'rotor:start',
-  ROTOR_STOP: 'rotor:stop',
-  ROTOR_SPEED_CHANGE: 'rotor:speed-change',
-  ROTOR_STARTED: 'rotor:started',
-  ROTOR_STOPPED: 'rotor:stopped',
-  ROTOR_ERROR: 'rotor:error',
+  ROTOR_READY:
+    'rotor:ready',
+
+  ROTOR_START:
+    'rotor:start',
+
+  ROTOR_STOP:
+    'rotor:stop',
+
+  ROTOR_SPEED_CHANGE:
+    'rotor:speed-change',
+
+  ROTOR_STARTED:
+    'rotor:started',
+
+  ROTOR_STOPPED:
+    'rotor:stopped',
+
+  ROTOR_ERROR:
+    'rotor:error',
 });
 
 
@@ -328,8 +464,11 @@ export const EVENTS = Object.freeze({
  * アプリケーション共通設定です。
  */
 export const APP_CONFIG = Object.freeze({
-  initialState: APP_STATES.BOOTING,
-  initialSceneId: SCENE_IDS.INTRO,
+  initialState:
+    APP_STATES.BOOTING,
+
+  initialSceneId:
+    SCENE_IDS.INTRO,
 
   autoPauseOnVisibilityChange: true,
   preventMultipleInitialization: true,
@@ -367,7 +506,8 @@ export const VIDEO_CONFIG = Object.freeze({
   preload: 'auto',
   crossOrigin: 'anonymous',
 
-  defaultVolume: APP_CONFIG.defaultVolume,
+  defaultVolume:
+    APP_CONFIG.defaultVolume,
 
   sphereRadius: 100,
 
@@ -377,7 +517,8 @@ export const VIDEO_CONFIG = Object.freeze({
     z: 0,
   }),
 
-  fadeDurationMs: APP_CONFIG.fadeDurationMs,
+  fadeDurationMs:
+    APP_CONFIG.fadeDurationMs,
 });
 
 
@@ -390,9 +531,13 @@ export const VIDEO_CONFIG = Object.freeze({
  */
 export const MENTOR_CONFIG = Object.freeze({
   name: 'ソラ教官',
-  imagePath: IMAGE_PATHS.mentor,
 
-  defaultDurationMs: APP_CONFIG.mentorDefaultDurationMs,
+  imagePath:
+    IMAGE_PATHS.mentor,
+
+  defaultDurationMs:
+    APP_CONFIG.mentorDefaultDurationMs,
+
   fadeDurationMs: 300,
 
   allowManualDismiss: false,
@@ -404,7 +549,8 @@ export const MENTOR_CONFIG = Object.freeze({
 /**
  * ソラ教官のメッセージ定義です。
  *
- * durationMsがnullの場合は、自動では非表示にしません。
+ * durationMsがnullの場合は、
+ * 自動では非表示にしません。
  */
 export const MENTOR_MESSAGES = Object.freeze({
   WELCOME: Object.freeze({
@@ -490,21 +636,36 @@ export const MENTOR_MESSAGES = Object.freeze({
  */
 export const CHOICES = Object.freeze({
   ROUTE: Object.freeze({
-    id: CHOICE_IDS.ROUTE,
-    title: 'どうしますか？',
-    description: '安全な移動方法を選んでください。',
+    id:
+      CHOICE_IDS.ROUTE,
+
+    title:
+      'どうしますか？',
+
+    description:
+      '安全な移動方法を選んでください。',
 
     options: Object.freeze([
       Object.freeze({
-        id: ROUTE_IDS.WAIT,
-        label: 'ここで待機する',
-        targetSceneId: SCENE_IDS.WAITING_ROUTE,
+        id:
+          ROUTE_IDS.WAIT,
+
+        label:
+          'ここで待機する',
+
+        targetSceneId:
+          SCENE_IDS.WAITING_ROUTE,
       }),
 
       Object.freeze({
-        id: ROUTE_IDS.ALTERNATE,
-        label: '別の場所へ向かう',
-        targetSceneId: SCENE_IDS.ALTERNATE_ROUTE,
+        id:
+          ROUTE_IDS.ALTERNATE,
+
+        label:
+          '別の場所へ向かう',
+
+        targetSceneId:
+          SCENE_IDS.ALTERNATE_ROUTE,
       }),
     ]),
   }),
@@ -521,22 +682,68 @@ export const CHOICES = Object.freeze({
  * TimelineManagerはこの値を解釈せず、
  * main.jsがイベント内容に応じて処理を振り分けます。
  */
-export const TIMELINE_EVENT_TYPES = Object.freeze({
-  MENTOR_SHOW: 'mentor:show',
-  MENTOR_HIDE: 'mentor:hide',
+export const TIMELINE_EVENT_TYPES =
+  Object.freeze({
+    /*
+     * Mentor
+     */
+    MENTOR_SHOW:
+      'mentor:show',
 
-  UI_SHOW_CONTROLS: 'ui:show-controls',
-  UI_HIDE_CONTROLS: 'ui:hide-controls',
-  UI_SHOW_CHOICE: 'ui:show-choice',
-  UI_HIDE_CHOICE: 'ui:hide-choice',
+    MENTOR_HIDE:
+      'mentor:hide',
 
-  ROTOR_START: 'rotor:start',
-  ROTOR_STOP: 'rotor:stop',
-  ROTOR_SPEED_CHANGE: 'rotor:speed-change',
+    /*
+     * UI
+     */
+    UI_SHOW_CONTROLS:
+      'ui:show-controls',
 
-  SCENE_CHANGE: 'scene:change',
-  APP_COMPLETE: 'app:complete',
-});
+    UI_HIDE_CONTROLS:
+      'ui:hide-controls',
+
+    UI_SHOW_CHOICE:
+      'ui:show-choice',
+
+    UI_HIDE_CHOICE:
+      'ui:hide-choice',
+
+    /*
+     * Rotor
+     */
+    ROTOR_START:
+      'rotor:start',
+
+    ROTOR_STOP:
+      'rotor:stop',
+
+    ROTOR_SPEED_CHANGE:
+      'rotor:speed-change',
+
+    /*
+     * Scene
+     */
+    SCENE_PAUSE:
+      'scene:pause',
+
+    SCENE_RESUME:
+      'scene:resume',
+
+    SCENE_CHANGE:
+      'scene:change',
+
+    /*
+     * Application
+     */
+    COMPLETE:
+      'app:complete',
+
+    /*
+     * 旧名称との互換用です。
+     */
+    APP_COMPLETE:
+      'app:complete',
+  });
 
 
 /* ==========================================================================
@@ -555,135 +762,236 @@ export const TIMELINE_EVENT_TYPES = Object.freeze({
  * @property {boolean} once
  */
 export const TIMELINES = Object.freeze({
-  [SCENE_IDS.INTRO]: Object.freeze([
-    Object.freeze({
-      id: 'intro-mentor-welcome',
-      time: 0.5,
-      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
-      payload: Object.freeze({
-        messageId: MENTOR_MESSAGES.WELCOME.id,
-      }),
-      once: true,
-    }),
-  ]),
+  [SCENE_IDS.INTRO]:
+    Object.freeze([
+      Object.freeze({
+        id:
+          'intro-mentor-welcome',
 
-  [SCENE_IDS.DEPARTURE]: Object.freeze([
-    Object.freeze({
-      id: 'departure-mentor-prepare',
-      time: 0.5,
-      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
-      payload: Object.freeze({
-        messageId: MENTOR_MESSAGES.PREPARE_DEPARTURE.id,
-      }),
-      once: true,
-    }),
+        time: 0.5,
 
-    Object.freeze({
-      id: 'departure-rotor-start',
-      time: 2,
-      type: TIMELINE_EVENT_TYPES.ROTOR_START,
-      payload: Object.freeze({
-        speed: 20,
-      }),
-      once: true,
-    }),
+        type:
+          TIMELINE_EVENT_TYPES.MENTOR_SHOW,
 
-    Object.freeze({
-      id: 'departure-mentor-takeoff',
-      time: 6,
-      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
-      payload: Object.freeze({
-        messageId: MENTOR_MESSAGES.TAKEOFF.id,
-      }),
-      once: true,
-    }),
-  ]),
+        payload: Object.freeze({
+          messageId:
+            MENTOR_MESSAGES.WELCOME.id,
+        }),
 
-  [SCENE_IDS.FLIGHT]: Object.freeze([
-    Object.freeze({
-      id: 'flight-mentor-guide',
-      time: 3,
-      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
-      payload: Object.freeze({
-        messageId: MENTOR_MESSAGES.FLIGHT_GUIDE.id,
+        once: true,
       }),
-      once: true,
-    }),
+    ]),
 
-    Object.freeze({
-      id: 'flight-route-choice',
-      time: 15,
-      type: TIMELINE_EVENT_TYPES.UI_SHOW_CHOICE,
-      payload: Object.freeze({
-        choiceId: CHOICE_IDS.ROUTE,
+  [SCENE_IDS.DEPARTURE]:
+    Object.freeze([
+      Object.freeze({
+        id:
+          'departure-mentor-prepare',
+
+        time: 0.5,
+
+        type:
+          TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+
+        payload: Object.freeze({
+          messageId:
+            MENTOR_MESSAGES
+              .PREPARE_DEPARTURE.id,
+        }),
+
+        once: true,
       }),
-      once: true,
-    }),
 
-    Object.freeze({
-      id: 'flight-route-choice-mentor',
-      time: 15,
-      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
-      payload: Object.freeze({
-        messageId: MENTOR_MESSAGES.ROUTE_CHOICE.id,
+      Object.freeze({
+        id:
+          'departure-rotor-start',
+
+        time: 2,
+
+        type:
+          TIMELINE_EVENT_TYPES.ROTOR_START,
+
+        payload: Object.freeze({
+          speed: 20,
+        }),
+
+        once: true,
       }),
-      once: true,
-    }),
-  ]),
 
-  [SCENE_IDS.WAITING_ROUTE]: Object.freeze([
-    Object.freeze({
-      id: 'waiting-route-mentor',
-      time: 0.5,
-      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
-      payload: Object.freeze({
-        messageId: MENTOR_MESSAGES.WAIT_ROUTE_SELECTED.id,
+      Object.freeze({
+        id:
+          'departure-mentor-takeoff',
+
+        time: 6,
+
+        type:
+          TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+
+        payload: Object.freeze({
+          messageId:
+            MENTOR_MESSAGES.TAKEOFF.id,
+        }),
+
+        once: true,
       }),
-      once: true,
-    }),
-  ]),
+    ]),
 
-  [SCENE_IDS.ALTERNATE_ROUTE]: Object.freeze([
-    Object.freeze({
-      id: 'alternate-route-mentor',
-      time: 0.5,
-      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
-      payload: Object.freeze({
-        messageId: MENTOR_MESSAGES.ALTERNATE_ROUTE_SELECTED.id,
+  [SCENE_IDS.FLIGHT]:
+    Object.freeze([
+      Object.freeze({
+        id:
+          'flight-mentor-guide',
+
+        time: 3,
+
+        type:
+          TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+
+        payload: Object.freeze({
+          messageId:
+            MENTOR_MESSAGES.FLIGHT_GUIDE.id,
+        }),
+
+        once: true,
       }),
-      once: true,
-    }),
-  ]),
 
-  [SCENE_IDS.ARRIVAL]: Object.freeze([
-    Object.freeze({
-      id: 'arrival-mentor-prepare',
-      time: 1,
-      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
-      payload: Object.freeze({
-        messageId: MENTOR_MESSAGES.PREPARE_ARRIVAL.id,
+      /*
+       * 同一時刻のイベントは配列順に処理されます。
+       *
+       * 先にソラ教官を表示し、
+       * 続けて選択肢を表示して動画を停止します。
+       */
+      Object.freeze({
+        id:
+          'flight-route-choice-mentor',
+
+        time: 15,
+
+        type:
+          TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+
+        payload: Object.freeze({
+          messageId:
+            MENTOR_MESSAGES.ROUTE_CHOICE.id,
+        }),
+
+        once: true,
       }),
-      once: true,
-    }),
 
-    Object.freeze({
-      id: 'arrival-rotor-stop',
-      time: 12,
-      type: TIMELINE_EVENT_TYPES.ROTOR_STOP,
-      payload: Object.freeze({}),
-      once: true,
-    }),
+      Object.freeze({
+        id:
+          'flight-route-choice',
 
-    Object.freeze({
-      id: 'arrival-mentor-complete',
-      time: 14,
-      type: TIMELINE_EVENT_TYPES.MENTOR_SHOW,
-      payload: Object.freeze({
-        messageId: MENTOR_MESSAGES.ARRIVAL_COMPLETE.id,
+        time: 15,
+
+        type:
+          TIMELINE_EVENT_TYPES.UI_SHOW_CHOICE,
+
+        payload: Object.freeze({
+          choiceId:
+            CHOICE_IDS.ROUTE,
+
+          pauseScene: true,
+        }),
+
+        once: true,
       }),
-      once: true,
-    }),
-  ]),
+    ]),
+
+  [SCENE_IDS.WAITING_ROUTE]:
+    Object.freeze([
+      Object.freeze({
+        id:
+          'waiting-route-mentor',
+
+        time: 0.5,
+
+        type:
+          TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+
+        payload: Object.freeze({
+          messageId:
+            MENTOR_MESSAGES
+              .WAIT_ROUTE_SELECTED.id,
+        }),
+
+        once: true,
+      }),
+    ]),
+
+  [SCENE_IDS.ALTERNATE_ROUTE]:
+    Object.freeze([
+      Object.freeze({
+        id:
+          'alternate-route-mentor',
+
+        time: 0.5,
+
+        type:
+          TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+
+        payload: Object.freeze({
+          messageId:
+            MENTOR_MESSAGES
+              .ALTERNATE_ROUTE_SELECTED.id,
+        }),
+
+        once: true,
+      }),
+    ]),
+
+  [SCENE_IDS.ARRIVAL]:
+    Object.freeze([
+      Object.freeze({
+        id:
+          'arrival-mentor-prepare',
+
+        time: 1,
+
+        type:
+          TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+
+        payload: Object.freeze({
+          messageId:
+            MENTOR_MESSAGES.PREPARE_ARRIVAL.id,
+        }),
+
+        once: true,
+      }),
+
+      Object.freeze({
+        id:
+          'arrival-rotor-stop',
+
+        time: 12,
+
+        type:
+          TIMELINE_EVENT_TYPES.ROTOR_STOP,
+
+        payload: Object.freeze({
+          immediate: false,
+        }),
+
+        once: true,
+      }),
+
+      Object.freeze({
+        id:
+          'arrival-mentor-complete',
+
+        time: 14,
+
+        type:
+          TIMELINE_EVENT_TYPES.MENTOR_SHOW,
+
+        payload: Object.freeze({
+          messageId:
+            MENTOR_MESSAGES.ARRIVAL_COMPLETE.id,
+        }),
+
+        once: true,
+      }),
+    ]),
 });
 
 
@@ -704,71 +1012,140 @@ export const TIMELINES = Object.freeze({
  * @property {string|null} nextSceneId
  */
 export const SCENES = Object.freeze({
-  [SCENE_IDS.INTRO]: Object.freeze({
-    id: SCENE_IDS.INTRO,
-    videoElementId: DOM_IDS.introVideo,
-    videoPath: VIDEO_PATHS.intro,
-    timelineId: SCENE_IDS.INTRO,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: SCENE_IDS.DEPARTURE,
-  }),
+  [SCENE_IDS.INTRO]:
+    Object.freeze({
+      id:
+        SCENE_IDS.INTRO,
 
-  [SCENE_IDS.DEPARTURE]: Object.freeze({
-    id: SCENE_IDS.DEPARTURE,
-    videoElementId: DOM_IDS.departureVideo,
-    videoPath: VIDEO_PATHS.departure,
-    timelineId: SCENE_IDS.DEPARTURE,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: SCENE_IDS.FLIGHT,
-  }),
+      videoElementId:
+        DOM_IDS.introVideo,
 
-  [SCENE_IDS.FLIGHT]: Object.freeze({
-    id: SCENE_IDS.FLIGHT,
-    videoElementId: DOM_IDS.flightVideo,
-    videoPath: VIDEO_PATHS.flight,
-    timelineId: SCENE_IDS.FLIGHT,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: null,
-  }),
+      videoPath:
+        VIDEO_PATHS.intro,
 
-  [SCENE_IDS.WAITING_ROUTE]: Object.freeze({
-    id: SCENE_IDS.WAITING_ROUTE,
-    videoElementId: DOM_IDS.waitingRouteVideo,
-    videoPath: VIDEO_PATHS.waitingRoute,
-    timelineId: SCENE_IDS.WAITING_ROUTE,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: SCENE_IDS.ARRIVAL,
-  }),
+      timelineId:
+        SCENE_IDS.INTRO,
 
-  [SCENE_IDS.ALTERNATE_ROUTE]: Object.freeze({
-    id: SCENE_IDS.ALTERNATE_ROUTE,
-    videoElementId: DOM_IDS.alternateRouteVideo,
-    videoPath: VIDEO_PATHS.alternateRoute,
-    timelineId: SCENE_IDS.ALTERNATE_ROUTE,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: SCENE_IDS.ARRIVAL,
-  }),
+      loop: false,
+      volume: 0.3,
+      resetOnLoad: true,
 
-  [SCENE_IDS.ARRIVAL]: Object.freeze({
-    id: SCENE_IDS.ARRIVAL,
-    videoElementId: DOM_IDS.arrivalVideo,
-    videoPath: VIDEO_PATHS.arrival,
-    timelineId: SCENE_IDS.ARRIVAL,
-    loop: false,
-    volume: 0.3,
-    resetOnLoad: true,
-    nextSceneId: SCENE_IDS.COMPLETED,
-  }),
+      nextSceneId:
+        SCENE_IDS.DEPARTURE,
+    }),
+
+  [SCENE_IDS.DEPARTURE]:
+    Object.freeze({
+      id:
+        SCENE_IDS.DEPARTURE,
+
+      videoElementId:
+        DOM_IDS.departureVideo,
+
+      videoPath:
+        VIDEO_PATHS.departure,
+
+      timelineId:
+        SCENE_IDS.DEPARTURE,
+
+      loop: false,
+      volume: 0.3,
+      resetOnLoad: true,
+
+      nextSceneId:
+        SCENE_IDS.FLIGHT,
+    }),
+
+  [SCENE_IDS.FLIGHT]:
+    Object.freeze({
+      id:
+        SCENE_IDS.FLIGHT,
+
+      videoElementId:
+        DOM_IDS.flightVideo,
+
+      videoPath:
+        VIDEO_PATHS.flight,
+
+      timelineId:
+        SCENE_IDS.FLIGHT,
+
+      loop: false,
+      volume: 0.3,
+      resetOnLoad: true,
+
+      /*
+       * このシーンはユーザー選択によって
+       * 次のシーンが決まるためnullです。
+       */
+      nextSceneId: null,
+    }),
+
+  [SCENE_IDS.WAITING_ROUTE]:
+    Object.freeze({
+      id:
+        SCENE_IDS.WAITING_ROUTE,
+
+      videoElementId:
+        DOM_IDS.waitingRouteVideo,
+
+      videoPath:
+        VIDEO_PATHS.waitingRoute,
+
+      timelineId:
+        SCENE_IDS.WAITING_ROUTE,
+
+      loop: false,
+      volume: 0.3,
+      resetOnLoad: true,
+
+      nextSceneId:
+        SCENE_IDS.ARRIVAL,
+    }),
+
+  [SCENE_IDS.ALTERNATE_ROUTE]:
+    Object.freeze({
+      id:
+        SCENE_IDS.ALTERNATE_ROUTE,
+
+      videoElementId:
+        DOM_IDS.alternateRouteVideo,
+
+      videoPath:
+        VIDEO_PATHS.alternateRoute,
+
+      timelineId:
+        SCENE_IDS.ALTERNATE_ROUTE,
+
+      loop: false,
+      volume: 0.3,
+      resetOnLoad: true,
+
+      nextSceneId:
+        SCENE_IDS.ARRIVAL,
+    }),
+
+  [SCENE_IDS.ARRIVAL]:
+    Object.freeze({
+      id:
+        SCENE_IDS.ARRIVAL,
+
+      videoElementId:
+        DOM_IDS.arrivalVideo,
+
+      videoPath:
+        VIDEO_PATHS.arrival,
+
+      timelineId:
+        SCENE_IDS.ARRIVAL,
+
+      loop: false,
+      volume: 0.3,
+      resetOnLoad: true,
+
+      nextSceneId:
+        SCENE_IDS.COMPLETED,
+    }),
 });
 
 
@@ -780,7 +1157,8 @@ export const SCENES = Object.freeze({
  * プロペラ制御設定です。
  */
 export const ROTOR_CONFIG = Object.freeze({
-  componentName: 'rotor-spin',
+  componentName:
+    'rotor-spin',
 
   defaultSpeed: 20,
   minimumSpeed: 0,
@@ -789,7 +1167,8 @@ export const ROTOR_CONFIG = Object.freeze({
   defaultAxis: 'y',
 
   /**
-   * GLTFモデル内のプロペラノード名を検索するための文字列です。
+   * GLTFモデル内のプロペラノード名を
+   * 検索するための文字列です。
    *
    * 大文字・小文字は区別しません。
    * 実際のモデルのノード名に合わせて調整してください。
@@ -826,16 +1205,26 @@ export const ROTOR_CONFIG = Object.freeze({
  * UI共通設定です。
  */
 export const UI_CONFIG = Object.freeze({
-  hiddenClass: 'is-hidden',
-  visibleClass: 'is-visible',
-  disabledClass: 'is-disabled',
-  activeClass: 'is-active',
+  hiddenClass:
+    'is-hidden',
+
+  visibleClass:
+    'is-visible',
+
+  disabledClass:
+    'is-disabled',
+
+  activeClass:
+    'is-active',
 
   transitionDurationMs: 300,
   preventMultipleClicksMs: 500,
 
-  loadingMessage: '読み込み中です…',
-  readyMessage: '準備ができました',
+  loadingMessage:
+    '読み込み中です…',
+
+  readyMessage:
+    '準備ができました',
 
   completionMessage:
     'フライト体験は終了です。ご参加ありがとうございました。',
@@ -862,7 +1251,8 @@ export const UI_CONFIG = Object.freeze({
  * キーボード操作設定です。
  */
 export const KEYBOARD_CONFIG = Object.freeze({
-  enabled: APP_CONFIG.enableKeyboardControls,
+  enabled:
+    APP_CONFIG.enableKeyboardControls,
 
   keys: Object.freeze({
     start: Object.freeze([
@@ -871,6 +1261,10 @@ export const KEYBOARD_CONFIG = Object.freeze({
 
     pause: Object.freeze([
       'Escape',
+      'Space',
+    ]),
+
+    resume: Object.freeze([
       'Space',
     ]),
 
@@ -908,13 +1302,19 @@ export const DEBUG_CONFIG = Object.freeze({
   enabled: false,
 
   showAFrameStats: false,
+
   enableVerboseLogging: false,
   enableTimelineLogging: false,
   enableSceneLogging: false,
   enableRotorLogging: false,
 
   allowSceneSkipping: false,
-  exposeAppInstance: false,
+
+  /**
+   * trueの場合、main.jsから
+   * window.airTaxiPlayerAppとして公開します。
+   */
+  exposeAppToWindow: false,
 });
 
 
@@ -925,7 +1325,8 @@ export const DEBUG_CONFIG = Object.freeze({
 /**
  * 空のタイムラインを返す際に使用する共有配列です。
  */
-const EMPTY_TIMELINE = Object.freeze([]);
+const EMPTY_TIMELINE =
+  Object.freeze([]);
 
 
 /* ==========================================================================
@@ -944,40 +1345,51 @@ const EMPTY_TIMELINE = Object.freeze([]);
 export function isValidSceneId(sceneId) {
   return (
     typeof sceneId === 'string' &&
-    Object.prototype.hasOwnProperty.call(SCENES, sceneId)
+    Object.prototype.hasOwnProperty.call(
+      SCENES,
+      sceneId
+    )
   );
 }
 
 
 /**
- * 指定されたシーンIDが、実在するシーンまたは完了状態か確認します。
+ * 指定されたシーンIDが、
+ * 実在するシーンまたは完了状態か確認します。
  *
  * @param {string} sceneId
  * @returns {boolean}
  */
-export function isValidSceneDestination(sceneId) {
+export function isValidSceneDestination(
+  sceneId
+) {
   return (
     isValidSceneId(sceneId) ||
-    sceneId === SCENE_IDS.COMPLETED
+    sceneId ===
+      SCENE_IDS.COMPLETED
   );
 }
 
 
 /**
- * 指定されたアプリケーション状態が有効か確認します。
+ * 指定されたアプリケーション状態が
+ * 有効か確認します。
  *
  * @param {string} state
  * @returns {boolean}
  */
 export function isValidAppState(state) {
-  return Object.values(APP_STATES).includes(state);
+  return Object.values(
+    APP_STATES
+  ).includes(state);
 }
 
 
 /**
  * シーン設定を取得します。
  *
- * 存在しないシーンIDが指定された場合は例外を投げます。
+ * 存在しないシーンIDが指定された場合は
+ * 例外を投げます。
  *
  * @param {string} sceneId
  * @returns {Readonly<Object>}
@@ -996,17 +1408,25 @@ export function getSceneConfig(sceneId) {
 /**
  * 指定されたタイムラインを取得します。
  *
- * タイムラインが設定されていない場合は空配列を返します。
+ * タイムラインが設定されていない場合は
+ * 空配列を返します。
  *
  * @param {string} timelineId
  * @returns {ReadonlyArray<Object>}
  */
-export function getTimelineConfig(timelineId) {
-  if (typeof timelineId !== 'string') {
+export function getTimelineConfig(
+  timelineId
+) {
+  if (
+    typeof timelineId !== 'string'
+  ) {
     return EMPTY_TIMELINE;
   }
 
-  return TIMELINES[timelineId] ?? EMPTY_TIMELINE;
+  return (
+    TIMELINES[timelineId] ??
+    EMPTY_TIMELINE
+  );
 }
 
 
@@ -1016,10 +1436,16 @@ export function getTimelineConfig(timelineId) {
  * @param {string} messageId
  * @returns {Readonly<Object>}
  */
-export function getMentorMessage(messageId) {
-  const message = Object.values(MENTOR_MESSAGES).find(
-    item => item.id === messageId
-  );
+export function getMentorMessage(
+  messageId
+) {
+  const message =
+    Object.values(
+      MENTOR_MESSAGES
+    ).find(
+      item =>
+        item.id === messageId
+    );
 
   if (!message) {
     throw new Error(
@@ -1037,10 +1463,16 @@ export function getMentorMessage(messageId) {
  * @param {string} choiceId
  * @returns {Readonly<Object>}
  */
-export function getChoiceConfig(choiceId) {
-  const choice = Object.values(CHOICES).find(
-    item => item.id === choiceId
-  );
+export function getChoiceConfig(
+  choiceId
+) {
+  const choice =
+    Object.values(
+      CHOICES
+    ).find(
+      item =>
+        item.id === choiceId
+    );
 
   if (!choice) {
     throw new Error(
@@ -1053,18 +1485,25 @@ export function getChoiceConfig(choiceId) {
 
 
 /**
- * 選択肢IDとオプションIDから遷移先シーンを取得します。
+ * 選択肢IDとオプションIDから
+ * 遷移先シーンを取得します。
  *
  * @param {string} choiceId
  * @param {string} optionId
  * @returns {string}
  */
-export function getChoiceTargetSceneId(choiceId, optionId) {
-  const choice = getChoiceConfig(choiceId);
+export function getChoiceTargetSceneId(
+  choiceId,
+  optionId
+) {
+  const choice =
+    getChoiceConfig(choiceId);
 
-  const option = choice.options.find(
-    item => item.id === optionId
-  );
+  const option =
+    choice.options.find(
+      item =>
+        item.id === optionId
+    );
 
   if (!option) {
     throw new Error(
@@ -1091,6 +1530,9 @@ export function getChoiceTargetSceneId(choiceId, optionId) {
 export function validateConfig() {
   validateInitialState();
   validateInitialScene();
+  validateApplicationConfig();
+  validateVideoConfig();
+  validateEvents();
   validateScenes();
   validateMentorMessages();
   validateChoices();
@@ -1107,7 +1549,11 @@ export function validateConfig() {
  * @private
  */
 function validateInitialState() {
-  if (!isValidAppState(APP_CONFIG.initialState)) {
+  if (
+    !isValidAppState(
+      APP_CONFIG.initialState
+    )
+  ) {
     throw new Error(
       `[Config] Invalid initial application state: ${APP_CONFIG.initialState}`
     );
@@ -1121,10 +1567,146 @@ function validateInitialState() {
  * @private
  */
 function validateInitialScene() {
-  if (!isValidSceneId(APP_CONFIG.initialSceneId)) {
+  if (
+    !isValidSceneId(
+      APP_CONFIG.initialSceneId
+    )
+  ) {
     throw new Error(
       `[Config] Invalid initial scene ID: ${APP_CONFIG.initialSceneId}`
     );
+  }
+}
+
+
+/**
+ * アプリケーション共通設定を検証します。
+ *
+ * @private
+ */
+function validateApplicationConfig() {
+  if (
+    typeof APP_CONFIG.defaultVolume !==
+      'number' ||
+    !Number.isFinite(
+      APP_CONFIG.defaultVolume
+    ) ||
+    APP_CONFIG.defaultVolume <
+      APP_CONFIG.minimumVolume ||
+    APP_CONFIG.defaultVolume >
+      APP_CONFIG.maximumVolume
+  ) {
+    throw new Error(
+      `[Config] Invalid default volume: ${APP_CONFIG.defaultVolume}`
+    );
+  }
+
+  const positiveNumberKeys = [
+    'videoLoadTimeoutMs',
+    'modelLoadTimeoutMs',
+    'sceneLoadTimeoutMs',
+    'timelineUpdateIntervalMs',
+    'fadeDurationMs',
+    'mentorDefaultDurationMs',
+  ];
+
+  for (
+    const key of
+    positiveNumberKeys
+  ) {
+    const value =
+      APP_CONFIG[key];
+
+    if (
+      typeof value !== 'number' ||
+      !Number.isFinite(value) ||
+      value < 0
+    ) {
+      throw new Error(
+        `[Config] Invalid APP_CONFIG value: ${key} = ${String(value)}`
+      );
+    }
+  }
+}
+
+
+/**
+ * 動画設定を検証します。
+ *
+ * @private
+ */
+function validateVideoConfig() {
+  if (
+    typeof VIDEO_CONFIG.preload !==
+      'string'
+  ) {
+    throw new Error(
+      '[Config] VIDEO_CONFIG.preload must be a string.'
+    );
+  }
+
+  if (
+    typeof VIDEO_CONFIG.sphereRadius !==
+      'number' ||
+    !Number.isFinite(
+      VIDEO_CONFIG.sphereRadius
+    ) ||
+    VIDEO_CONFIG.sphereRadius <= 0
+  ) {
+    throw new Error(
+      `[Config] Invalid video sphere radius: ${VIDEO_CONFIG.sphereRadius}`
+    );
+  }
+
+  for (
+    const axis of
+    ['x', 'y', 'z']
+  ) {
+    const value =
+      VIDEO_CONFIG.sphereRotation[
+        axis
+      ];
+
+    if (
+      typeof value !== 'number' ||
+      !Number.isFinite(value)
+    ) {
+      throw new Error(
+        `[Config] Invalid video sphere rotation: ${axis} = ${String(value)}`
+      );
+    }
+  }
+}
+
+
+/**
+ * カスタムイベント名を検証します。
+ *
+ * 同一文字列を持つ後方互換エイリアスは許可します。
+ *
+ * @private
+ */
+function validateEvents() {
+  for (
+    const [eventKey, eventName] of
+    Object.entries(EVENTS)
+  ) {
+    if (
+      typeof eventName !== 'string' ||
+      eventName.trim() === ''
+    ) {
+      throw new Error(
+        `[Config] Invalid event name: ${eventKey}`
+      );
+    }
+
+    if (
+      !eventName.includes(':')
+    ) {
+      throw new Error(
+        `[Config] Event name must use namespace:action format: ${eventKey} = ${eventName}`
+      );
+    }
   }
 }
 
@@ -1135,7 +1717,10 @@ function validateInitialScene() {
  * @private
  */
 function validateScenes() {
-  for (const [sceneId, scene] of Object.entries(SCENES)) {
+  for (
+    const [sceneId, scene] of
+    Object.entries(SCENES)
+  ) {
     if (scene.id !== sceneId) {
       throw new Error(
         `[Config] Scene key and scene.id do not match: ${sceneId}`
@@ -1143,7 +1728,8 @@ function validateScenes() {
     }
 
     if (
-      typeof scene.videoElementId !== 'string' ||
+      typeof scene.videoElementId !==
+        'string' ||
       scene.videoElementId.trim() === ''
     ) {
       throw new Error(
@@ -1152,7 +1738,8 @@ function validateScenes() {
     }
 
     if (
-      typeof scene.videoPath !== 'string' ||
+      typeof scene.videoPath !==
+        'string' ||
       scene.videoPath.trim() === ''
     ) {
       throw new Error(
@@ -1161,7 +1748,8 @@ function validateScenes() {
     }
 
     if (
-      typeof scene.timelineId !== 'string' ||
+      typeof scene.timelineId !==
+        'string' ||
       scene.timelineId.trim() === ''
     ) {
       throw new Error(
@@ -1169,29 +1757,46 @@ function validateScenes() {
       );
     }
 
-    if (!Array.isArray(TIMELINES[scene.timelineId])) {
+    if (
+      !Array.isArray(
+        TIMELINES[
+          scene.timelineId
+        ]
+      )
+    ) {
       throw new Error(
         `[Config] Timeline does not exist for scene "${sceneId}": ${scene.timelineId}`
       );
     }
 
-    if (typeof scene.loop !== 'boolean') {
+    if (
+      typeof scene.loop !==
+      'boolean'
+    ) {
       throw new Error(
         `[Config] loop must be a boolean for scene: ${sceneId}`
       );
     }
 
-    if (typeof scene.resetOnLoad !== 'boolean') {
+    if (
+      typeof scene.resetOnLoad !==
+      'boolean'
+    ) {
       throw new Error(
         `[Config] resetOnLoad must be a boolean for scene: ${sceneId}`
       );
     }
 
     if (
-      typeof scene.volume !== 'number' ||
-      !Number.isFinite(scene.volume) ||
-      scene.volume < APP_CONFIG.minimumVolume ||
-      scene.volume > APP_CONFIG.maximumVolume
+      typeof scene.volume !==
+        'number' ||
+      !Number.isFinite(
+        scene.volume
+      ) ||
+      scene.volume <
+        APP_CONFIG.minimumVolume ||
+      scene.volume >
+        APP_CONFIG.maximumVolume
     ) {
       throw new Error(
         `[Config] Invalid volume for scene "${sceneId}": ${scene.volume}`
@@ -1200,7 +1805,9 @@ function validateScenes() {
 
     if (
       scene.nextSceneId !== null &&
-      !isValidSceneDestination(scene.nextSceneId)
+      !isValidSceneDestination(
+        scene.nextSceneId
+      )
     ) {
       throw new Error(
         `[Config] Invalid nextSceneId "${scene.nextSceneId}" in scene "${sceneId}"`
@@ -1216,11 +1823,18 @@ function validateScenes() {
  * @private
  */
 function validateMentorMessages() {
-  const messageIds = new Set();
+  const messageIds =
+    new Set();
 
-  for (const message of Object.values(MENTOR_MESSAGES)) {
+  for (
+    const message of
+    Object.values(
+      MENTOR_MESSAGES
+    )
+  ) {
     if (
-      typeof message.id !== 'string' ||
+      typeof message.id !==
+        'string' ||
       message.id.trim() === ''
     ) {
       throw new Error(
@@ -1228,16 +1842,23 @@ function validateMentorMessages() {
       );
     }
 
-    if (messageIds.has(message.id)) {
+    if (
+      messageIds.has(
+        message.id
+      )
+    ) {
       throw new Error(
         `[Config] Duplicate mentor message ID: ${message.id}`
       );
     }
 
-    messageIds.add(message.id);
+    messageIds.add(
+      message.id
+    );
 
     if (
-      typeof message.speaker !== 'string' ||
+      typeof message.speaker !==
+        'string' ||
       message.speaker.trim() === ''
     ) {
       throw new Error(
@@ -1246,7 +1867,8 @@ function validateMentorMessages() {
     }
 
     if (
-      typeof message.text !== 'string' ||
+      typeof message.text !==
+        'string' ||
       message.text.trim() === ''
     ) {
       throw new Error(
@@ -1257,8 +1879,11 @@ function validateMentorMessages() {
     if (
       message.durationMs !== null &&
       (
-        typeof message.durationMs !== 'number' ||
-        !Number.isFinite(message.durationMs) ||
+        typeof message.durationMs !==
+          'number' ||
+        !Number.isFinite(
+          message.durationMs
+        ) ||
         message.durationMs < 0
       )
     ) {
@@ -1276,11 +1901,16 @@ function validateMentorMessages() {
  * @private
  */
 function validateChoices() {
-  const choiceIds = new Set();
+  const choiceIds =
+    new Set();
 
-  for (const choice of Object.values(CHOICES)) {
+  for (
+    const choice of
+    Object.values(CHOICES)
+  ) {
     if (
-      typeof choice.id !== 'string' ||
+      typeof choice.id !==
+        'string' ||
       choice.id.trim() === ''
     ) {
       throw new Error(
@@ -1288,16 +1918,23 @@ function validateChoices() {
       );
     }
 
-    if (choiceIds.has(choice.id)) {
+    if (
+      choiceIds.has(
+        choice.id
+      )
+    ) {
       throw new Error(
         `[Config] Duplicate choice ID: ${choice.id}`
       );
     }
 
-    choiceIds.add(choice.id);
+    choiceIds.add(
+      choice.id
+    );
 
     if (
-      typeof choice.title !== 'string' ||
+      typeof choice.title !==
+        'string' ||
       choice.title.trim() === ''
     ) {
       throw new Error(
@@ -1306,7 +1943,8 @@ function validateChoices() {
     }
 
     if (
-      typeof choice.description !== 'string' ||
+      typeof choice.description !==
+        'string' ||
       choice.description.trim() === ''
     ) {
       throw new Error(
@@ -1315,7 +1953,9 @@ function validateChoices() {
     }
 
     if (
-      !Array.isArray(choice.options) ||
+      !Array.isArray(
+        choice.options
+      ) ||
       choice.options.length < 2
     ) {
       throw new Error(
@@ -1323,11 +1963,16 @@ function validateChoices() {
       );
     }
 
-    const optionIds = new Set();
+    const optionIds =
+      new Set();
 
-    for (const option of choice.options) {
+    for (
+      const option of
+      choice.options
+    ) {
       if (
-        typeof option.id !== 'string' ||
+        typeof option.id !==
+          'string' ||
         option.id.trim() === ''
       ) {
         throw new Error(
@@ -1335,16 +1980,23 @@ function validateChoices() {
         );
       }
 
-      if (optionIds.has(option.id)) {
+      if (
+        optionIds.has(
+          option.id
+        )
+      ) {
         throw new Error(
           `[Config] Duplicate choice option ID: ${choice.id} / ${option.id}`
         );
       }
 
-      optionIds.add(option.id);
+      optionIds.add(
+        option.id
+      );
 
       if (
-        typeof option.label !== 'string' ||
+        typeof option.label !==
+          'string' ||
         option.label.trim() === ''
       ) {
         throw new Error(
@@ -1352,7 +2004,11 @@ function validateChoices() {
         );
       }
 
-      if (!isValidSceneId(option.targetSceneId)) {
+      if (
+        !isValidSceneId(
+          option.targetSceneId
+        )
+      ) {
         throw new Error(
           `[Config] Invalid target scene ID: ${choice.id} / ${option.id}`
         );
@@ -1368,13 +2024,21 @@ function validateChoices() {
  * @private
  */
 function validateTimelines() {
-  const eventIds = new Set();
-  const validTimelineTypes = Object.values(
-    TIMELINE_EVENT_TYPES
-  );
+  const eventIds =
+    new Set();
 
-  for (const [timelineId, timeline] of Object.entries(TIMELINES)) {
-    if (!Array.isArray(timeline)) {
+  const validTimelineTypes =
+    Object.values(
+      TIMELINE_EVENT_TYPES
+    );
+
+  for (
+    const [timelineId, timeline] of
+    Object.entries(TIMELINES)
+  ) {
+    if (
+      !Array.isArray(timeline)
+    ) {
       throw new Error(
         `[Config] Timeline must be an array: ${timelineId}`
       );
@@ -1382,68 +2046,99 @@ function validateTimelines() {
 
     let previousTime = -1;
 
-    for (const event of timeline) {
+    for (
+      const timelineEvent of
+      timeline
+    ) {
       if (
-        typeof event.id !== 'string' ||
-        event.id.trim() === ''
+        typeof timelineEvent.id !==
+          'string' ||
+        timelineEvent.id.trim() === ''
       ) {
         throw new Error(
           `[Config] Timeline event ID is required: ${timelineId}`
         );
       }
 
-      if (eventIds.has(event.id)) {
-        throw new Error(
-          `[Config] Duplicate timeline event ID: ${event.id}`
-        );
-      }
-
-      eventIds.add(event.id);
-
       if (
-        typeof event.time !== 'number' ||
-        !Number.isFinite(event.time) ||
-        event.time < 0
+        eventIds.has(
+          timelineEvent.id
+        )
       ) {
         throw new Error(
-          `[Config] Invalid event time in "${event.id}": ${event.time}`
+          `[Config] Duplicate timeline event ID: ${timelineEvent.id}`
         );
       }
 
-      if (event.time < previousTime) {
+      eventIds.add(
+        timelineEvent.id
+      );
+
+      if (
+        typeof timelineEvent.time !==
+          'number' ||
+        !Number.isFinite(
+          timelineEvent.time
+        ) ||
+        timelineEvent.time < 0
+      ) {
+        throw new Error(
+          `[Config] Invalid event time in "${timelineEvent.id}": ${timelineEvent.time}`
+        );
+      }
+
+      if (
+        timelineEvent.time <
+        previousTime
+      ) {
         throw new Error(
           `[Config] Timeline "${timelineId}" is not sorted by time`
         );
       }
 
-      if (!validTimelineTypes.includes(event.type)) {
+      if (
+        !validTimelineTypes.includes(
+          timelineEvent.type
+        )
+      ) {
         throw new Error(
-          `[Config] Unknown timeline event type in "${event.id}": ${event.type}`
-        );
-      }
-
-      if (typeof event.once !== 'boolean') {
-        throw new Error(
-          `[Config] Timeline event once must be a boolean: ${event.id}`
+          `[Config] Unknown timeline event type in "${timelineEvent.id}": ${timelineEvent.type}`
         );
       }
 
       if (
-        event.payload !== undefined &&
-        (
-          event.payload === null ||
-          typeof event.payload !== 'object' ||
-          Array.isArray(event.payload)
-        )
+        typeof timelineEvent.once !==
+        'boolean'
       ) {
         throw new Error(
-          `[Config] Timeline payload must be an object: ${event.id}`
+          `[Config] Timeline event once must be a boolean: ${timelineEvent.id}`
         );
       }
 
-      validateTimelinePayload(event);
+      if (
+        timelineEvent.payload !==
+          undefined &&
+        (
+          timelineEvent.payload ===
+            null ||
+          typeof timelineEvent.payload !==
+            'object' ||
+          Array.isArray(
+            timelineEvent.payload
+          )
+        )
+      ) {
+        throw new Error(
+          `[Config] Timeline payload must be an object: ${timelineEvent.id}`
+        );
+      }
 
-      previousTime = event.time;
+      validateTimelinePayload(
+        timelineEvent
+      );
+
+      previousTime =
+        timelineEvent.time;
     }
   }
 }
@@ -1452,32 +2147,76 @@ function validateTimelines() {
 /**
  * タイムラインイベントのpayloadを検証します。
  *
- * @param {Object} event
+ * @param {Object} timelineEvent
  * @private
  */
-function validateTimelinePayload(event) {
-  const payload = event.payload ?? {};
+function validateTimelinePayload(
+  timelineEvent
+) {
+  const payload =
+    timelineEvent.payload ??
+    {};
 
-  switch (event.type) {
+  switch (
+    timelineEvent.type
+  ) {
     case TIMELINE_EVENT_TYPES.MENTOR_SHOW:
-      getMentorMessage(payload.messageId);
+      getMentorMessage(
+        payload.messageId
+      );
       break;
 
     case TIMELINE_EVENT_TYPES.UI_SHOW_CHOICE:
-      getChoiceConfig(payload.choiceId);
+      getChoiceConfig(
+        payload.choiceId
+      );
+
+      if (
+        payload.pauseScene !==
+          undefined &&
+        typeof payload.pauseScene !==
+          'boolean'
+      ) {
+        throw new Error(
+          `[Config] pauseScene must be a boolean: ${timelineEvent.id}`
+        );
+      }
+
       break;
 
     case TIMELINE_EVENT_TYPES.ROTOR_START:
     case TIMELINE_EVENT_TYPES.ROTOR_SPEED_CHANGE:
-      validateRotorSpeedPayload(event.id, payload.speed);
+      validateRotorSpeedPayload(
+        timelineEvent.id,
+        payload.speed
+      );
+      break;
+
+    case TIMELINE_EVENT_TYPES.ROTOR_STOP:
+      if (
+        payload.immediate !==
+          undefined &&
+        typeof payload.immediate !==
+          'boolean'
+      ) {
+        throw new Error(
+          `[Config] Rotor stop immediate must be a boolean: ${timelineEvent.id}`
+        );
+      }
+
       break;
 
     case TIMELINE_EVENT_TYPES.SCENE_CHANGE:
-      if (!isValidSceneDestination(payload.sceneId)) {
+      if (
+        !isValidSceneDestination(
+          payload.sceneId
+        )
+      ) {
         throw new Error(
-          `[Config] Invalid timeline scene ID: ${event.id}`
+          `[Config] Invalid timeline scene ID: ${timelineEvent.id}`
         );
       }
+
       break;
 
     default:
@@ -1493,12 +2232,17 @@ function validateTimelinePayload(event) {
  * @param {*} speed
  * @private
  */
-function validateRotorSpeedPayload(eventId, speed) {
+function validateRotorSpeedPayload(
+  eventId,
+  speed
+) {
   if (
     typeof speed !== 'number' ||
     !Number.isFinite(speed) ||
-    speed < ROTOR_CONFIG.minimumSpeed ||
-    speed > ROTOR_CONFIG.maximumSpeed
+    speed <
+      ROTOR_CONFIG.minimumSpeed ||
+    speed >
+      ROTOR_CONFIG.maximumSpeed
   ) {
     throw new Error(
       `[Config] Invalid rotor speed in "${eventId}": ${String(speed)}`
@@ -1514,8 +2258,11 @@ function validateRotorSpeedPayload(eventId, speed) {
  */
 function validateRotorConfig() {
   if (
-    typeof ROTOR_CONFIG.minimumSpeed !== 'number' ||
-    !Number.isFinite(ROTOR_CONFIG.minimumSpeed)
+    typeof ROTOR_CONFIG.minimumSpeed !==
+      'number' ||
+    !Number.isFinite(
+      ROTOR_CONFIG.minimumSpeed
+    )
   ) {
     throw new Error(
       '[Config] Invalid minimum rotor speed.'
@@ -1523,9 +2270,13 @@ function validateRotorConfig() {
   }
 
   if (
-    typeof ROTOR_CONFIG.maximumSpeed !== 'number' ||
-    !Number.isFinite(ROTOR_CONFIG.maximumSpeed) ||
-    ROTOR_CONFIG.maximumSpeed < ROTOR_CONFIG.minimumSpeed
+    typeof ROTOR_CONFIG.maximumSpeed !==
+      'number' ||
+    !Number.isFinite(
+      ROTOR_CONFIG.maximumSpeed
+    ) ||
+    ROTOR_CONFIG.maximumSpeed <
+      ROTOR_CONFIG.minimumSpeed
   ) {
     throw new Error(
       '[Config] Invalid maximum rotor speed.'
@@ -1533,10 +2284,15 @@ function validateRotorConfig() {
   }
 
   if (
-    typeof ROTOR_CONFIG.defaultSpeed !== 'number' ||
-    !Number.isFinite(ROTOR_CONFIG.defaultSpeed) ||
-    ROTOR_CONFIG.defaultSpeed < ROTOR_CONFIG.minimumSpeed ||
-    ROTOR_CONFIG.defaultSpeed > ROTOR_CONFIG.maximumSpeed
+    typeof ROTOR_CONFIG.defaultSpeed !==
+      'number' ||
+    !Number.isFinite(
+      ROTOR_CONFIG.defaultSpeed
+    ) ||
+    ROTOR_CONFIG.defaultSpeed <
+      ROTOR_CONFIG.minimumSpeed ||
+    ROTOR_CONFIG.defaultSpeed >
+      ROTOR_CONFIG.maximumSpeed
   ) {
     throw new Error(
       `[Config] Invalid default rotor speed: ${ROTOR_CONFIG.defaultSpeed}`
@@ -1544,7 +2300,9 @@ function validateRotorConfig() {
   }
 
   if (
-    !['x', 'y', 'z'].includes(ROTOR_CONFIG.defaultAxis)
+    !['x', 'y', 'z'].includes(
+      ROTOR_CONFIG.defaultAxis
+    )
   ) {
     throw new Error(
       `[Config] Invalid rotor axis: ${ROTOR_CONFIG.defaultAxis}`
@@ -1552,17 +2310,25 @@ function validateRotorConfig() {
   }
 
   if (
-    !Array.isArray(ROTOR_CONFIG.nodeNamePatterns) ||
-    ROTOR_CONFIG.nodeNamePatterns.length === 0
+    !Array.isArray(
+      ROTOR_CONFIG.nodeNamePatterns
+    ) ||
+    ROTOR_CONFIG
+      .nodeNamePatterns
+      .length === 0
   ) {
     throw new Error(
       '[Config] At least one rotor node name pattern is required.'
     );
   }
 
-  for (const pattern of ROTOR_CONFIG.nodeNamePatterns) {
+  for (
+    const pattern of
+    ROTOR_CONFIG.nodeNamePatterns
+  ) {
     if (
-      typeof pattern !== 'string' ||
+      typeof pattern !==
+        'string' ||
       pattern.trim() === ''
     ) {
       throw new Error(
@@ -1572,19 +2338,38 @@ function validateRotorConfig() {
   }
 
   if (
-    !Array.isArray(ROTOR_CONFIG.rotationDirections) ||
-    ROTOR_CONFIG.rotationDirections.length === 0
+    !Array.isArray(
+      ROTOR_CONFIG.rotationDirections
+    ) ||
+    ROTOR_CONFIG
+      .rotationDirections
+      .length === 0
   ) {
     throw new Error(
       '[Config] At least one rotor rotation direction is required.'
     );
   }
 
-  for (const direction of ROTOR_CONFIG.rotationDirections) {
-    if (direction !== 1 && direction !== -1) {
+  for (
+    const direction of
+    ROTOR_CONFIG.rotationDirections
+  ) {
+    if (
+      direction !== 1 &&
+      direction !== -1
+    ) {
       throw new Error(
         `[Config] Rotor rotation direction must be 1 or -1: ${direction}`
       );
     }
+  }
+
+  if (
+    typeof ROTOR_CONFIG.stopImmediately !==
+    'boolean'
+  ) {
+    throw new Error(
+      '[Config] ROTOR_CONFIG.stopImmediately must be a boolean.'
+    );
   }
 }
