@@ -13,7 +13,7 @@
       "
     >
 
-    <title>Air Taxi 003</title>
+    <title>Air Taxi 004</title>
 
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
@@ -269,7 +269,7 @@
           src="Background360test2.mp4"
         ></video>
 
-        <!-- after2：同じ30秒の360°動画 -->
+        <!-- after2：30秒の360°動画 -->
         <video
           id="video-after2"
           playsinline
@@ -407,27 +407,44 @@
 
       const fade = document.getElementById('fade-overlay');
 
-      const mentorPanel = document.getElementById('mentor-panel');
-      const mentorText = document.getElementById('mentor-text');
+      const mentorPanel =
+        document.getElementById('mentor-panel');
 
-      const sceneEl = document.querySelector('a-scene');
+      const mentorText =
+        document.getElementById('mentor-text');
 
-      const externalScene = document.getElementById('external-scene');
-      const externalAircraft = document.getElementById('external-aircraft');
+      const externalScene =
+        document.getElementById('external-scene');
 
-      const car = document.getElementById('moving-car');
+      const externalAircraft =
+        document.getElementById('external-aircraft');
 
-      const cockpitAircraft = document.getElementById('aircraft');
+      const car =
+        document.getElementById('moving-car');
 
-      const cam = document.getElementById('main-camera');
+      const cockpitAircraft =
+        document.getElementById('aircraft');
 
-      const sphereBefore = document.getElementById('sphere-before');
-      const sphereAfter1 = document.getElementById('sphere-after1');
-      const sphereAfter2 = document.getElementById('sphere-after2');
+      const cam =
+        document.getElementById('main-camera');
 
-      const videoBefore = document.getElementById('video-before');
-      const videoAfter1 = document.getElementById('video-after1');
-      const videoAfter2 = document.getElementById('video-after2');
+      const sphereBefore =
+        document.getElementById('sphere-before');
+
+      const sphereAfter1 =
+        document.getElementById('sphere-after1');
+
+      const sphereAfter2 =
+        document.getElementById('sphere-after2');
+
+      const videoBefore =
+        document.getElementById('video-before');
+
+      const videoAfter1 =
+        document.getElementById('video-after1');
+
+      const videoAfter2 =
+        document.getElementById('video-after2');
 
 
       /* =====================================================
@@ -456,9 +473,6 @@
 
       /*
        * 360°動画シーン全体の尺
-       *
-       * 動画ファイル自体が終了しても、
-       * この時間まではシーンを継続する
        */
       const BEFORE_SCENE_DURATION = 10000;
       const AFTER_SCENE_DURATION = 32000;
@@ -468,6 +482,14 @@
        */
       const DESCENT_MESSAGE_TIME = 16500;
       const COMPLETE_MESSAGE_TIME = 32000;
+
+      /*
+       * 【変更点】
+       * after2だけ最後の完了処理を遅らせる時間。
+       *
+       * 5000ミリ秒 = 5秒
+       */
+      const AFTER2_COMPLETE_DELAY = 5000;
 
 
       /* =====================================================
@@ -807,7 +829,8 @@
          */
         if (
           typeof DeviceOrientationEvent !== 'undefined' &&
-          typeof DeviceOrientationEvent.requestPermission === 'function'
+          typeof DeviceOrientationEvent.requestPermission ===
+            'function'
         ) {
           try {
             const response =
@@ -856,6 +879,7 @@
         );
 
         btnMain.innerText = '離陸開始';
+
         btnMain.setAttribute(
           'onclick',
           'handleTakeOff()'
@@ -952,8 +976,6 @@
 
         /*
          * beforeシーン開始3秒後のメッセージ。
-         * 動画自体は2秒で終了するが、
-         * タイマーはそのまま継続する。
          */
         beforeTowerMessageTimer = setTimeout(() => {
           if (currentPhase !== 'before') {
@@ -968,8 +990,6 @@
 
         /*
          * beforeシーンは合計10秒。
-         * 動画が2秒で終了していても、
-         * 10秒経過するまではこのシーンを維持する。
          */
         beforeChoiceTimer = setTimeout(() => {
           if (currentPhase !== 'before') {
@@ -1042,10 +1062,6 @@
         setTimeout(() => {
           pauseAllVideos();
 
-          /*
-           * after1とafter2では同じ動画ファイルを使用するが、
-           * video要素とvideosphereは分けている。
-           */
           const selectedVideo =
             choiceNumber === 1
               ? videoAfter1
@@ -1081,6 +1097,34 @@
 
       function scheduleAfterScene(choiceNumber) {
         /*
+         * 【変更点】
+         *
+         * after1の場合：
+         *   COMPLETE_MESSAGE_TIMEのまま
+         *
+         * after2の場合：
+         *   COMPLETE_MESSAGE_TIMEに5秒を追加
+         */
+        const completeMessageTime =
+          choiceNumber === 2
+            ? COMPLETE_MESSAGE_TIME +
+              AFTER2_COMPLETE_DELAY
+            : COMPLETE_MESSAGE_TIME;
+
+        /*
+         * 【変更点】
+         *
+         * after2では完了メッセージを遅らせるため、
+         * リセットボタンの表示も同じだけ遅らせる。
+         */
+        const afterSceneDuration =
+          choiceNumber === 2
+            ? AFTER_SCENE_DURATION +
+              AFTER2_COMPLETE_DELAY
+            : AFTER_SCENE_DURATION;
+
+
+        /*
          * シーン開始1.2秒後
          */
         afterStartMessageTimer = setTimeout(() => {
@@ -1106,7 +1150,7 @@
 
 
         /*
-         * シーン開始15秒後
+         * シーン開始16.5秒後
          */
         afterDescentMessageTimer = setTimeout(() => {
           if (
@@ -1131,7 +1175,10 @@
 
 
         /*
-         * シーン開始29秒後
+         * 任務完了処理
+         *
+         * after1：32秒後
+         * after2：37秒後
          *
          * ・任務完了メッセージ
          * ・プロペラ停止
@@ -1152,14 +1199,14 @@
             '任務完了だ。よくやったな！合格だ！',
             0
           );
-        }, COMPLETE_MESSAGE_TIME);
+        }, completeMessageTime);
 
 
         /*
-         * afterシーン開始32秒後
+         * afterシーン終了処理
          *
-         * 動画は30秒で終了するが、
-         * 最終状態のまま2秒間継続する。
+         * after1：32秒後
+         * after2：37秒後
          */
         afterEndTimer = setTimeout(() => {
           if (
@@ -1170,7 +1217,7 @@
           }
 
           handleMissionComplete();
-        }, AFTER_SCENE_DURATION);
+        }, afterSceneDuration);
       }
 
 
@@ -1182,7 +1229,7 @@
         currentPhase = 'complete';
 
         /*
-         * 29秒時点の処理が何らかの理由で
+         * 完了メッセージ用タイマーが何らかの理由で
          * 実行されなかった場合にも停止させる。
          */
         if (!missionCompleted) {
