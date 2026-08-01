@@ -13,7 +13,7 @@
       "
     >
 
-    <title>Air Taxi 004</title>
+    <title>Air Taxi 005</title>
 
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
@@ -187,6 +187,24 @@
   </head>
 
   <body>
+    <!-- =====================================================
+         BGM
+
+         HTMLファイルと同じ階層に
+         bgm01.mp3を配置してください。
+
+         loop属性により、音源終了後は自動的に
+         先頭へ戻って再生されます。
+    ====================================================== -->
+
+    <audio
+      id="bgm"
+      src="bgm01.mp3"
+      preload="auto"
+      loop
+    ></audio>
+
+
     <!-- フェード -->
     <div id="fade-overlay"></div>
 
@@ -402,10 +420,14 @@
          DOM取得
       ====================================================== */
 
-      const btnMain = document.getElementById('btn-main');
-      const btnArea = document.getElementById('btn-area');
+      const btnMain =
+        document.getElementById('btn-main');
 
-      const fade = document.getElementById('fade-overlay');
+      const btnArea =
+        document.getElementById('btn-area');
+
+      const fade =
+        document.getElementById('fade-overlay');
 
       const mentorPanel =
         document.getElementById('mentor-panel');
@@ -446,12 +468,32 @@
       const videoAfter2 =
         document.getElementById('video-after2');
 
+      /*
+       * BGM
+       */
+      const bgm =
+        document.getElementById('bgm');
+
 
       /* =====================================================
          基本設定
       ====================================================== */
 
+      /*
+       * 動画音量
+       */
       const VIDEO_VOLUME = 0.3;
+
+      /*
+       * BGM音量
+       *
+       * 動画音声やソラ教官を邪魔しないよう、
+       * 動画より小さめに設定しています。
+       *
+       * 0   = 無音
+       * 1.0 = 最大音量
+       */
+      const BGM_VOLUME = 0.15;
 
       /*
        * 外部視点シーン
@@ -484,7 +526,6 @@
       const COMPLETE_MESSAGE_TIME = 32000;
 
       /*
-       * 【変更点】
        * after2だけ最後の完了処理を遅らせる時間。
        *
        * 5000ミリ秒 = 5秒
@@ -521,8 +562,34 @@
          初期化
       ====================================================== */
 
+      initializeBgm();
       initializeVideos();
       initializeSceneVisibility();
+
+
+      /**
+       * BGMの初期設定
+       */
+      function initializeBgm() {
+        bgm.pause();
+
+        bgm.volume = BGM_VOLUME;
+
+        /*
+         * HTMLのloop属性に加え、
+         * JavaScript側でもloopを有効にしておく。
+         */
+        bgm.loop = true;
+
+        try {
+          bgm.currentTime = 0;
+        } catch (error) {
+          console.warn(
+            'BGMを先頭に戻せませんでした。',
+            error
+          );
+        }
+      }
 
 
       function initializeVideos() {
@@ -550,13 +617,68 @@
 
 
       function initializeSceneVisibility() {
-        externalScene.setAttribute('visible', true);
+        externalScene.setAttribute(
+          'visible',
+          true
+        );
 
-        sphereBefore.setAttribute('visible', false);
-        sphereAfter1.setAttribute('visible', false);
-        sphereAfter2.setAttribute('visible', false);
+        sphereBefore.setAttribute(
+          'visible',
+          false
+        );
 
-        cockpitAircraft.setAttribute('visible', false);
+        sphereAfter1.setAttribute(
+          'visible',
+          false
+        );
+
+        sphereAfter2.setAttribute(
+          'visible',
+          false
+        );
+
+        cockpitAircraft.setAttribute(
+          'visible',
+          false
+        );
+      }
+
+
+      /* =====================================================
+         BGM処理
+      ====================================================== */
+
+      /**
+       * BGMを先頭から再生します。
+       *
+       * 最初のスタートボタン操作中に呼び出すことで、
+       * iPhoneやSafariの自動再生制限に対応します。
+       */
+      async function startBgm() {
+        bgm.loop = true;
+        bgm.volume = BGM_VOLUME;
+
+        try {
+          bgm.currentTime = 0;
+        } catch (error) {
+          console.warn(
+            'BGMを先頭に戻せませんでした。',
+            error
+          );
+        }
+
+        try {
+          await bgm.play();
+
+          console.log(
+            'BGMの再生を開始しました。'
+          );
+        } catch (error) {
+          console.error(
+            'BGMの再生を開始できませんでした。',
+            error
+          );
+        }
       }
 
 
@@ -605,6 +727,12 @@
       }
 
 
+      /**
+       * 動画のみを停止します。
+       *
+       * BGMはここに含めないため、
+       * 選択画面で動画が止まってもBGMは流れ続けます。
+       */
       function pauseAllVideos() {
         videoBefore.pause();
         videoAfter1.pause();
@@ -613,15 +741,30 @@
 
 
       function hideAllVideoSpheres() {
-        sphereBefore.setAttribute('visible', false);
-        sphereAfter1.setAttribute('visible', false);
-        sphereAfter2.setAttribute('visible', false);
+        sphereBefore.setAttribute(
+          'visible',
+          false
+        );
+
+        sphereAfter1.setAttribute(
+          'visible',
+          false
+        );
+
+        sphereAfter2.setAttribute(
+          'visible',
+          false
+        );
       }
 
 
       function showVideoSphere(sphereEl) {
         hideAllVideoSpheres();
-        sphereEl.setAttribute('visible', true);
+
+        sphereEl.setAttribute(
+          'visible',
+          true
+        );
       }
 
 
@@ -703,7 +846,10 @@
          教官メッセージ
       ====================================================== */
 
-      function showMentorMessage(text, duration = 3000) {
+      function showMentorMessage(
+        text,
+        duration = 3000
+      ) {
         clearTimeout(mentorHideTimer);
         clearTimeout(mentorTextDelayTimer);
 
@@ -748,8 +894,13 @@
       ====================================================== */
 
       function clearAllFlightAnimations() {
-        car.removeAttribute('animation__takeoff');
-        car.removeAttribute('animation__forward');
+        car.removeAttribute(
+          'animation__takeoff'
+        );
+
+        car.removeAttribute(
+          'animation__forward'
+        );
       }
 
 
@@ -784,9 +935,13 @@
          * animation-mixerを削除すると、
          * GLB内のアニメーション再生が停止する。
          */
-        cockpitAircraft.removeAttribute('animation-mixer');
+        cockpitAircraft.removeAttribute(
+          'animation-mixer'
+        );
 
-        console.log('プロペラ回転を停止しました。');
+        console.log(
+          'プロペラ回転を停止しました。'
+        );
       }
 
 
@@ -795,7 +950,8 @@
       ====================================================== */
 
       function whitenModelMaterials(modelEl) {
-        const mesh = modelEl.getObject3D('mesh');
+        const mesh =
+          modelEl.getObject3D('mesh');
 
         if (!mesh) {
           return;
@@ -806,7 +962,9 @@
       externalAircraft.addEventListener(
         'model-loaded',
         () => {
-          whitenModelMaterials(externalAircraft);
+          whitenModelMaterials(
+            externalAircraft
+          );
         }
       );
 
@@ -814,7 +972,9 @@
       cockpitAircraft.addEventListener(
         'model-loaded',
         () => {
-          whitenModelMaterials(cockpitAircraft);
+          whitenModelMaterials(
+            cockpitAircraft
+          );
         }
       );
 
@@ -825,20 +985,36 @@
 
       async function handleStart() {
         /*
+         * BGMは最初のユーザー操作中に、
+         * できるだけ早く再生を開始する。
+         *
+         * DeviceOrientationの許可や動画アンロックよりも
+         * 先に呼び出すことで、iPhone/Safariでも
+         * 再生許可を取得しやすくします。
+         */
+        const bgmStartPromise =
+          startBgm();
+
+        /*
          * iOSのジャイロ使用許可
          */
         if (
-          typeof DeviceOrientationEvent !== 'undefined' &&
-          typeof DeviceOrientationEvent.requestPermission ===
+          typeof DeviceOrientationEvent !==
+            'undefined' &&
+          typeof DeviceOrientationEvent
+            .requestPermission ===
             'function'
         ) {
           try {
             const response =
-              await DeviceOrientationEvent.requestPermission();
+              await DeviceOrientationEvent
+                .requestPermission();
 
             if (response === 'granted') {
               const lookControls =
-                cam.components['look-controls'];
+                cam.components[
+                  'look-controls'
+                ];
 
               if (lookControls) {
                 lookControls.pause();
@@ -865,6 +1041,14 @@
         await unlockVideos();
 
         /*
+         * BGM開始処理の完了を待つ。
+         *
+         * BGMの失敗はstartBgm()内で処理するため、
+         * 他の体験処理はそのまま進みます。
+         */
+        await bgmStartPromise;
+
+        /*
          * 動画を再準備
          */
         prepareVideo(videoBefore);
@@ -878,7 +1062,8 @@
           4500
         );
 
-        btnMain.innerText = '離陸開始';
+        btnMain.innerText =
+          '離陸開始';
 
         btnMain.setAttribute(
           'onclick',
@@ -926,7 +1111,8 @@
           );
 
           const fadeStart = Math.max(
-            FORWARD_DURATION - FADE_LEAD_TIME,
+            FORWARD_DURATION -
+              FADE_LEAD_TIME,
             50
           );
 
@@ -955,17 +1141,28 @@
         /*
          * 外部視点を非表示
          */
-        externalScene.setAttribute('visible', false);
+        externalScene.setAttribute(
+          'visible',
+          false
+        );
 
         /*
          * 360°動画とコクピット機体を表示
          */
-        showVideoSphere(sphereBefore);
+        showVideoSphere(
+          sphereBefore
+        );
 
-        cockpitAircraft.setAttribute('visible', true);
+        cockpitAircraft.setAttribute(
+          'visible',
+          true
+        );
+
         startCockpitRotor();
 
-        playVideoOnce(videoBefore);
+        playVideoOnce(
+          videoBefore
+        );
 
         /*
          * フェード解除
@@ -977,27 +1174,35 @@
         /*
          * beforeシーン開始3秒後のメッセージ。
          */
-        beforeTowerMessageTimer = setTimeout(() => {
-          if (currentPhase !== 'before') {
-            return;
-          }
+        beforeTowerMessageTimer =
+          setTimeout(() => {
+            if (
+              currentPhase !==
+              'before'
+            ) {
+              return;
+            }
 
-          showMentorMessage(
-            'ツインタワーに近づいてきたな！',
-            2500
-          );
-        }, 3000);
+            showMentorMessage(
+              'ツインタワーに近づいてきたな！',
+              2500
+            );
+          }, 3000);
 
         /*
          * beforeシーンは合計10秒。
          */
-        beforeChoiceTimer = setTimeout(() => {
-          if (currentPhase !== 'before') {
-            return;
-          }
+        beforeChoiceTimer =
+          setTimeout(() => {
+            if (
+              currentPhase !==
+              'before'
+            ) {
+              return;
+            }
 
-          triggerBranchChoice();
-        }, BEFORE_SCENE_DURATION);
+            triggerBranchChoice();
+          }, BEFORE_SCENE_DURATION);
       }
 
 
@@ -1008,9 +1213,14 @@
       function triggerBranchChoice() {
         currentPhase = 'choice';
 
+        /*
+         * 動画は止めるが、
+         * BGMは止めない。
+         */
         videoBefore.pause();
 
-        btnArea.style.display = 'block';
+        btnArea.style.display =
+          'block';
 
         btnArea.innerHTML = `
           <div class="choice-container">
@@ -1060,6 +1270,10 @@
         fade.style.opacity = '1';
 
         setTimeout(() => {
+          /*
+           * 動画だけを停止する。
+           * BGMは流れ続ける。
+           */
           pauseAllVideos();
 
           const selectedVideo =
@@ -1072,12 +1286,20 @@
               ? sphereAfter1
               : sphereAfter2;
 
-          showVideoSphere(selectedSphere);
+          showVideoSphere(
+            selectedSphere
+          );
 
-          cockpitAircraft.setAttribute('visible', true);
+          cockpitAircraft.setAttribute(
+            'visible',
+            true
+          );
+
           startCockpitRotor();
 
-          playVideoOnce(selectedVideo);
+          playVideoOnce(
+            selectedVideo
+          );
 
           setTimeout(() => {
             fade.style.opacity = '0';
@@ -1095,15 +1317,15 @@
          afterシーンのタイムライン
       ====================================================== */
 
-      function scheduleAfterScene(choiceNumber) {
+      function scheduleAfterScene(
+        choiceNumber
+      ) {
         /*
-         * 【変更点】
-         *
          * after1の場合：
-         *   COMPLETE_MESSAGE_TIMEのまま
+         * COMPLETE_MESSAGE_TIMEのまま
          *
          * after2の場合：
-         *   COMPLETE_MESSAGE_TIMEに5秒を追加
+         * COMPLETE_MESSAGE_TIMEに5秒を追加
          */
         const completeMessageTime =
           choiceNumber === 2
@@ -1112,8 +1334,6 @@
             : COMPLETE_MESSAGE_TIME;
 
         /*
-         * 【変更点】
-         *
          * after2では完了メッセージを遅らせるため、
          * リセットボタンの表示も同じだけ遅らせる。
          */
@@ -1127,51 +1347,57 @@
         /*
          * シーン開始1.2秒後
          */
-        afterStartMessageTimer = setTimeout(() => {
-          if (
-            currentPhase !== 'after1' &&
-            currentPhase !== 'after2'
-          ) {
-            return;
-          }
+        afterStartMessageTimer =
+          setTimeout(() => {
+            if (
+              currentPhase !==
+                'after1' &&
+              currentPhase !==
+                'after2'
+            ) {
+              return;
+            }
 
-          if (choiceNumber === 1) {
-            showMentorMessage(
-              'OK！では前の機体が飛び立つのを待とう。',
-              4000
-            );
-          } else {
-            showMentorMessage(
-              'OK！では別の地点へ向かおう。',
-              4000
-            );
-          }
-        }, 1200);
+            if (choiceNumber === 1) {
+              showMentorMessage(
+                'OK！では前の機体が飛び立つのを待とう。',
+                4000
+              );
+            } else {
+              showMentorMessage(
+                'OK！では別の地点へ向かおう。',
+                4000
+              );
+            }
+          }, 1200);
 
 
         /*
          * シーン開始16.5秒後
          */
-        afterDescentMessageTimer = setTimeout(() => {
-          if (
-            currentPhase !== 'after1' &&
-            currentPhase !== 'after2'
-          ) {
-            return;
-          }
+        afterDescentMessageTimer =
+          setTimeout(() => {
+            if (
+              currentPhase !==
+                'after1' &&
+              currentPhase !==
+                'after2'
+            ) {
+              return;
+            }
 
-          if (choiceNumber === 1) {
-            showMentorMessage(
-              'そろそろ降りられるみたいだ。高度を下げていこう！',
-              5000
-            );
-          } else {
-            showMentorMessage(
-              'こちらは問題なさそうだ。高度を下げていこう！',
-              5100
-            );
-          }
-        }, DESCENT_MESSAGE_TIME);
+            if (choiceNumber === 1) {
+              showMentorMessage(
+                'そろそろ降りられるみたいだ。高度を下げていこう！',
+                5000
+              );
+            } else {
+              showMentorMessage(
+                'こちらは問題なさそうだ。高度を下げていこう！',
+                5100
+              );
+            }
+          }, DESCENT_MESSAGE_TIME);
 
 
         /*
@@ -1183,23 +1409,26 @@
          * ・任務完了メッセージ
          * ・プロペラ停止
          */
-        afterCompleteMessageTimer = setTimeout(() => {
-          if (
-            currentPhase !== 'after1' &&
-            currentPhase !== 'after2'
-          ) {
-            return;
-          }
+        afterCompleteMessageTimer =
+          setTimeout(() => {
+            if (
+              currentPhase !==
+                'after1' &&
+              currentPhase !==
+                'after2'
+            ) {
+              return;
+            }
 
-          missionCompleted = true;
+            missionCompleted = true;
 
-          stopCockpitRotor();
+            stopCockpitRotor();
 
-          showMentorMessage(
-            '任務完了だ。よくやったな！合格だ！',
-            0
-          );
-        }, completeMessageTime);
+            showMentorMessage(
+              '任務完了だ。よくやったな！合格だ！',
+              0
+            );
+          }, completeMessageTime);
 
 
         /*
@@ -1208,16 +1437,19 @@
          * after1：32秒後
          * after2：37秒後
          */
-        afterEndTimer = setTimeout(() => {
-          if (
-            currentPhase !== 'after1' &&
-            currentPhase !== 'after2'
-          ) {
-            return;
-          }
+        afterEndTimer =
+          setTimeout(() => {
+            if (
+              currentPhase !==
+                'after1' &&
+              currentPhase !==
+                'after2'
+            ) {
+              return;
+            }
 
-          handleMissionComplete();
-        }, afterSceneDuration);
+            handleMissionComplete();
+          }, afterSceneDuration);
       }
 
 
@@ -1229,8 +1461,9 @@
         currentPhase = 'complete';
 
         /*
-         * 完了メッセージ用タイマーが何らかの理由で
-         * 実行されなかった場合にも停止させる。
+         * 完了メッセージ用タイマーが
+         * 何らかの理由で実行されなかった場合にも
+         * プロペラを停止する。
          */
         if (!missionCompleted) {
           missionCompleted = true;
@@ -1243,7 +1476,14 @@
           );
         }
 
-        btnArea.style.display = 'block';
+        /*
+         * BGMは完了画面でも流し続ける。
+         *
+         * リセットボタンを押してページが再読み込みされると、
+         * BGMも停止して初期状態へ戻る。
+         */
+        btnArea.style.display =
+          'block';
 
         btnArea.innerHTML = `
           <button
