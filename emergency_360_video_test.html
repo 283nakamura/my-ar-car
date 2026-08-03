@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+
+    <meta
+      name="viewport"
+      content="
+        width=device-width,
+        initial-scale=1.0,
+        maximum-scale=1.0,
+        user-scalable=no,
+        viewport-fit=cover
+      "
+    >
+
+    <title>360° Video Player</title>
+
+    <!--
+      オンライン版A-Frame
+      ネット接続が必要です。
+    -->
+    <script
+      src="https://aframe.io/releases/1.7.0/aframe.min.js"
+    ></script>
+
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+
+        margin: 0;
+        padding: 0;
+
+        overflow: hidden;
+
+        background: #000;
+
+        font-family:
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      a-scene {
+        width: 100%;
+        height: 100%;
+      }
+
+
+      /* =====================================================
+         起動画面
+         ====================================================== */
+
+      #start-screen {
+        position: fixed;
+        inset: 0;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding:
+          max(24px, env(safe-area-inset-top))
+          max(24px, env(safe-area-inset-right))
+          max(24px, env(safe-area-inset-bottom))
+          max(24px, env(safe-area-inset-left));
+
+        background:
+          radial-gradient(
+            circle at center,
+            rgba(24, 44, 68, 0.96),
+            rgba(0, 0, 0, 0.98)
+          );
+
+        z-index: 10000;
+
+        opacity: 1;
+        visibility: visible;
+
+        transition:
+          opacity 300ms ease,
+          visibility 300ms ease;
+      }
+
+      #start-screen.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .start-panel {
+        width: min(88vw, 520px);
+
+        padding: clamp(24px, 5vw, 42px);
+
+        border:
+          1px solid rgba(255, 255, 255, 0.18);
+
+        border-radius: 20px;
+
+        background: rgba(7, 18, 31, 0.88);
+
+        box-shadow:
+          0 18px 60px rgba(0, 0, 0, 0.52);
+
+        text-align: center;
+
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      .start-title {
+        margin: 0 0 12px;
+
+        font-size: clamp(26px, 7vw, 46px);
+        line-height: 1.25;
+      }
+
+      .start-description {
+        margin: 0 0 26px;
+
+        color: rgba(255, 255, 255, 0.76);
+
+        font-size: clamp(14px, 3.8vw, 18px);
+        line-height: 1.7;
+      }
+
+      .primary-button {
+        min-width: 180px;
+
+        padding: 15px 28px;
+
+        border: 0;
+        border-radius: 10px;
+
+        background: #27e0d0;
+        color: #07131f;
+
+        font-size: clamp(17px, 4vw, 22px);
+        font-weight: 800;
+
+        cursor: pointer;
+
+        box-shadow:
+          0 8px 24px rgba(39, 224, 208, 0.28);
+
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .primary-button:active {
+        transform: translateY(1px);
+      }
+
+
+      /* =====================================================
+         操作UI
+         ====================================================== */
+
+      #controls {
+        position: fixed;
+
+        left: 50%;
+        bottom:
+          max(
+            18px,
+            calc(env(safe-area-inset-bottom) + 12px)
+          );
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+
+        transform: translateX(-50%);
+
+        z-index: 9000;
+
+        opacity: 0;
+        visibility: hidden;
+
+        transition:
+          opacity 250ms ease,
+          visibility 250ms ease;
+      }
+
+      #controls.is-visible {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .control-button {
+        min-width: 88px;
+
+        padding: 11px 16px;
+
+        border:
+          1px solid rgba(255, 255, 255, 0.22);
+
+        border-radius: 10px;
+
+        background: rgba(5, 15, 28, 0.82);
+        color: #fff;
+
+        font-size: clamp(13px, 3vw, 17px);
+        font-weight: 700;
+
+        cursor: pointer;
+
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+
+        -webkit-tap-highlight-color: transparent;
+      }
+
+
+      /* =====================================================
+         状態表示
+         ====================================================== */
+
+      #status {
+        position: fixed;
+
+        top:
+          max(
+            14px,
+            calc(env(safe-area-inset-top) + 8px)
+          );
+
+        left: 50%;
+
+        max-width: min(86vw, 540px);
+
+        padding: 9px 14px;
+
+        border-radius: 999px;
+
+        background: rgba(0, 0, 0, 0.58);
+        color: rgba(255, 255, 255, 0.9);
+
+        font-size: clamp(12px, 2.8vw, 15px);
+        text-align: center;
+
+        transform: translateX(-50%);
+
+        z-index: 9000;
+
+        pointer-events: none;
+      }
+
+
+      /* =====================================================
+         エラー画面
+         ====================================================== */
+
+      #error-message {
+        position: fixed;
+        inset: 0;
+
+        display: none;
+        align-items: center;
+        justify-content: center;
+
+        padding: 24px;
+
+        background: rgba(0, 0, 0, 0.92);
+
+        color: #fff;
+
+        z-index: 20000;
+
+        text-align: center;
+      }
+
+      #error-message.is-visible {
+        display: flex;
+      }
+
+      .error-panel {
+        max-width: 620px;
+
+        padding: 28px;
+
+        border:
+          1px solid rgba(255, 255, 255, 0.2);
+
+        border-radius: 16px;
+
+        background: #111a27;
+      }
+
+      .error-title {
+        margin: 0 0 12px;
+
+        font-size: 24px;
+      }
+
+      .error-detail {
+        margin: 0;
+
+        color: rgba(255, 255, 255, 0.75);
+
+        line-height: 1.7;
+      }
+
+
+      /* =====================================================
+         縦長画面
+         ====================================================== */
+
+      @media (orientation: portrait) {
+        #controls {
+          width: calc(100% - 24px);
+
+          flex-wrap: wrap;
+        }
+
+        .control-button {
+          flex: 1 1 28%;
+
+          min-width: 86px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- =====================================================
+         起動画面
+         ====================================================== -->
+
+    <div id="start-screen">
+      <section class="start-panel">
+        <h1 class="start-title">
+          360°動画テスト
+        </h1>
+
+        <p class="start-description">
+          再生後は、スマホを動かすか、
+          画面をドラッグして周囲を見回せます。
+        </p>
+
+        <button
+          id="start-button"
+          class="primary-button"
+          type="button"
+        >
+          動画を再生
+        </button>
+      </section>
+    </div>
+
+
+    <!-- =====================================================
+         操作UI
+         ====================================================== -->
+
+    <div
+      id="controls"
+      aria-label="動画操作"
+    >
+      <button
+        id="pause-button"
+        class="control-button"
+        type="button"
+      >
+        一時停止
+      </button>
+
+      <button
+        id="restart-button"
+        class="control-button"
+        type="button"
+      >
+        最初から
+      </button>
+
+      <button
+        id="fullscreen-button"
+        class="control-button"
+        type="button"
+      >
+        全画面
+      </button>
+    </div>
+
+    <div
+      id="status"
+      role="status"
+      aria-live="polite"
+    >
+      動画を準備しています…
+    </div>
+
+    <div id="error-message">
+      <section class="error-panel">
+        <h2 class="error-title">
+          動画を読み込めませんでした
+        </h2>
+
+        <p
+          id="error-detail"
+          class="error-detail"
+        ></p>
+      </section>
+    </div>
+
+
+    <!-- =====================================================
+         A-Frame
+         ====================================================== -->
+
+    <a-scene
+      id="scene"
+      embedded
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      renderer="
+        antialias: true;
+        colorManagement: true;
+      "
+    >
+      <a-assets timeout="30000">
+        <!--
+          ここを実際の動画ファイル名へ変更してください。
+
+          例：
+          emergency_test_360.mp4
+
+          HTMLと動画を同じフォルダに置く場合：
+          src="./emergency_test_360.mp4"
+        -->
+        <video
+          id="video-360"
+          src="./video360.mp4"
+          preload="metadata"
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
+      </a-assets>
+
+      <!--
+        一般的な360°正距円筒図法動画を球面へ貼ります。
+
+        正面方向がずれている場合は、
+        rotationのY値だけ調整してください。
+
+        例：
+        rotation="0 0 0"
+        rotation="0 -90 0"
+        rotation="0 90 0"
+        rotation="0 180 0"
+      -->
+      <a-videosphere
+        id="video-sphere"
+        src="#video-360"
+        radius="100"
+        rotation="0 -90 0"
+      ></a-videosphere>
+
+      <a-entity
+        id="camera-rig"
+        position="0 0 0"
+      >
+        <a-camera
+          id="camera"
+          position="0 0 0"
+          look-controls="
+            magicWindowTrackingEnabled: true;
+            touchEnabled: true;
+            mouseEnabled: true;
+          "
+          wasd-controls-enabled="false"
+        ></a-camera>
+      </a-entity>
+    </a-scene>
+
+
+    <script>
+      'use strict';
+
+
+      /* =====================================================
+         DOM
+         ====================================================== */
+
+      const scene =
+        document.getElementById('scene');
+
+      const camera =
+        document.getElementById('camera');
+
+      const video =
+        document.getElementById('video-360');
+
+      const startScreen =
+        document.getElementById('start-screen');
+
+      const startButton =
+        document.getElementById('start-button');
+
+      const controls =
+        document.getElementById('controls');
+
+      const pauseButton =
+        document.getElementById('pause-button');
+
+      const restartButton =
+        document.getElementById('restart-button');
+
+      const fullscreenButton =
+        document.getElementById('fullscreen-button');
+
+      const status =
+        document.getElementById('status');
+
+      const errorMessage =
+        document.getElementById('error-message');
+
+      const errorDetail =
+        document.getElementById('error-detail');
+
+
+      /* =====================================================
+         状態
+         ====================================================== */
+
+      let isPlaying = false;
+      let isStarted = false;
+
+
+      /* =====================================================
+         初期化
+         ====================================================== */
+
+      initialize();
+
+
+      function initialize() {
+        video.volume = 1;
+        video.loop = false;
+
+        registerEventListeners();
+
+        if (
+          video.readyState >=
+          HTMLMediaElement.HAVE_METADATA
+        ) {
+          updateStatus(
+            '再生できます'
+          );
+        }
+      }
+
+
+      function registerEventListeners() {
+        startButton.addEventListener(
+          'click',
+          handleStart
+        );
+
+        pauseButton.addEventListener(
+          'click',
+          togglePause
+        );
+
+        restartButton.addEventListener(
+          'click',
+          restartVideo
+        );
+
+        fullscreenButton.addEventListener(
+          'click',
+          toggleFullscreen
+        );
+
+        video.addEventListener(
+          'loadedmetadata',
+          () => {
+            updateStatus(
+              `動画を読み込みました ${
+                formatTime(video.duration)
+              }`
+            );
+          }
+        );
+
+        video.addEventListener(
+          'canplay',
+          () => {
+            if (!isStarted) {
+              updateStatus(
+                '再生できます'
+              );
+            }
+          }
+        );
+
+        video.addEventListener(
+          'play',
+          () => {
+            isPlaying = true;
+
+            pauseButton.textContent =
+              '一時停止';
+
+            updatePlaybackStatus();
+          }
+        );
+
+        video.addEventListener(
+          'pause',
+          () => {
+            isPlaying = false;
+
+            pauseButton.textContent =
+              '再生';
+
+            updatePlaybackStatus();
+          }
+        );
+
+        video.addEventListener(
+          'timeupdate',
+          updatePlaybackStatus
+        );
+
+        video.addEventListener(
+          'ended',
+          () => {
+            isPlaying = false;
+
+            pauseButton.textContent =
+              'もう一度再生';
+
+            updateStatus(
+              '動画が終了しました'
+            );
+          }
+        );
+
+        video.addEventListener(
+          'waiting',
+          () => {
+            updateStatus(
+              '動画を読み込んでいます…'
+            );
+          }
+        );
+
+        video.addEventListener(
+          'error',
+          handleVideoError
+        );
+      }
+
+
+      /* =====================================================
+         再生
+         ====================================================== */
+
+      async function handleStart() {
+        startButton.disabled = true;
+
+        /*
+         * iPhoneでは、端末の向き情報を使用するために
+         * ユーザー操作内で許可を求める必要があります。
+         */
+        await requestDeviceOrientationPermission();
+
+        try {
+          await video.play();
+
+          isStarted = true;
+
+          startScreen.classList.add(
+            'is-hidden'
+          );
+
+          controls.classList.add(
+            'is-visible'
+          );
+        } catch (error) {
+          startButton.disabled = false;
+
+          showError(
+            '動画を再生できませんでした。',
+            error
+          );
+        }
+      }
+
+
+      async function togglePause() {
+        if (video.ended) {
+          await restartVideo();
+          return;
+        }
+
+        if (video.paused) {
+          try {
+            await video.play();
+          } catch (error) {
+            showError(
+              '動画を再開できませんでした。',
+              error
+            );
+          }
+
+          return;
+        }
+
+        video.pause();
+      }
+
+
+      async function restartVideo() {
+        try {
+          video.pause();
+          video.currentTime = 0;
+
+          await video.play();
+        } catch (error) {
+          showError(
+            '動画を最初から再生できませんでした。',
+            error
+          );
+        }
+      }
+
+
+      /* =====================================================
+         端末方向
+         ====================================================== */
+
+      async function requestDeviceOrientationPermission() {
+        if (
+          typeof DeviceOrientationEvent ===
+            'undefined' ||
+          typeof DeviceOrientationEvent
+            .requestPermission !==
+            'function'
+        ) {
+          return;
+        }
+
+        try {
+          const permission =
+            await DeviceOrientationEvent
+              .requestPermission();
+
+          if (permission !== 'granted') {
+            console.warn(
+              '端末方向の使用が許可されませんでした。' +
+              '画面ドラッグによる見回しは使用できます。'
+            );
+          }
+        } catch (error) {
+          console.warn(
+            '端末方向の許可取得に失敗しました。',
+            error
+          );
+        }
+      }
+
+
+      /* =====================================================
+         全画面
+         ====================================================== */
+
+      async function toggleFullscreen() {
+        try {
+          if (document.fullscreenElement) {
+            await document.exitFullscreen();
+            return;
+          }
+
+          const target =
+            document.documentElement;
+
+          if (
+            typeof target.requestFullscreen ===
+            'function'
+          ) {
+            await target.requestFullscreen();
+          }
+        } catch (error) {
+          console.warn(
+            '全画面表示を開始できませんでした。',
+            error
+          );
+        }
+      }
+
+
+      /* =====================================================
+         表示
+         ====================================================== */
+
+      function updatePlaybackStatus() {
+        if (!isStarted) {
+          return;
+        }
+
+        const currentTime =
+          formatTime(video.currentTime);
+
+        const duration =
+          Number.isFinite(video.duration)
+            ? formatTime(video.duration)
+            : '--:--';
+
+        const state =
+          isPlaying
+            ? '再生中'
+            : '一時停止';
+
+        updateStatus(
+          `${state}　${currentTime} / ${duration}`
+        );
+      }
+
+
+      function updateStatus(message) {
+        status.textContent = message;
+      }
+
+
+      function formatTime(seconds) {
+        if (!Number.isFinite(seconds)) {
+          return '--:--';
+        }
+
+        const totalSeconds =
+          Math.max(
+            0,
+            Math.floor(seconds)
+          );
+
+        const minutes =
+          Math.floor(
+            totalSeconds / 60
+          );
+
+        const remainingSeconds =
+          totalSeconds % 60;
+
+        return (
+          `${String(minutes).padStart(2, '0')}:` +
+          `${String(remainingSeconds).padStart(2, '0')}`
+        );
+      }
+
+
+      /* =====================================================
+         エラー
+         ====================================================== */
+
+      function handleVideoError() {
+        const mediaError =
+          video.error;
+
+        const message =
+          mediaError
+            ? `MediaError code: ${mediaError.code}`
+            : '動画ファイルまたはパスを確認してください。';
+
+        showError(
+          '動画の読み込み中にエラーが発生しました。',
+          new Error(message)
+        );
+      }
+
+
+      function showError(
+        message,
+        error
+      ) {
+        console.error(
+          '[360 Video Player]',
+          message,
+          error
+        );
+
+        errorDetail.textContent =
+          `${message} ${
+            error instanceof Error
+              ? error.message
+              : ''
+          }`;
+
+        errorMessage.classList.add(
+          'is-visible'
+        );
+      }
+    </script>
+  </body>
+</html>
